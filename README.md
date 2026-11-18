@@ -109,6 +109,25 @@ Kalau OpenWA mati, pesanan tetap tersimpan; hanya notifikasi WA yang dilewati.
 | `OPENWA_SESSION` | Opsional | Nama atau UUID sesi WhatsApp, default `intorma` |
 | `OPENWA_WEBHOOK_SECRET` | Opsional | Dicek di `?s=` oleh `/api/wa/webhook` |
 
+## Aplikasi yang bisa di-download & pembagian akses
+
+Situs ini adalah **PWA**: bisa dipasang di HP/laptop seperti aplikasi.
+
+- Buka situs di Chrome/Edge → menu ⋮ → **Install / Add to Home Screen**.
+- Tombol **“Install aplikasi”** juga muncul di footer saat browser mendukung.
+- Ikon dan splash memakai `public/icon.svg` + PNG di `public/icons/`.
+- Service worker hanya menyimpan halaman publik (`/`, `/order`, `/lacak`) untuk fallback offline.
+  **Halaman `/admin` dan `/api/` tidak pernah di-cache**, jadi data pesanan tidak tertinggal di
+  perangkat orang lain.
+
+### Pembagian akses
+- **Pelanggan / orang lain**: cukup dapat link publik `https://domain-kamu.com`. Mereka bisa pesan,
+  melihat harga otomatis, dan lacak pesanan. Tidak perlu login.
+- **Kamu (admin)**: buka `https://domain-kamu.com/admin` lalu masukkan `ADMIN_PASSWORD`.
+  URL admin tidak ditampilkan di navigasi publik—jangan dibagikan ke grup pelanggan.
+- Cookie admin bertanda tangan + middleware menolak akses `/admin` tanpa sesi, dan setiap server
+  action masih memeriksa ulang status admin. Tombol **Keluar** di header admin menghapus sesi.
+
 ## Deploy ke Vercel
 
 `vercel.json` sudah disiapkan: framework Next.js, `npm install` + `npm run build`, output `.next`,

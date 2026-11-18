@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline — in.torma</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; min-height: 100vh; display: grid; place-items: center;
+        background: #0d0d0c; color: #f1ece3;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        padding: 24px;
+      }
+      main { max-width: 28rem; }
+      img { width: 56px; height: 56px; display: block; }
+      p.eyebrow { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #a8a198; margin: 28px 0 12px; }
+      h1 { font-size: clamp(2rem, 7vw, 3rem); line-height: 1; letter-spacing: -.04em; margin: 0; }
+      h1 em { font-family: Georgia, serif; font-weight: 400; }
+      p.desc { color: #a8a198; line-height: 1.6; margin: 18px 0 28px; }
+      button {
+        border: 0; border-radius: 14px 14px 14px 0; padding: 14px 22px;
+        background: #f1ece3; color: #0d0d0c; font: inherit; font-weight: 700; cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icon.svg" alt="in.torma" />
+      <p class="eyebrow">Sedang offline</p>
+      <h1>Koneksi sedang <em>putus.</em></h1>
+      <p class="desc">Halaman yang kamu buka belum tersimpan di perangkat. Sambungkan internet dulu, lalu coba lagi.</p>
+      <button type="button" onclick="location.reload()">Coba lagi</button>
+    </main>
+  </body>
+</html>

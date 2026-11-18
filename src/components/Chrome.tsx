@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InstallButton } from "@/components/PWA";
 import { SITE_NAME, TAGLINE, waDisplay, waLink } from "@/lib/site";
 
 const wordmark = { src: "/int.svg", alt: `${SITE_NAME} — ${TAGLINE}` };
@@ -50,6 +51,7 @@ export function Footer() {
             <a href={waLink()} target="_blank" rel="noreferrer" className="btn-on-dark mt-7">
               Chat WhatsApp <span aria-hidden="true">→</span>
             </a>
+            <InstallButton />
           </div>
 
           <div className="grid grid-cols-2 gap-8 text-sm">

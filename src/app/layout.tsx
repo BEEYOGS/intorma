@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { ServiceWorkerRegister } from "@/components/PWA";
 import "./globals.css";
 
 const sans = localFont({
@@ -24,7 +25,10 @@ export const metadata: Metadata = {
   title: { default: "in.torma — jasa desain", template: "%s — in.torma" },
   description:
     "Studio desain independen. Logo, poster, konten sosial, sampai kemasan. Pesan lewat brief singkat, pantau status pesanan, dan bayar lewat transfer BCA.",
-  icons: { icon: "/icon.svg" },
+  applicationName: "in.torma",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "in.torma", statusBarStyle: "black-translucent" },
+  icons: { icon: "/icon.svg", apple: "/icons/icon-192.png" },
 };
 
 export const viewport: Viewport = { themeColor: "#0d0d0c" };
@@ -33,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" className={`${sans.variable} ${serif.variable}`}>
       <body className="min-h-dvh bg-paper font-sans text-ink antialiased">
+        <ServiceWorkerRegister />
         <a href="#konten" className="skip-link">
           Lewati ke konten
         </a>
