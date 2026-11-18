@@ -111,11 +111,15 @@ Kalau OpenWA mati, pesanan tetap tersimpan; hanya notifikasi WA yang dilewati.
 
 ## Aplikasi yang bisa di-download & pembagian akses
 
-Situs ini adalah **PWA**: bisa dipasang di HP/laptop seperti aplikasi.
+Situs ini adalah **PWA (Progressive Web App)**—istilah untuk website yang bisa dibuka di browser
+*dan* dipasang ke layar utama seperti aplikasi. Jadi **bukan aplikasi WhatsApp / gateway WA**, bukan
+juga aplikasi terpisah yang harus di-update manual. Satu source code, satu database, fitur web dan
+"app" identik. Aplikasinya tetap online (butuh internet), sama seperti web.
 
 - Buka situs di Chrome/Edge → menu ⋮ → **Install / Add to Home Screen**.
 - Tombol **“Install aplikasi”** juga muncul di footer saat browser mendukung.
-- Ikon dan splash memakai `public/icon.svg` + PNG di `public/icons/`.
+- Ikon dan splash memakai **file SVG yang sama dengan web** (`public/icon.svg`). PNG 192/512 dan
+  versi maskable di `public/icons/` dihasilkan dari SVG itu juga, supaya tampilannya identik.
 - Service worker hanya menyimpan halaman publik (`/`, `/order`, `/lacak`) untuk fallback offline.
   **Halaman `/admin` dan `/api/` tidak pernah di-cache**, jadi data pesanan tidak tertinggal di
   perangkat orang lain.
