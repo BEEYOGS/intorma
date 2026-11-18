@@ -97,37 +97,75 @@ Kalau OpenWA mati, pesanan tetap tersimpan; hanya notifikasi WA yang dilewati.
 
 ## Environment
 
-| Variabel | Arti |
-| --- | --- |
-| `DATABASE_URL` | Connection string Neon (pakai yang pooled) |
-| `ADMIN_PASSWORD` | Password halaman admin |
-| `ADMIN_SECRET` | Kunci tanda tangan cookie sesi admin |
-| `ADMIN_WA` | Nomor yang menerima notifikasi pesanan baru |
-| `NEXT_PUBLIC_SITE_URL` | URL publik situs untuk link di pesan WA |
-| `OPENWA_URL` | Alamat gateway, default `http://127.0.0.1:2785` |
-| `OPENWA_KEY` | API key admin gateway (header `X-API-Key`) |
-| `OPENWA_SESSION` | Nama atau UUID sesi WhatsApp, default `intorma` |
-| `OPENWA_WEBHOOK_SECRET` | Dicek di `?s=` oleh `/api/wa/webhook` |
+| Variabel | Status | Arti |
+| --- | --- | --- |
+| `DATABASE_URL` | Wajib | Connection string Neon (pakai yang pooled) |
+| `ADMIN_PASSWORD` | Wajib | Password halaman admin |
+| `ADMIN_SECRET` | Wajib | Kunci acak panjang untuk tanda tangan cookie sesi |
+| `NEXT_PUBLIC_SITE_URL` | Disarankan | URL publik situs untuk link di pesan WA. Tanpa ini, Vercel memakai `VERCEL_URL` otomatis |
+| `ADMIN_WA` | Opsional | Nomor yang menerima notifikasi pesanan baru |
+| `OPENWA_URL` | Opsional | Alamat gateway yang bisa diakses publik, mis. `https://wa.domain.com` |
+| `OPENWA_KEY` | Opsional | API key admin gateway (header `X-API-Key`) |
+| `OPENWA_SESSION` | Opsional | Nama atau UUID sesi WhatsApp, default `intorma` |
+| `OPENWA_WEBHOOK_SECRET` | Opsional | Dicek di `?s=` oleh `/api/wa/webhook` |
 
 ## Deploy ke Vercel
 
+`vercel.json` sudah disiapkan: framework Next.js, `npm install` + `npm run build`, output `.next`,
+dan beberapa header keamanan dasar. Tidak perlu mengubahnya.
+
 Aplikasi Next.js bisa langsung di-deploy ke Vercel; **gateway OpenWA tidak bisa** karena butuh
-proses Chrome/WhatsApp yang berjalan terus. Pilihan yang aman:
+proses Chrome/WhatsApp yang berjalan terus. Langkahnya:
 
-1. Deploy folder ini ke Vercel (framework terdeteksi otomatis, tanpa `vercel.json` khusus).
-2. Tambahkan environment yang sama di Project Settings → Environment Variables. Untuk produksi:
-   - `NEXT_PUBLIC_SITE_URL=https://domain-kamu.com`
-   - `DATABASE_URL` dari Neon
-   - `ADMIN_PASSWORD`, `ADMIN_SECRET`, `ADMIN_WA`
-   - `OPENWA_*` hanya jika gateway bisa diakses dari internet.
-3. Jalankan migrasi sekali dari mesin lokal terhadap database produksi:
-   `npm run db:migrate` (dengan `DATABASE_URL` produksi).
-4. Jalankan OpenWA di VPS/komputer yang selalu hidup dan beri alamat HTTPS publik. Daftarkan
-   webhook sesi ke `https://domain-kamu.com/api/wa/webhook?s=<OPENWA_WEBHOOK_SECRET>`.
-   Jika gateway tetap di komputer lokal, Vercel tidak bisa menjangkaunya; notifikasi WA akan
-   dilewati sampai `OPENWA_URL` diisi alamat publik.
+1. Import repository ini di Vercel (atau jalankan `vercel --prod` dari folder `intorma`).
+2. Isi Environment Variables di **Project Settings → Environment Variables** untuk
+   **Production** (dan Preview bila perlu):
 
-Perintah build: `npm run build`, start: `npm run start`.
+   ```text
+   DATABASE_URL=postgresql://...@...neon.tech/...?sslmode=require
+   ADMIN_PASSWORD=ganti-dengan-password-kuat
+   ADMIN_SECRET=string-acak-panjang-minimal-32-karakter
+   ADMIN_WA=6289...
+   NEXT_PUBLIC_SITE_URL=https://domain-kamu.com
+   ```
+
+   `NEXT_PUBLIC_SITE_URL` dipakai saat build untuk tautan di pesan WhatsApp. Kalau belum punya
+   domain, biarkan kosong—kode memakai `VERCEL_URL` otomatis.
+
+3. Jalankan migrasi **sekali** ke database produksi dari mesin lokal:
+
+   ```bash
+   cd intorma
+   # isi dulu DATABASE_URL di .env.local dengan connection-string produksi
+   npm run db:migrate
+   ```
+
+   Migrasi aman diulang (idempoten) dan tidak menghapus data yang sudah ada. Jangan
+   menaruh connection-string produksi di chat atau file yang ter-commit.
+
+4. Cek deploy: buka `https://domain-kamu.com`, lalu `/admin` dan pastikan login berhasil.
+
+5. **WhatsApp (opsional tapi disarankan)**: jalankan OpenWA di VPS/komputer yang selalu hidup
+   dengan alamat HTTPS publik, lalu isi juga:
+
+   ```text
+   OPENWA_URL=https://wa.domain-kamu.com
+   OPENWA_KEY=api-key-gateway
+   OPENWA_SESSION=intorma
+   OPENWA_WEBHOOK_SECRET=rahasia-webhook
+   ```
+
+   Daftarkan webhook sesi ke:
+
+   ```text
+   https://domain-kamu.com/api/wa/webhook?s=<OPENWA_WEBHOOK_SECRET>
+   ```
+
+   event `message.received`. Pelanggan bisa kirim `status INT-XXXXXX` dan dibalas otomatis.
+   Kalau `OPENWA_*` kosong atau gateway tidak bisa dijangkau Vercel, pesanan tetap tersimpan
+   dan halaman lacak tetap jalan—hanya notifikasi WA yang dilewati.
+
+> Catatan: jangan pernah commit `.env.local`. File sudah masuk `.gitignore`.
 
 ## Struktur singkat
 
