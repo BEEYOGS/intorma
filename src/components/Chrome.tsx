@@ -1,23 +1,35 @@
 import Link from "next/link";
+import { SITE_NAME, TAGLINE, waDisplay, waLink } from "@/lib/site";
 
-export function Nav({ light = false }: { light?: boolean }) {
+const wordmark = { src: "/int.svg", alt: `${SITE_NAME} — ${TAGLINE}` };
+
+export function Nav() {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-5 px-5 py-3.5">
-        <Link href="/" aria-label="in.tarma, beranda" className="shrink-0 rounded-tag-sm">
+    <header className="sticky top-0 z-50 border-b border-line bg-paper/85 backdrop-blur-md">
+      <div className="wrap flex h-[4.25rem] items-center justify-between gap-4">
+        <Link href="/" aria-label={`${SITE_NAME}, beranda`} className="shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/int.svg" alt="in.tarma — Creative without idea" className="h-9 w-auto sm:h-10" />
+          <img {...wordmark} alt={wordmark.alt} className="h-8 w-auto sm:h-9" />
         </Link>
-        <nav aria-label="Navigasi utama" className="flex items-center gap-1 text-xs sm:gap-2 sm:text-sm">
-          <Link href="/#layanan" className="rounded-full px-2.5 py-2 text-soft transition-colors hover:text-white sm:px-3">Layanan</Link>
-          <Link href="/lacak" className="rounded-full px-2.5 py-2 text-soft transition-colors hover:text-white sm:px-3">
-            <span className="sm:hidden">Lacak</span>
-            <span className="hidden sm:inline">Lacak pesanan</span>
-          </Link>
-          <Link href="/order" className={`ml-1 inline-flex items-center gap-2 rounded-tag-sm px-3.5 py-2.5 font-bold transition-all sm:ml-2 sm:px-4 ${light ? "bg-black text-white hover:bg-black/80" : "bg-white text-black hover:bg-soft"}`}>
-            Pesan <span aria-hidden="true">↗</span>
-          </Link>
+
+        <nav aria-label="Navigasi utama" className="hidden items-center gap-7 text-sm font-medium text-ink/65 md:flex">
+          <Link href="/#layanan" className="transition-colors hover:text-ink">Layanan</Link>
+          <Link href="/#cara-kerja" className="transition-colors hover:text-ink">Cara kerja</Link>
+          <Link href="/#pembayaran" className="transition-colors hover:text-ink">Pembayaran</Link>
+          <Link href="/lacak" className="transition-colors hover:text-ink">Lacak pesanan</Link>
         </nav>
+
+        <div className="flex items-center gap-1.5">
+          <Link
+            href="/lacak"
+            className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-ink/65 transition-colors hover:bg-ink/5 hover:text-ink md:hidden"
+          >
+            Lacak
+          </Link>
+          <Link href="/order" className="btn-primary min-h-11 px-4 py-2 text-sm sm:px-5">
+            Pesan
+          </Link>
+        </div>
       </div>
     </header>
   );
@@ -25,22 +37,45 @@ export function Nav({ light = false }: { light?: boolean }) {
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/10">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-5 py-9">
-        <Link href="/" aria-label="in.tarma, kembali ke beranda" className="inline-flex rounded-tag-sm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/int.svg" alt="in.tarma — Creative without idea" className="h-10 w-auto" />
-        </Link>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm">
-          <p className="text-mute">@aku.vza <span className="px-1 text-white/20">/</span> design studio</p>
-          <a
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-white transition-colors hover:border-white hover:bg-white hover:text-black"
-            href="https://wa.me/6289617607952"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Chat WhatsApp <span aria-hidden="true">↗</span>
-          </a>
+    <footer className="on-dark bg-[#080808] text-ink">
+      <div className="wrap py-14 sm:py-20">
+        <div className="grid gap-12 border-b border-white/15 pb-12 lg:grid-cols-[1.15fr_.85fr] lg:gap-20">
+          <div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img {...wordmark} alt={wordmark.alt} className="h-9 w-auto" />
+            <p className="mt-6 max-w-sm text-[15px] leading-6 text-ink/60">
+              Studio desain independen untuk logo, poster, konten sosial, dan kemasan. Brief singkat,
+              harga jelas, progres bisa dipantau.
+            </p>
+            <a href={waLink()} target="_blank" rel="noreferrer" className="btn-on-dark mt-7">
+              Chat WhatsApp <span aria-hidden="true">→</span>
+            </a>
+          </div>
+
+          <div className="grid grid-cols-2 gap-8 text-sm">
+            <nav aria-label="Tautan situs" className="flex flex-col gap-3">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/55">Situs</p>
+              <Link href="/order" className="text-ink/75 transition-colors hover:text-ink">Pesan desain</Link>
+              <Link href="/lacak" className="text-ink/75 transition-colors hover:text-ink">Lacak pesanan</Link>
+              <Link href="/#layanan" className="text-ink/75 transition-colors hover:text-ink">Layanan &amp; harga</Link>
+              <Link href="/#pembayaran" className="text-ink/75 transition-colors hover:text-ink">Pembayaran</Link>
+            </nav>
+            <div className="flex flex-col gap-3">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/55">Kontak</p>
+              <a href={waLink()} target="_blank" rel="noreferrer" className="text-ink/75 transition-colors hover:text-ink">
+                WhatsApp
+              </a>
+              <a href="https://instagram.com/aku.vza" target="_blank" rel="noreferrer" className="text-ink/75 transition-colors hover:text-ink">
+                Instagram @aku.vza
+              </a>
+              <span className="text-ink/60">{waDisplay}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 pt-6 text-xs text-ink/50 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} {SITE_NAME}</p>
+          <p className="uppercase tracking-[0.18em]">{TAGLINE}</p>
         </div>
       </div>
     </footer>
@@ -50,7 +85,16 @@ export function Footer() {
 export function StatusDot({ color, label }: { color: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-2 whitespace-nowrap">
-      <span aria-hidden className="size-2.5 rounded-full" style={{ background: color }} />
+      <span aria-hidden className="status-dot" style={{ background: color }} />
+      {label}
+    </span>
+  );
+}
+
+export function StatusBadge({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-line bg-panel/70 px-3 py-1.5 text-[12px] font-semibold text-ink/80">
+      <span aria-hidden className="status-dot" style={{ background: color }} />
       {label}
     </span>
   );

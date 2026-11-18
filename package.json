@@ -1,11 +1,14 @@
 {
-  "name": "in-tarma-order",
+  "name": "intorma",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs"
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
+    "gateway": "node scripts/gateway.mjs",
+    "openwa": "node scripts/openwa.mjs",
+    "wa:session": "node scripts/wa-session.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",

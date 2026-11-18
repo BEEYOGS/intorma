@@ -20,9 +20,15 @@ create table if not exists orders (
   status text not null default 'menunggu',
   price int,
   note text,
+  paid boolean not null default false,
+  paid_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- untuk database yang dibuat sebelum kolom pembayaran ada
+alter table orders add column if not exists paid boolean not null default false;
+alter table orders add column if not exists paid_at timestamptz;
 
 create table if not exists order_events (
   id serial primary key,
@@ -34,6 +40,20 @@ create table if not exists order_events (
 
 create index if not exists orders_status_idx on orders(status, created_at desc);
 
+create table if not exists app_settings (
+  key text primary key,
+  value text not null default '',
+  updated_at timestamptz not null default now()
+);
+
+insert into app_settings (key, value) values
+  ('payment_enabled', '1'),
+  ('bank_name', 'BCA'),
+  ('bank_account', '8171700213'),
+  ('bank_holder', 'Yogi'),
+  ('payment_note', 'Transfer sesuai total, lalu konfirmasi lewat WhatsApp.')
+on conflict (key) do nothing;
+
 insert into services (id, name, blurb, price_from, days, sort) values
   ('logo', 'Logo dan identitas', 'Logo, palet warna, dan panduan pemakaian dasar.', 350000, 5, 1),
   ('poster', 'Poster dan banner', 'Poster acara, spanduk, atau materi cetak lain.', 120000, 2, 2),
@@ -41,4 +61,4 @@ insert into services (id, name, blurb, price_from, days, sort) values
   ('kemasan', 'Kemasan dan label', 'Label produk, stiker, dan desain kemasan.', 300000, 4, 4),
   ('thumbnail', 'Thumbnail dan cover', 'Thumbnail video, cover podcast, atau sampul.', 60000, 1, 5),
   ('lain', 'Belum tahu butuh apa', 'Ceritakan saja kebutuhanmu, nanti kami arahkan.', 0, 3, 6)
-on conflict (id) do nothing
+on conflict (id) do nothing;

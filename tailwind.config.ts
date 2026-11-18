@@ -1,25 +1,29 @@
 import type { Config } from "tailwindcss";
 
-// Palet brand: hitam, putih, abu. Warna lain hanya untuk status (lihat src/lib/status.ts).
+// Monokrom gelap: kertas malam, tinta terang. Warna lain hanya untuk status & logo bank.
 export default {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        ink: "#000000",
-        panel: "#121212",
-        line: "#2b2b2b",
-        mute: "#808080",
-        soft: "#c8c8c8",
+        ink: "#f1ece3",
+        paper: "#0d0d0c",
+        panel: "#1b1a17",
+        sand: "#161512",
+        line: "#39352f",
+        mute: "#a8a198",
       },
-      fontFamily: { sans: ["Arial", "Helvetica", "sans-serif"] },
-      // Bentuk khas logo: tiga sudut bulat, satu sudut tetap siku.
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "Segoe UI", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "Consolas", "monospace"],
+      },
       borderRadius: {
-        tag: "1.75rem 1.75rem 1.75rem 0",
-        "tag-r": "1.75rem 1.75rem 0 1.75rem",
-        "tag-sm": "1rem 1rem 1rem 0",
+        tag: "1.1rem 1.1rem 1.1rem 0",
+        "tag-sm": "0.75rem 0.75rem 0.75rem 0",
+        "tag-lg": "1.75rem 1.75rem 1.75rem 0",
       },
-      letterSpacing: { tightest: "-0.06em" },
+      letterSpacing: { tightest: "-0.055em" },
     },
   },
   plugins: [],

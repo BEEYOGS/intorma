@@ -1,10 +1,10 @@
-# in.tarma design direction
+# in.torma design direction
 
 ## Brand
 
-- in.tarma is an Indonesian design studio for identity, posters, social content, packaging, and related creative work.
+- in.torma is an Indonesian design studio for identity, posters, social content, packaging, and related creative work.
 - Use `public/int.svg` as the full wordmark and `public/icon.svg` as the symbol. Do not redraw, crop, recolor, or typeset a substitute logo.
-- The identity is monochrome: black, white, and supporting grays. Keep the logo legible against its background; introduce another accent only when the user supplies one.
+- The identity is monochrome: black, white, and supporting grays. The site uses a dark ink-night background (#0d0d0c) with warm off-white text (#f1ece3) and raised charcoal surfaces; keep the logo legible against its background and introduce another accent only when the user supplies one (currently the official blue BCA logo in payment instructions).
 - Preserve the existing tagline, “Creative without idea,” where the full wordmark is used.
 
 ## Interface
