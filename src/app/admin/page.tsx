@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
 import { StatusBadge } from "@/components/Chrome";
+import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderEditor } from "@/components/OrderEditor";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
@@ -11,42 +12,77 @@ import { STATUSES, STATUS_META, isStatus, type Status } from "@/lib/status";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin", robots: { index: false } };
 
-export default async function Admin({
-  searchParams,
-}: {
-  searchParams: Promise<{ s?: string; p?: string }>;
-}) {
-  if (!(await isAdmin())) redirect("/admin/login");
-  const { s, p } = await searchParams;
-  const filter = s && isStatus(s) ? s : null;
-  const unpaidOnly = p === "belum" && !filter;
+type Params = {
+  s?: string;
+  p?: string;
+  q?: string;
+  open?: string;
+  saved?: string;
+  deleted?: string;
+};
 
-  const [orders, counts, unpaid, revenue] = await Promise.all([
-    unpaidOnly
-      ? sql.query(
-          `select o.*, v.name as service, v.price_from as service_price
-           from orders o left join services v on v.id = o.service_id
-           where o.price is not null and not o.paid and o.status <> 'batal'
-           order by o.created_at desc limit 100`,
-        )
-      : filter
-        ? sql`
-            select o.*, v.name as service, v.price_from as service_price
-            from orders o left join services v on v.id = o.service_id
-            where o.status = ${filter} order by o.created_at desc limit 100`
-        : sql`
-            select o.*, v.name as service, v.price_from as service_price
-            from orders o left join services v on v.id = o.service_id
-            order by o.created_at desc limit 100`,
+function buildReturn(filter: string | null, unpaidOnly: boolean, q: string): string {
+  const params = new URLSearchParams();
+  if (filter) params.set("s", filter);
+  if (unpaidOnly) params.set("p", "belum");
+  if (q) params.set("q", q);
+  const query = params.toString();
+  return query ? `/admin?${query}` : "/admin";
+}
+
+export default async function Admin({ searchParams }: { searchParams: Promise<Params> }) {
+  if (!(await isAdmin())) redirect("/admin/login");
+  const params = await searchParams;
+  const filter = params.s && isStatus(params.s) ? params.s : null;
+  const unpaidOnly = params.p === "belum" && !filter;
+  const q = (params.q ?? "").trim().slice(0, 80);
+  const openCode = params.open?.toUpperCase() ?? null;
+  const saved = params.saved === "1";
+  const deleted = params.deleted?.toUpperCase() ?? null;
+  const returnTo = buildReturn(filter, unpaidOnly, q);
+
+  const conditions: string[] = [];
+  const values: Array<string | number> = [];
+  if (filter) {
+    values.push(filter);
+    conditions.push(`o.status = $${values.length}`);
+  }
+  if (unpaidOnly) {
+    conditions.push(`o.price is not null and not o.paid and o.status <> 'batal'`);
+  }
+  if (q) {
+    values.push(`%${q}%`);
+    const placeholder = `$${values.length}`;
+    conditions.push(`(o.code ilike ${placeholder} or o.name ilike ${placeholder} or o.wa ilike ${placeholder})`);
+  }
+  const where = conditions.length ? `where ${conditions.join(" and ")}` : "";
+  const from = `from orders o left join services v on v.id = o.service_id`;
+
+  const [orders, matched, counts, unpaid, revenue] = await Promise.all([
+    sql.query(
+      `select o.*, v.name as service, v.price_from as service_price ${from} ${where}
+       order by o.created_at desc limit 100`,
+      values,
+    ),
+    sql.query(`select count(*)::int as n ${from} ${where}`, values),
     sql`select status, count(*)::int as n from orders group by status`,
     sql`select count(*)::int as n from orders where price is not null and not paid and status <> 'batal'`,
     sql`select coalesce(sum(price), 0)::int as total from orders where paid`,
   ]);
 
   const count = (st: string) => Number(counts.find((c) => c.status === st)?.n ?? 0);
-  const total = counts.reduce((a, c) => a + Number(c.n), 0);
+  const total = counts.reduce((sum, c) => sum + Number(c.n), 0);
   const unpaidCount = Number(unpaid[0]?.n ?? 0);
   const paidTotal = Number(revenue[0]?.total ?? 0);
+  const resultCount = Number(matched[0]?.n ?? 0);
+
+  const keepSearch = (path: string) =>
+    q ? `${path}${path.includes("?") ? "&" : "?"}q=${encodeURIComponent(q)}` : path;
+  const clearSearch = filter
+    ? `/admin?s=${filter}`
+    : unpaidOnly
+      ? "/admin?p=belum"
+      : "/admin";
 
   return (
     <AdminShell active="orders">
@@ -61,54 +97,102 @@ export default async function Admin({
         </p>
       </div>
 
+      {(saved || deleted) && (
+        <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-tag-sm border border-ink/15 bg-ink/[0.06] px-4 py-3 text-sm">
+          <span>{deleted ? `Pesanan ${deleted} sudah dihapus.` : "Perubahan pesanan tersimpan."}</span>
+          <Link href={returnTo} className="font-semibold text-mute transition-colors hover:text-ink">
+            Tutup
+          </Link>
+        </div>
+      )}
+
       <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Baru" value={count("menunggu")} hint="menunggu konfirmasi" />
+        <Stat label="Baru" value={count("menunggu")} hint="menunggu konfirmasi" href={keepSearch("/admin?s=menunggu")} />
         <Stat label="Dikerjakan" value={count("dikerjakan") + count("revisi")} hint="termasuk revisi" />
         <Stat label="Selesai" value={count("selesai")} hint="total pesanan selesai" />
-        <Stat label="Belum dibayar" value={unpaidCount} hint="harga sudah disepakati" href="/admin?p=belum" />
+        <Stat label="Belum dibayar" value={unpaidCount} hint="harga sudah disepakati" href={keepSearch("/admin?p=belum")} />
       </div>
 
-      <nav aria-label="Filter pesanan" className="mt-8 flex flex-wrap gap-2">
-        <FilterLink href="/admin" active={!filter && !unpaidOnly}>
+      <form action="/admin" method="get" className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
+        {filter && <input type="hidden" name="s" value={filter} />}
+        {unpaidOnly && <input type="hidden" name="p" value="belum" />}
+        <label htmlFor="cari-pesanan" className="sr-only">Cari pesanan</label>
+        <input
+          id="cari-pesanan"
+          name="q"
+          defaultValue={q}
+          placeholder="Cari kode, nama, atau WhatsApp…"
+          className="field min-h-10 sm:max-w-sm"
+          autoComplete="off"
+        />
+        <button type="submit" className="btn-outline min-h-10 px-4 text-sm">Cari</button>
+        {q && (
+          <Link href={clearSearch} className="btn-ghost min-h-10 px-4 text-sm">
+            Hapus pencarian
+          </Link>
+        )}
+      </form>
+
+      <nav aria-label="Filter pesanan" className="mt-4 flex flex-wrap gap-2">
+        <FilterLink href={keepSearch("/admin")} active={!filter && !unpaidOnly}>
           Semua ({total})
         </FilterLink>
         {STATUSES.map((st) => (
-          <FilterLink key={st} href={`/admin?s=${st}`} active={filter === st}>
+          <FilterLink key={st} href={keepSearch(`/admin?s=${st}`)} active={filter === st}>
             <span className="inline-flex items-center gap-2">
               <span aria-hidden className="status-dot" style={{ background: STATUS_META[st].color }} />
               {STATUS_META[st].label} ({count(st)})
             </span>
           </FilterLink>
         ))}
-        <FilterLink href="/admin?p=belum" active={unpaidOnly}>
+        <FilterLink href={keepSearch("/admin?p=belum")} active={unpaidOnly}>
           Belum dibayar ({unpaidCount})
         </FilterLink>
       </nav>
 
+      <div className="mt-6 flex flex-wrap items-baseline justify-between gap-2 text-sm text-mute">
+        <p>
+          {resultCount === 0
+            ? "Tidak ada pesanan yang cocok."
+            : `Menampilkan ${orders.length} dari ${resultCount} pesanan${q ? ` untuk “${q}”` : ""}.`}
+        </p>
+        {resultCount > orders.length && <p className="text-xs">Batasi pencarian untuk melihat sisanya.</p>}
+      </div>
+
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-tag-lg border border-dashed border-line p-8 text-center">
+        <div className="mt-4 rounded-tag-lg border border-dashed border-line p-8 text-center">
           <p className="font-semibold">
-            {unpaidOnly
-              ? "Semua pesanan berharga sudah dibayar."
-              : filter
-                ? "Belum ada pesanan dengan status ini."
-                : "Belum ada pesanan."}
+            {q
+              ? `Tidak ada pesanan untuk “${q}”.`
+              : unpaidOnly
+                ? "Semua pesanan berharga sudah dibayar."
+                : filter
+                  ? "Belum ada pesanan dengan status ini."
+                  : "Belum ada pesanan."}
           </p>
           <p className="mt-2 text-sm text-mute">
-            Bagikan halaman <span className="font-mono text-[13px]">/order</span> ke calon klien.
+            {q
+              ? "Coba kata kunci lain, atau hapus pencarian untuk melihat semua pesanan."
+              : "Bagikan halaman /order ke calon klien untuk mulai menerima pesanan."}
           </p>
-          <Link href="/order" className="btn-outline mt-5 min-h-10 px-4 text-sm">
-            Buka halaman pesan
-          </Link>
+          {q ? (
+            <Link href={clearSearch} className="btn-outline mt-5 min-h-10 px-4 text-sm">
+              Hapus pencarian
+            </Link>
+          ) : (
+            <Link href="/order" className="btn-outline mt-5 min-h-10 px-4 text-sm">
+              Buka halaman pesan
+            </Link>
+          )}
         </div>
       ) : (
-        <ul className="mt-5 border-t border-line">
+        <ul className="mt-4 border-t border-line">
           {orders.map((o) => {
             const st = (isStatus(o.status) ? o.status : "menunggu") as Status;
             const price = o.price == null ? null : Number(o.price);
             return (
               <li key={o.id} className="border-b border-line">
-                <details className="group">
+                <details className="group" open={o.code === openCode}>
                   <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-1 py-5 transition-colors hover:bg-sand/50 sm:grid-cols-[7rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_1.25rem] sm:gap-4 sm:px-3">
                     <span className="font-mono text-[13px] font-semibold tracking-wide">{o.code}</span>
                     <span className="flex items-center gap-2 justify-self-end sm:hidden">
@@ -174,9 +258,7 @@ export default async function Admin({
                               <a href={o.ref_link} target="_blank" rel="noreferrer" className="underline decoration-ink/25 underline-offset-4 hover:decoration-ink">
                                 Buka link
                               </a>
-                            ) : (
-                              "—"
-                            )}
+                            ) : "—"}
                           </dd>
                         </div>
                         <div>
@@ -195,10 +277,28 @@ export default async function Admin({
                       </div>
                     </div>
 
-                    <OrderEditor
-                      order={{ id: Number(o.id), status: o.status, price, note: o.note, paid: Boolean(o.paid) }}
-                      servicePrice={o.service_price == null ? null : Number(o.service_price)}
-                    />
+                    <div className="grid gap-4">
+                      <OrderEditor
+                        order={{ id: Number(o.id), status: o.status, price, note: o.note, paid: Boolean(o.paid) }}
+                        servicePrice={o.service_price == null ? null : Number(o.service_price)}
+                        returnTo={returnTo}
+                      />
+
+                      <div className="rounded-tag-lg border border-[#c0392b]/25 bg-[#c0392b]/[0.04] p-5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#e98078]">Hapus pesanan</p>
+                        <p className="mt-2 text-xs leading-5 text-mute">
+                          Untuk pesanan duplikat, uji coba, atau yang sudah dibatalkan. Riwayat status ikut terhapus.
+                        </p>
+                        <div className="mt-4">
+                          <DeleteOrderButton
+                            id={Number(o.id)}
+                            code={o.code}
+                            name={o.name}
+                            returnTo={returnTo}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </details>
               </li>

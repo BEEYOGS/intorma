@@ -13,13 +13,22 @@ type Order = {
   paid: boolean;
 };
 
-export function OrderEditor({ order, servicePrice }: { order: Order; servicePrice: number | null }) {
+export function OrderEditor({
+  order,
+  servicePrice,
+  returnTo,
+}: {
+  order: Order;
+  servicePrice: number | null;
+  returnTo: string;
+}) {
   const [state, action, pending] = useActionState<ActionResult, FormData>(updateOrder, null);
   const status = (STATUSES as readonly string[]).includes(order.status) ? (order.status as Status) : "menunggu";
 
   return (
     <form action={action} className="rounded-tag-lg border border-line bg-panel/60 p-5">
       <input type="hidden" name="id" value={order.id} />
+      <input type="hidden" name="returnTo" value={returnTo} />
 
       <fieldset>
         <legend className="label">Status pesanan</legend>

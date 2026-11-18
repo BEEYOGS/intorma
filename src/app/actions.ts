@@ -19,6 +19,17 @@ export type ActionResult = { ok?: boolean; error?: string; reset?: boolean } | n
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const digits = (f: FormData, k: string) => str(f, k).replace(/\D/g, "");
 
+/** Hanya terima path admin internal supaya redirect tidak bisa dipakai untuk open redirect. */
+function adminReturn(value: string): string {
+  return value.startsWith("/admin") && !value.startsWith("//") ? value : "/admin";
+}
+
+function withQuery(path: string, values: Record<string, string>): string {
+  const url = new URL(adminReturn(path), "http://local");
+  for (const [key, value] of Object.entries(values)) url.searchParams.set(key, value);
+  return `${url.pathname}${url.search}`;
+}
+
 export async function createOrder(_prev: OrderState, f: FormData): Promise<OrderState> {
   const values = {
     name: str(f, "name"), wa: str(f, "wa"), service: str(f, "service"),
@@ -128,7 +139,27 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
 
   revalidatePath("/admin");
   revalidatePath(`/lacak/${order.code}`);
-  return { ok: true };
+  redirect(withQuery(str(f, "returnTo"), { open: order.code, saved: "1" }));
+}
+
+export async function deleteOrder(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+
+  const id = Number(f.get("id"));
+  const code = str(f, "code").toUpperCase();
+  const confirm = str(f, "confirm").toUpperCase();
+  if (!id || !/^INT-[A-Z0-9]{6}$/.test(code)) return { error: "Data pesanan tidak valid." };
+  if (confirm !== code) {
+    return { error: `Kode tidak sama. Ketik ${code} persis untuk mengonfirmasi penghapusan.` };
+  }
+
+  const existing = (await sql`select code from orders where id = ${id}`)[0];
+  if (!existing || existing.code !== code) return { error: "Pesanan tidak ditemukan atau kode sudah berubah." };
+
+  // order_events punya ON DELETE CASCADE, jadi riwayat ikut terhapus.
+  await sql`delete from orders where id = ${id}`;
+  revalidatePath("/admin");
+  redirect(withQuery(str(f, "returnTo"), { deleted: code }));
 }
 
 export async function saveService(_prev: ActionResult, f: FormData): Promise<ActionResult> {

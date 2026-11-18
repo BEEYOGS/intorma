@@ -166,6 +166,11 @@ select {
   summary::-webkit-details-marker {
     display: none;
   }
+
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(3px);
+  }
 }
 
 @layer components {
