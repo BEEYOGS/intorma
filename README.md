@@ -2,11 +2,20 @@
 
 Next.js 15 (App Router) + Tailwind 3 + Neon Postgres + OpenWA.
 
-## Jalankan
-1. `npm install`
-2. `cp .env.example .env.local` lalu isi nilainya
-3. `npm run db:migrate` (membuat tabel + 6 layanan contoh)
-4. `npm run dev` -> http://localhost:3000, admin di /admin
+## Jalankan lokal
+
+Persyaratan: Node.js 20.9 atau lebih baru dan database Postgres di Neon.
+
+1. Install dependensi dengan `npm install`.
+2. Salin `.env.example` menjadi `.env.local` (Windows PowerShell: `Copy-Item .env.example .env.local`; macOS/Linux: `cp .env.example .env.local`).
+3. Isi `DATABASE_URL`, `ADMIN_PASSWORD`, dan `ADMIN_SECRET`. Buat `ADMIN_SECRET` acak yang panjang dan jangan gunakan nilai contoh di produksi.
+4. Jalankan `npm run db:migrate` untuk membuat tabel dan memasukkan enam layanan awal.
+5. Jalankan `npm run dev`, lalu buka http://localhost:3000. Halaman admin ada di `/admin`.
+
+Notifikasi WhatsApp bersifat opsional. Tanpa OpenWA, pesanan tetap tersimpan dan kode pelacakan tetap tampil setelah formulir dikirim; pengunjung dapat memakainya di `/lacak`.
+Untuk tautan WhatsApp yang benar di produksi, isi `NEXT_PUBLIC_SITE_URL` dengan URL publik situs tanpa garis miring di akhir.
+
+Untuk produksi, jalankan `npm run build` lalu `npm run start` di host Node.js yang mendukung Next.js. Pastikan seluruh variabel lingkungan di atas tersedia dan migrasi database sudah dijalankan sebelum menerima pesanan.
 
 ## OpenWA
 open-wa memakai browser (puppeteer), jadi **tidak bisa jalan di Vercel**. Jalankan terpisah

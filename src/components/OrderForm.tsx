@@ -32,7 +32,7 @@ export function OrderForm({ services, preselect }: { services: Service[]; presel
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block">
           <span className="mb-2 block text-sm text-soft">Nama</span>
-          <input name="name" defaultValue={v.name} autoComplete="name" className="field" required />
+          <input name="name" defaultValue={v.name} autoComplete="name" className="field" minLength={2} required />
         </label>
         <label className="block">
           <span className="mb-2 block text-sm text-soft">Nomor WhatsApp</span>
@@ -42,7 +42,7 @@ export function OrderForm({ services, preselect }: { services: Service[]; presel
 
       <label className="block">
         <span className="mb-2 block text-sm text-soft">Brief</span>
-        <textarea name="brief" defaultValue={v.brief} rows={6} className="field resize-y" required
+        <textarea name="brief" defaultValue={v.brief} rows={6} className="field resize-y" minLength={15} required
           placeholder="Untuk apa desainnya, siapa yang akan melihat, dan gaya yang kamu suka. Belum punya ide juga tidak apa-apa." />
       </label>
 

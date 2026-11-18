@@ -15,6 +15,13 @@ export type OrderState = {
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
+function isValidDate(value: string) {
+  if (!value) return true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+}
+
 export async function createOrder(_prev: OrderState, f: FormData): Promise<OrderState> {
   const values = {
     name: str(f, "name"), wa: str(f, "wa"), service: str(f, "service"),
@@ -26,22 +33,37 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   if (!wa) return { error: "Nomor WhatsApp tidak valid. Contoh: 0812 3456 7890.", values };
   if (!values.service) return { error: "Pilih salah satu layanan.", values };
   if (values.brief.length < 15) return { error: "Brief terlalu singkat. Tulis minimal satu-dua kalimat.", values };
-  if (values.ref && !/^https?:\/\//i.test(values.ref)) return { error: "Link referensi harus diawali http:// atau https://.", values };
+  if (values.ref) {
+    try {
+      const url = new URL(values.ref);
+      if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error();
+    } catch {
+      return { error: "Masukkan link referensi yang valid dengan http:// atau https://.", values };
+    }
+  }
+  if (!isValidDate(values.deadline)) return { error: "Tanggal target selesai tidak valid.", values };
 
   const svc = (await sql`select id, name from services where id = ${values.service} and active`)[0];
   if (!svc) return { error: "Layanan tidak ditemukan.", values };
 
-  let order: { id: number; code: string } | undefined;
+  type CreatedOrder = { id: number; code: string };
+  let order: CreatedOrder | undefined;
   for (let i = 0; i < 5 && !order; i++) {
     const rows = await sql`
-      insert into orders (code, name, wa, service_id, brief, ref_link, deadline)
-      values (${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${values.brief}, ${values.ref || null}, ${values.deadline || null})
-      on conflict (code) do nothing returning id, code`;
-    order = rows[0] as typeof order;
+      with created as (
+        insert into orders (code, name, wa, service_id, brief, ref_link, deadline)
+        values (${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${values.brief}, ${values.ref || null}, ${values.deadline || null})
+        on conflict (code) do nothing returning id, code
+      ), logged as (
+        insert into order_events (order_id, status, note)
+        select id, 'menunggu', 'Pesanan diterima' from created
+        returning order_id
+      )
+      select c.id, c.code from created c
+      join logged l on l.order_id = c.id`;
+    order = rows[0] as CreatedOrder | undefined;
   }
   if (!order) return { error: "Gagal menyimpan pesanan. Coba kirim lagi.", values };
-
-  await sql`insert into order_events (order_id, status, note) values (${order.id}, 'menunggu', 'Pesanan diterima')`;
 
   const link = `${siteUrl()}/lacak/${order.code}`;
   await Promise.all([
@@ -82,17 +104,31 @@ export async function updateOrder(f: FormData) {
   const price = priceRaw ? Number(priceRaw) : null;
   if (!id || !isStatus(status)) return;
 
-  const prev = (await sql`select status from orders where id = ${id}`)[0];
   const rows = await sql`
-    update orders set status = ${status}, price = ${price}, note = ${note || null}, updated_at = now()
-    where id = ${id} returning code, name, wa`;
+    with previous as (
+      select id, status from orders where id = ${id} for update
+    ), updated as (
+      update orders o
+      set status = ${status}, price = ${price}, note = ${note || null}, updated_at = now()
+      from previous p
+      where o.id = p.id
+      returning o.id, o.code, o.name, o.wa, o.status
+    ), logged as (
+      insert into order_events (order_id, status, note)
+      select u.id, u.status, ${note || null}
+      from updated u
+      join previous p on p.id = u.id
+      where p.status is distinct from u.status or ${note || null} is not null
+      returning order_id
+    )
+    select u.id, u.code, u.name, u.wa, u.status, p.status as previous_status
+    from updated u
+    join previous p on p.id = u.id
+    left join logged l on l.order_id = u.id`;
   const order = rows[0];
   if (!order) return;
 
-  const changed = prev?.status !== status;
-  if (changed || note) {
-    await sql`insert into order_events (order_id, status, note) values (${id}, ${status}, ${note || null})`;
-  }
+  const changed = order.previous_status !== status;
 
   if (f.get("notify") === "on" && (changed || note)) {
     const parts = [changed ? STATUS_META[status].wa(order.code, order.name) : `Halo ${order.name}, ada kabar untuk pesanan ${order.code}.`];

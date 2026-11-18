@@ -25,7 +25,7 @@ export default async function TrackPage({
       <main className="mx-auto max-w-3xl px-5 pb-24 pt-10">
         {baru && (
           <p className="mb-8 rounded-tag-sm border border-white px-4 py-3">
-            Pesanan terkirim. Simpan kode di bawah, kami juga kirim salinannya ke WhatsApp kamu.
+            Pesanan tersimpan. Simpan kode di bawah untuk melacaknya; notifikasi WhatsApp mungkin tidak tersedia.
           </p>
         )}
         <p className="text-soft">{order.service}</p>
