@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
-import { getServices } from "@/lib/db";
+import { getServices, type Service } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { priceLabel } from "@/lib/pricing";
 import { getPaymentSettings } from "@/lib/settings";
@@ -40,8 +40,41 @@ const faq = [
   ],
 ];
 
+function ServiceRows({ items }: { items: Service[] }) {
+  return (
+    <ul className="border-t border-line">
+      {items.map((service, index) => (
+        <li key={service.id}>
+          <Link
+            href={`/order?layanan=${service.id}`}
+            className="group grid grid-cols-[2rem_minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1 border-b border-line py-5 transition-colors hover:bg-sand/60 sm:grid-cols-[3rem_minmax(0,1fr)_8.5rem_7rem_1.5rem] sm:items-center sm:gap-x-6 sm:px-4 sm:py-6"
+          >
+            <span className="row-span-2 pt-1 font-serif text-lg italic text-ink/30 sm:row-span-1 sm:pt-0">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-lg font-semibold leading-snug tracking-tight sm:text-xl">{service.name}</span>
+              <span className="mt-1 block text-sm leading-5 text-mute">{service.blurb}</span>
+            </span>
+            <span className="row-span-2 text-right sm:row-span-1">
+              <span className="block text-[13px] font-semibold sm:text-sm">{priceLabel(service)}</span>
+              <span className="mt-1 block text-xs text-mute sm:hidden">± {service.days} hari</span>
+            </span>
+            <span className="hidden text-sm text-mute sm:block sm:text-right">± {service.days} hari</span>
+            <span aria-hidden="true" className="hidden text-ink/30 transition-transform group-hover:translate-x-1 group-hover:text-ink sm:block">
+              →
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default async function Home() {
   const [services, payment] = await Promise.all([getServices(), getPaymentSettings()]);
+  const design = services.filter((s) => s.pricing_mode !== "per_unit");
+  const print = services.filter((s) => s.pricing_mode === "per_unit");
   const priced = services.filter((s) => s.price_from > 0);
   const minPrice = priced.length ? Math.min(...priced.map((s) => s.price_from)) : null;
   const days = services.map((s) => s.days);
@@ -134,32 +167,25 @@ export default async function Home() {
               </p>
             </div>
 
-            <ul className="mt-10 border-t border-line sm:mt-12">
-              {services.map((service, index) => (
-                <li key={service.id}>
-                  <Link
-                    href={`/order?layanan=${service.id}`}
-                    className="group grid grid-cols-[2rem_minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1 border-b border-line py-5 transition-colors hover:bg-sand/60 sm:grid-cols-[3rem_minmax(0,1fr)_8.5rem_7rem_1.5rem] sm:items-center sm:gap-x-6 sm:px-4 sm:py-6"
-                  >
-                    <span className="row-span-2 pt-1 font-serif text-lg italic text-ink/30 sm:row-span-1 sm:pt-0">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-lg font-semibold leading-snug tracking-tight sm:text-xl">{service.name}</span>
-                      <span className="mt-1 block text-sm leading-5 text-mute">{service.blurb}</span>
-                    </span>
-                    <span className="row-span-2 text-right sm:row-span-1">
-                      <span className="block text-[13px] font-semibold sm:text-sm">{priceLabel(service)}</span>
-                      <span className="mt-1 block text-xs text-mute sm:hidden">± {service.days} hari</span>
-                    </span>
-                    <span className="hidden text-sm text-mute sm:block sm:text-right">± {service.days} hari</span>
-                    <span aria-hidden="true" className="hidden text-ink/30 transition-transform group-hover:translate-x-1 group-hover:text-ink sm:block">
-                      →
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <div className="mt-10 space-y-10 sm:mt-12">
+              <section aria-labelledby="grp-desain">
+                <div className="mb-3 flex items-baseline gap-3">
+                  <h3 id="grp-desain" className="font-serif text-xl italic text-ink/55">Desain</h3>
+                  <span aria-hidden className="h-px flex-1 bg-line" />
+                  <span className="text-xs text-mute">{design.length} layanan</span>
+                </div>
+                <ServiceRows items={design} />
+              </section>
+
+              <section aria-labelledby="grp-cetak">
+                <div className="mb-3 flex items-baseline gap-3">
+                  <h3 id="grp-cetak" className="font-serif text-xl italic text-ink/55">Cetak</h3>
+                  <span aria-hidden className="h-px flex-1 bg-line" />
+                  <span className="text-xs text-mute">{print.length} layanan</span>
+                </div>
+                <ServiceRows items={print} />
+              </section>
+            </div>
 
             <p className="mt-8 text-sm text-mute">
               Belum tahu harus pilih apa?{" "}

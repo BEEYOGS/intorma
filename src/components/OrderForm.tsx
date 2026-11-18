@@ -32,6 +32,7 @@ export function OrderForm({
   const initial = services.find((s) => s.id === (v.service ?? preselect)) ?? services[0];
   const [selected, setSelected] = useState(initial?.id ?? "");
   const [qty, setQty] = useState(v.qty || String(initial?.min_qty ?? 1));
+  const printServices = services.filter((s) => s.pricing_mode === "per_unit");
   const chosen = services.find((s) => s.id === selected);
   const priced = chosen ? calculatePrice(chosen, qty) : null;
   const perUnit = chosen?.pricing_mode === "per_unit";
@@ -53,6 +54,37 @@ export function OrderForm({
     const max = chosen?.max_qty ?? 10000;
     const next = Math.min(max, Math.max(min, current + delta));
     setQty(String(next));
+  }
+
+  function serviceCard(s: Service) {
+    const on = selected === s.id;
+    return (
+      <label key={s.id} className="block cursor-pointer">
+        <input
+          type="radio"
+          name="service"
+          value={s.id}
+          checked={on}
+          onChange={() => pick(s.id)}
+          className="peer sr-only"
+          required
+        />
+        <span
+          className={`flex h-full flex-col justify-between gap-4 rounded-tag-sm border p-4 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink ${
+            on ? "border-ink bg-ink text-paper" : "border-line bg-panel/50 text-ink hover:border-ink/40"
+          }`}
+        >
+          <span>
+            <span className="block font-semibold leading-snug">{s.name}</span>
+            <span className={`mt-1 block text-[13px] leading-5 ${on ? "text-paper/60" : "text-mute"}`}>{s.blurb}</span>
+          </span>
+          <span className={`flex items-center justify-between gap-3 border-t pt-3 text-[13px] ${on ? "border-paper/20" : "border-line"}`}>
+            <span className="font-semibold">{priceLabel(s)}</span>
+            <span className={on ? "text-paper/55" : "text-mute"}>± {s.days} hari</span>
+          </span>
+        </span>
+      </label>
+    );
   }
 
   return (
@@ -93,37 +125,19 @@ export function OrderForm({
         <fieldset>
           <legend className="mb-1 text-xl font-semibold tracking-tight">Pilih layanan</legend>
           <p className="mb-5 text-sm text-mute">Harga per item sudah kami rangkum. Sisanya bisa dibicarakan lewat WhatsApp.</p>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {services.map((s) => {
-              const on = selected === s.id;
-              return (
-                <label key={s.id} className="block cursor-pointer">
-                  <input
-                    type="radio"
-                    name="service"
-                    value={s.id}
-                    checked={on}
-                    onChange={() => pick(s.id)}
-                    className="peer sr-only"
-                    required
-                  />
-                  <span
-                    className={`flex h-full flex-col justify-between gap-4 rounded-tag-sm border p-4 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink ${
-                      on ? "border-ink bg-ink text-paper" : "border-line bg-panel/50 text-ink hover:border-ink/40"
-                    }`}
-                  >
-                    <span>
-                      <span className="block font-semibold leading-snug">{s.name}</span>
-                      <span className={`mt-1 block text-[13px] leading-5 ${on ? "text-paper/60" : "text-mute"}`}>{s.blurb}</span>
-                    </span>
-                    <span className={`flex items-center justify-between gap-3 border-t pt-3 text-[13px] ${on ? "border-paper/20" : "border-line"}`}>
-                      <span className="font-semibold">{priceLabel(s)}</span>
-                      <span className={on ? "text-paper/55" : "text-mute"}>± {s.days} hari</span>
-                    </span>
-                  </span>
-                </label>
-              );
-            })}
+          <div className="space-y-7">
+            <div>
+              <p className="mb-2 flex items-baseline gap-3 font-serif text-lg italic text-ink/55">
+                Desain <span aria-hidden className="h-px flex-1 bg-line not-italic" />
+              </p>
+              <div className="grid gap-2.5 sm:grid-cols-2">{services.filter((s) => s.pricing_mode !== "per_unit").map(serviceCard)}</div>
+            </div>
+            <div>
+              <p className="mb-2 flex items-baseline gap-3 font-serif text-lg italic text-ink/55">
+                Cetak <span aria-hidden className="h-px flex-1 bg-line not-italic" />
+              </p>
+              <div className="grid gap-2.5 sm:grid-cols-2">{printServices.map(serviceCard)}</div>
+            </div>
           </div>
         </fieldset>
 
@@ -179,6 +193,15 @@ export function OrderForm({
           </fieldset>
         )}
 
+        <div className="rounded-tag-lg border border-line bg-panel/50 p-5 lg:hidden">
+          <p className="eyebrow">Ringkasan</p>
+          <p className="mt-2 font-semibold">{chosen?.name ?? "Pilih layanan"}</p>
+          {breakdown && <p className="mt-1 text-sm text-mute">{breakdown}</p>}
+          <p className="mt-3 text-3xl font-semibold tabular-nums tracking-tight">
+            {priced?.price != null ? rupiah(priced.price) : "Belum dihitung"}
+          </p>
+        </div>
+
         <fieldset>
           <legend className="mb-1 text-xl font-semibold tracking-tight">Data kamu</legend>
           <p className="mb-5 text-sm text-mute">Dipakai untuk mengirim kode pesanan dan kabar progres lewat WhatsApp.</p>
@@ -228,15 +251,6 @@ export function OrderForm({
             </label>
           </div>
         </fieldset>
-
-        <div className="rounded-tag-lg border border-line bg-panel/50 p-5 lg:hidden">
-          <p className="eyebrow">Ringkasan</p>
-          <p className="mt-2 font-semibold">{chosen?.name ?? "Pilih layanan"}</p>
-          {breakdown && <p className="mt-1 text-sm text-mute">{breakdown}</p>}
-          <p className="mt-3 text-3xl font-semibold tabular-nums tracking-tight">
-            {priced?.price != null ? rupiah(priced.price) : "Belum dihitung"}
-          </p>
-        </div>
 
         <div className="flex flex-col gap-4 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">
           <button type="submit" disabled={pending || Boolean(priced?.error)} className="btn-primary w-full sm:w-auto">

@@ -37,6 +37,8 @@ export default async function TrackPage({
 
   const st = (isStatus(order.status) ? order.status : "menunggu") as Status;
   const meta = STATUS_META[st];
+  const flow: Status[] = ["menunggu", "dikerjakan", "selesai"];
+  const flowIndex = flow.indexOf(st);
   const nextStep = order.price
     ? order.paid
       ? "Pembayaran sudah kami terima. Admin akan mengabari lewat WhatsApp kalau ada kabar."
@@ -104,6 +106,33 @@ export default async function TrackPage({
                 </div>
               </div>
             </section>
+
+            {st === "batal" ? (
+              <p className="mt-4 rounded-tag-sm border border-[#c0392b]/30 bg-[#c0392b]/[0.06] px-4 py-3 text-sm text-[#e98078]">
+                Pesanan ini dibatalkan. Kalau ini keliru, langsung chat kami lewat WhatsApp.
+              </p>
+            ) : st === "revisi" ? (
+              <p className="mt-4 rounded-tag-sm border border-line bg-panel/40 px-4 py-3 text-sm text-ink/70">
+                Pesanan sedang tahap revisi. Admin akan mengabari lewat WhatsApp begitu ada kabar.
+              </p>
+            ) : (
+              <ol aria-label="Progres pesanan" className="mt-4 flex flex-wrap gap-x-6 gap-y-3 border-t border-line pt-4">
+                {flow.map((s, index) => (
+                  <li key={s} className="flex items-center gap-2">
+                    <span
+                      className={`grid size-6 place-items-center rounded-full text-[11px] font-bold ${
+                        index <= flowIndex ? "bg-ink text-paper" : "border border-line text-mute"
+                      }`}
+                    >
+                      {index < flowIndex ? "✓" : index + 1}
+                    </span>
+                    <span className={`text-xs font-semibold ${index <= flowIndex ? "text-ink/75" : "text-mute"}`}>
+                      {STATUS_META[s].label}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
 
             <section aria-label="Langkah berikutnya" className="mt-4 flex gap-3 rounded-tag-sm border border-line bg-panel/40 px-4 py-3.5">
               <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-ink text-[11px] font-bold text-paper">→</span>
