@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { createOrder } from "@/app/actions";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { DateField } from "@/components/DateField";
@@ -27,6 +27,7 @@ export function OrderForm({
   payment: PaymentInfo;
 }) {
   const [state, action, pending] = useActionState(createOrder, null);
+  const formRef = useRef<HTMLFormElement>(null);
   const v = state?.values ?? {};
   const initial = services.find((s) => s.id === (v.service ?? preselect)) ?? services[0];
   const [selected, setSelected] = useState(initial?.id ?? "");
@@ -55,8 +56,23 @@ export function OrderForm({
   }
 
   return (
-    <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-14">
-      <form action={action} className="space-y-11">
+    <>
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-14">
+      <form ref={formRef} action={action} className="space-y-11">
+        <ol className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line pb-4 text-[12px] text-mute">
+          {[
+            ["01", "Pilih layanan"],
+            ["02", "Isi detail"],
+            ["03", "Kirim & pantau"],
+          ].map(([n, label], index) => (
+            <li key={n} className="flex items-center gap-3">
+              <span className="font-serif text-base italic text-ink/45">{n}</span>
+              <span className="font-semibold text-ink/75">{label}</span>
+              {index < 2 && <span aria-hidden className="text-ink/25">/</span>}
+            </li>
+          ))}
+        </ol>
+
         <div className="flex items-start gap-3 rounded-tag-sm border border-ink/15 bg-ink/[0.05] px-4 py-3.5">
           <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-ink text-[11px] font-bold text-paper">
             i
@@ -155,6 +171,7 @@ export function OrderForm({
                   <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-ink">
                     {priced?.price != null ? rupiah(priced.price) : "—"}
                   </p>
+                  <p className="mt-1 text-[11px] text-mute">Belum termasuk finishing/ongkir.</p>
                 </div>
               </div>
               {priced?.error && <p className="mt-3 text-sm text-[#e98078]">{priced.error}</p>}
@@ -294,6 +311,26 @@ export function OrderForm({
           </p>
         </div>
       </aside>
-    </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/95 px-5 py-3 backdrop-blur-md lg:hidden">
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="eyebrow">Total</p>
+            <p className="truncate text-xl font-semibold tabular-nums">
+              {priced?.price != null ? rupiah(priced.price) : "Belum dihitung"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => formRef.current?.requestSubmit()}
+            disabled={pending || Boolean(priced?.error)}
+            className="btn-primary min-h-11 shrink-0 px-5 text-sm"
+          >
+            {pending ? "Mengirim…" : "Kirim pesanan"}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }

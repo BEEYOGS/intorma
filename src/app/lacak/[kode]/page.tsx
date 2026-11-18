@@ -37,6 +37,11 @@ export default async function TrackPage({
 
   const st = (isStatus(order.status) ? order.status : "menunggu") as Status;
   const meta = STATUS_META[st];
+  const nextStep = order.price
+    ? order.paid
+      ? "Pembayaran sudah kami terima. Admin akan mengabari lewat WhatsApp kalau ada kabar."
+      : "Transfer ke rekening di sebelah, lalu kirim konfirmasi lewat WhatsApp supaya cepat dicek."
+    : "Admin sedang membaca brief. Harga dan jadwal menyusul lewat WhatsApp.";
 
   return (
     <>
@@ -97,6 +102,14 @@ export default async function TrackPage({
                   <h2 id="status-sekarang" className="text-2xl font-semibold tracking-tight sm:text-3xl">{meta.label}</h2>
                   {order.note && <p className="mt-3 max-w-xl text-sm leading-6 text-ink/65">{order.note}</p>}
                 </div>
+              </div>
+            </section>
+
+            <section aria-label="Langkah berikutnya" className="mt-4 flex gap-3 rounded-tag-sm border border-line bg-panel/40 px-4 py-3.5">
+              <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-ink text-[11px] font-bold text-paper">→</span>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/55">Langkah berikutnya</p>
+                <p className="mt-1 text-sm leading-6 text-ink/70">{nextStep}</p>
               </div>
             </section>
 

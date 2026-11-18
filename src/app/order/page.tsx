@@ -27,7 +27,11 @@ export default async function OrderPage({
             <Link href="/" className="text-[13px] font-medium text-mute transition-colors hover:text-ink">
               ← Kembali ke beranda
             </Link>
-            <h1 className="display mt-6 text-[clamp(2.5rem,6vw,4.5rem)]">Ceritakan kebutuhanmu.</h1>
+            <h1 className="display mt-6 text-[clamp(2.5rem,6vw,4.5rem)]">
+              Ceritakan
+              <br />
+              <span className="font-serif font-normal italic tracking-[-0.02em]">kebutuhanmu.</span>
+            </h1>
             <p className="mt-5 max-w-xl text-sm leading-6 text-ink/65 sm:text-base sm:leading-7">
               Satu formulir, sekitar dua menit. Setelah terkirim kamu mendapat kode pesanan dan salinannya
               lewat WhatsApp.
@@ -35,7 +39,7 @@ export default async function OrderPage({
           </div>
         </div>
 
-        <div className="wrap py-12 sm:py-16">
+        <div className="wrap pb-28 pt-12 sm:pb-28 sm:pt-16 lg:pb-16">
           {services.length === 0 ? (
             <div className="max-w-lg rounded-tag-lg border border-line bg-panel/60 p-6">
               <p className="font-semibold">Belum ada layanan aktif.</p>

@@ -75,7 +75,7 @@ export default async function Home() {
                 </Link>
               </div>
               <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-mute">
-                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-ink/30" />Harga awal transparan</li>
+                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-ink/30" />Harga dihitung otomatis</li>
                 <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-ink/30" />Kabar progres via WhatsApp</li>
                 <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-ink/30" />Bisa dilacak online</li>
               </ul>
