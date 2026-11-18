@@ -21,6 +21,11 @@ Halaman:
 | URL | Isi |
 | --- | --- |
 | `/` | Beranda: layanan, cara kerja, pembayaran, FAQ |
+
+Harga layanan cetak dihitung otomatis dari jumlah yang diisi pelanggan (mis. spanduk
+Rp25.000/meter × panjang). Riset harga awal dan sumbernya ada di `PRICING.md`; pengaturan
+mode harga, satuan, dan batas jumlah ada di `/admin/layanan`.
+
 | `/order` | Formulir pesanan |
 | `/lacak` | Cari pesanan dengan kode |
 | `/lacak/INT-XXXXXX` | Status, riwayat, harga, dan pembayaran |

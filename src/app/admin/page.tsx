@@ -60,7 +60,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
 
   const [orders, matched, counts, unpaid, revenue] = await Promise.all([
     sql.query(
-      `select o.*, v.name as service, v.price_from as service_price ${from} ${where}
+      `select o.*, v.name as service, v.price_from as service_price, v.unit_label as unit_label ${from} ${where}
        order by o.created_at desc limit 100`,
       values,
     ),
@@ -279,7 +279,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
 
                     <div className="grid gap-4">
                       <OrderEditor
-                        order={{ id: Number(o.id), status: o.status, price, note: o.note, paid: Boolean(o.paid) }}
+                        order={{
+                          id: Number(o.id), status: o.status, price, note: o.note, paid: Boolean(o.paid),
+                          qty: o.qty == null ? null : Number(o.qty),
+                          unitRate: o.unit_rate == null ? null : Number(o.unit_rate),
+                          unitLabel: String(o.unit_label ?? ""),
+                        }}
                         servicePrice={o.service_price == null ? null : Number(o.service_price)}
                         returnTo={returnTo}
                       />

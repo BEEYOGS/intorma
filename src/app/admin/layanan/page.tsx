@@ -3,7 +3,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { ServiceForm } from "@/components/ServiceForm";
 import { isAdmin } from "@/lib/auth";
 import { getAllServices } from "@/lib/db";
-import { rupiah } from "@/lib/format";
+import { priceLabel } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Layanan", robots: { index: false } };
@@ -53,8 +53,9 @@ export default async function ServicesAdmin() {
                   <span className="block text-xs leading-5 text-mute">{s.blurb}</span>
                 </span>
                 <span className="text-sm font-semibold tabular-nums">
-                  {s.price_from ? rupiah(s.price_from) : "Sesuai brief"}
+                  {priceLabel(s)}
                 </span>
+                <span className="tag">{s.pricing_mode === "per_unit" ? "Per item" : "Tetap"}</span>
                 <span className="text-xs text-mute">± {s.days} hari</span>
                 <span className="tag">{s.active ? "Aktif" : "Nonaktif"}</span>
                 <span className="font-mono text-[11px] text-mute">urutan {s.sort}</span>

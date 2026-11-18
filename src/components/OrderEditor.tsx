@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { updateOrder, type ActionResult } from "@/app/actions";
 import { rupiah } from "@/lib/format";
+import { priceBreakdown } from "@/lib/pricing";
 import { STATUSES, STATUS_META, type Status } from "@/lib/status";
 
 type Order = {
@@ -11,6 +12,9 @@ type Order = {
   price: number | null;
   note: string | null;
   paid: boolean;
+  qty: number | null;
+  unitRate: number | null;
+  unitLabel: string;
 };
 
 export function OrderEditor({
@@ -63,6 +67,11 @@ export function OrderEditor({
           <span className="mt-1.5 block text-xs text-mute">
             {servicePrice ? `Harga layanan: ${rupiah(servicePrice)} — boleh disesuaikan dengan kesepakatan.` : "Kosongkan kalau harga belum disepakati."}
           </span>
+          {priceBreakdown(order.price, order.qty, order.unitRate, order.unitLabel, rupiah) && (
+            <span className="mt-1 block text-xs font-medium text-ink/75">
+              Dihitung otomatis: {priceBreakdown(order.price, order.qty, order.unitRate, order.unitLabel, rupiah)}
+            </span>
+          )}
         </label>
       </div>
 

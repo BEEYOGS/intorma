@@ -5,6 +5,7 @@ import { Footer, Nav, StatusBadge } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
 import { sql } from "@/lib/db";
 import { jam, rupiah, tanggal } from "@/lib/format";
+import { priceBreakdown } from "@/lib/pricing";
 import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, isStatus, type Status } from "@/lib/status";
 import { waLink } from "@/lib/site";
@@ -23,7 +24,7 @@ export default async function TrackPage({
   const order = (
     await sql`
       select o.id, o.code, o.name, o.status, o.price, o.note, o.paid, o.deadline, o.brief,
-        o.created_at, s.name as service
+        o.created_at, o.qty, o.unit_rate, s.name as service, s.unit_label as unit_label
       from orders o left join services s on s.id = o.service_id
       where o.code = ${kode.toUpperCase()}`
   )[0];
@@ -129,6 +130,23 @@ export default async function TrackPage({
                 </div>
                 <p className="mt-5 text-sm text-mute">Total</p>
                 <p className="text-3xl font-semibold tracking-tight tabular-nums">{rupiah(order.price)}</p>
+                {priceBreakdown(
+                  order.price == null ? null : Number(order.price),
+                  order.qty == null ? null : Number(order.qty),
+                  order.unit_rate == null ? null : Number(order.unit_rate),
+                  String(order.unit_label ?? ""),
+                  rupiah,
+                ) && (
+                  <p className="mt-1 text-xs text-mute">
+                    {priceBreakdown(
+                      order.price == null ? null : Number(order.price),
+                      order.qty == null ? null : Number(order.qty),
+                      order.unit_rate == null ? null : Number(order.unit_rate),
+                      String(order.unit_label ?? ""),
+                      rupiah,
+                    )}
+                  </p>
+                )}
 
                 {order.paid ? (
                   <p className="mt-4 border-t border-line pt-4 text-sm leading-6 text-mute">

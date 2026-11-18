@@ -3,8 +3,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
+import type { Service } from "@/lib/db";
 import { isAdmin, login, logout } from "@/lib/auth";
 import { makeCode, normalizeWA, rupiah } from "@/lib/format";
+import { calculatePrice } from "@/lib/pricing";
 import { STATUS_META, isStatus } from "@/lib/status";
 import { getPaymentSettings, paymentLines, savePaymentSettings } from "@/lib/settings";
 import { sendWA, siteUrl } from "@/lib/wa";
@@ -34,6 +36,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   const values = {
     name: str(f, "name"), wa: str(f, "wa"), service: str(f, "service"),
     brief: str(f, "brief"), ref: str(f, "ref"), deadline: str(f, "deadline"),
+    qty: str(f, "qty"),
   };
   const wa = normalizeWA(values.wa);
 
@@ -43,14 +46,31 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   if (values.brief.length < 15) return { error: "Brief terlalu singkat. Tulis minimal satu-dua kalimat.", values };
   if (values.ref && !/^https?:\/\//i.test(values.ref)) return { error: "Link referensi harus diawali http:// atau https://.", values };
 
-  const svc = (await sql`select id, name from services where id = ${values.service} and active`)[0];
-  if (!svc) return { error: "Layanan tidak ditemukan. Pilih layanan lain.", values };
+  const svcRow = (
+    await sql`select id, name, price_from, pricing_mode, unit_label, min_qty, max_qty
+      from services where id = ${values.service} and active`
+  )[0];
+  if (!svcRow) return { error: "Layanan tidak ditemukan. Pilih layanan lain.", values };
+
+  const svc = {
+    id: String(svcRow.id),
+    name: String(svcRow.name),
+    price_from: Number(svcRow.price_from ?? 0),
+    pricing_mode: svcRow.pricing_mode === "per_unit" ? "per_unit" : "flat",
+    unit_label: String(svcRow.unit_label ?? ""),
+    min_qty: Number(svcRow.min_qty ?? 1),
+    max_qty: Number(svcRow.max_qty ?? 10000),
+  } as Service;
+
+  const priced = calculatePrice(svc, values.qty);
+  if (priced.error) return { error: priced.error, values };
 
   let order: { id: number; code: string } | undefined;
   for (let i = 0; i < 5 && !order; i++) {
     const rows = await sql`
-      insert into orders (code, name, wa, service_id, brief, ref_link, deadline)
-      values (${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${values.brief}, ${values.ref || null}, ${values.deadline || null})
+      insert into orders (code, name, wa, service_id, brief, ref_link, deadline, qty, unit_rate, price)
+      values (${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${values.brief}, ${values.ref || null}, ${values.deadline || null},
+        ${priced.qty}, ${priced.unitRate}, ${priced.price})
       on conflict (code) do nothing returning id, code`;
     const inserted = rows[0] as { id: number; code: string } | undefined;
     order = inserted;
@@ -63,7 +83,20 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   await Promise.all([
     sendWA(wa, `${STATUS_META.menunggu.wa(order.code, values.name)}\n\nPantau di: ${link}`),
     process.env.ADMIN_WA
-      ? sendWA(process.env.ADMIN_WA, `Pesanan baru ${order.code}\n${values.name} (${wa})\n${svc.name}\n\n${values.brief}`)
+      ? sendWA(
+          process.env.ADMIN_WA,
+          [
+            `Pesanan baru ${order.code}`,
+            `${values.name} (${wa})`,
+            svc.name,
+            priced.qty ? `${priced.qty} ${svc.unit_label || "unit"} × ${rupiah(priced.unitRate)}` : null,
+            priced.price ? `Total: ${rupiah(priced.price)}` : "Total: menunggu konfirmasi",
+            "",
+            values.brief,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        )
       : Promise.resolve(false),
   ]);
 
@@ -172,9 +205,15 @@ export async function saveService(_prev: ActionResult, f: FormData): Promise<Act
   const days = Math.min(365, Math.max(1, Number(digits(f, "days")) || 1));
   const sort = Math.min(9999, Math.max(0, Number(digits(f, "sort")) || 0));
   const active = f.get("active") === "on";
+  const pricingMode = str(f, "pricing_mode") === "per_unit" ? "per_unit" : "flat";
+  const unitLabel = pricingMode === "per_unit" ? str(f, "unit_label").slice(0, 24) : "";
+  const minQty = pricingMode === "per_unit" ? Math.max(0.01, Number(str(f, "min_qty")) || 1) : 1;
+  const maxQty = pricingMode === "per_unit" ? Math.min(1_000_000, Number(str(f, "max_qty")) || 10000) : 10000;
 
   if (name.length < 2) return { error: "Nama layanan minimal 2 karakter." };
   if (blurb.length < 5) return { error: "Tulis deskripsi singkat (minimal 5 karakter)." };
+  if (pricingMode === "per_unit" && !unitLabel) return { error: "Isi nama satuan, misalnya meter atau lembar." };
+  if (maxQty < minQty) return { error: "Jumlah maksimal tidak boleh lebih kecil dari minimal." };
 
   if (mode === "new") {
     const id = str(f, "id").toLowerCase();
@@ -184,8 +223,8 @@ export async function saveService(_prev: ActionResult, f: FormData): Promise<Act
     const exists = (await sql`select 1 from services where id = ${id}`)[0];
     if (exists) return { error: "ID layanan itu sudah dipakai." };
     await sql`
-      insert into services (id, name, blurb, price_from, days, sort, active)
-      values (${id}, ${name}, ${blurb}, ${price}, ${days}, ${sort}, ${active})`;
+      insert into services (id, name, blurb, price_from, days, sort, active, pricing_mode, unit_label, min_qty, max_qty)
+      values (${id}, ${name}, ${blurb}, ${price}, ${days}, ${sort}, ${active}, ${pricingMode}, ${unitLabel}, ${minQty}, ${maxQty})`;
     revalidatePath("/admin/layanan");
     revalidatePath("/");
     revalidatePath("/order");
@@ -195,7 +234,8 @@ export async function saveService(_prev: ActionResult, f: FormData): Promise<Act
   const id = str(f, "id");
   const rows = await sql`
     update services set name = ${name}, blurb = ${blurb}, price_from = ${price},
-      days = ${days}, sort = ${sort}, active = ${active}
+      days = ${days}, sort = ${sort}, active = ${active},
+      pricing_mode = ${pricingMode}, unit_label = ${unitLabel}, min_qty = ${minQty}, max_qty = ${maxQty}
     where id = ${id} returning id`;
   if (!rows[0]) return { error: "Layanan tidak ditemukan." };
 

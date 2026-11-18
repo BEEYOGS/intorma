@@ -4,6 +4,7 @@ import { Footer, Nav } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
 import { getServices } from "@/lib/db";
 import { rupiah } from "@/lib/format";
+import { priceLabel } from "@/lib/pricing";
 import { getPaymentSettings } from "@/lib/settings";
 import { waLink } from "@/lib/site";
 
@@ -19,7 +20,7 @@ const steps = [
 const faq = [
   [
     "Bagaimana harga ditentukan?",
-    "Harga awal tiap layanan tertera di daftar. Setelah brief masuk, kami konfirmasi lingkup kerja dan harga final lewat WhatsApp sebelum pengerjaan dimulai.",
+    "Layanan desain punya harga awal. Layanan cetak dihitung otomatis: misalnya spanduk Rp25.000 per meter, tinggal isi panjangnya—sistem langsung mengalikannya. Harga final tetap kami konfirmasi lewat WhatsApp sebelum produksi.",
   ],
   [
     "Berapa lama pengerjaannya?",
@@ -62,8 +63,8 @@ export default async function Home() {
                 <span className="font-serif font-normal italic tracking-[-0.02em]">kelihatan.</span>
               </h1>
               <p className="mt-7 max-w-lg text-[15px] leading-7 text-ink/65 sm:text-base sm:leading-8">
-                Logo, poster, konten sosial, sampai kemasan. Mulai dari cerita yang kamu punya; kami bantu
-                bentuk jadi desain yang siap dipakai.
+                Logo, poster, konten sosial, kemasan, sampai spanduk dan kartu nama. Pilih layanan, isi
+                jumlahnya, dan harga langsung terhitung—tanpa perlu tanya-tanya dulu.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link href="/order" className="btn-primary">
@@ -148,9 +149,7 @@ export default async function Home() {
                       <span className="mt-1 block text-sm leading-5 text-mute">{service.blurb}</span>
                     </span>
                     <span className="row-span-2 text-right sm:row-span-1">
-                      <span className="block text-[13px] font-semibold sm:text-sm">
-                        {service.price_from ? `Mulai ${rupiah(service.price_from)}` : "Sesuai brief"}
-                      </span>
+                      <span className="block text-[13px] font-semibold sm:text-sm">{priceLabel(service)}</span>
                       <span className="mt-1 block text-xs text-mute sm:hidden">± {service.days} hari</span>
                     </span>
                     <span className="hidden text-sm text-mute sm:block sm:text-right">± {service.days} hari</span>
