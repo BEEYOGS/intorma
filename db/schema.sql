@@ -33,6 +33,7 @@ create table if not exists order_events (
 );
 
 create index if not exists orders_status_idx on orders(status, created_at desc);
+create index if not exists order_events_order_created_idx on order_events(order_id, created_at desc);
 
 insert into services (id, name, blurb, price_from, days, sort) values
   ('logo', 'Logo dan identitas', 'Logo, palet warna, dan panduan pemakaian dasar.', 350000, 5, 1),

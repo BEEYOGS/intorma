@@ -12,9 +12,19 @@ export default async function OrderPage({ searchParams }: { searchParams: Promis
       <Nav />
       <main className="mx-auto max-w-3xl px-5 pb-24 pt-10">
         <h1 className="text-5xl font-bold leading-none tracking-tightest sm:text-6xl">Pesan desain</h1>
-        <p className="mt-4 max-w-md text-soft">Isi formulir ini. Setelah terkirim, kamu dapat kode pesanan dan notifikasi di WhatsApp.</p>
+        <p className="mt-4 max-w-md text-soft">Isi formulir ini untuk mendapat kode pelacakan. Notifikasi WhatsApp mungkin tidak tersedia.</p>
         <div className="mt-12">
-          <OrderForm services={services} preselect={layanan} />
+          {services.length > 0 ? (
+            <OrderForm services={services} preselect={layanan} />
+          ) : (
+            <p role="status" className="border-y border-line py-6 text-soft">
+              Layanan belum tersedia untuk dipesan.{" "}
+              <a className="font-semibold text-white underline underline-offset-4" href="https://wa.me/6289617607952" target="_blank" rel="noreferrer">
+                Hubungi kami lewat WhatsApp
+              </a>
+              .
+            </p>
+          )}
         </div>
       </main>
       <Footer />
