@@ -167,6 +167,14 @@ select {
     display: none;
   }
 
+  .install-timer {
+    animation: installTimer 15s linear forwards;
+  }
+  @keyframes installTimer {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+
   dialog::backdrop {
     background: rgba(0, 0, 0, 0.72);
     backdrop-filter: blur(3px);
