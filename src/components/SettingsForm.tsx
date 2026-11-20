@@ -74,8 +74,8 @@ export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; 
           <button type="submit" disabled={pending} className="btn-primary min-h-11 px-5 text-sm">
             {pending ? "Menyimpan…" : "Simpan pengaturan"}
           </button>
-          {state?.ok && <span role="status" className="text-sm font-medium text-[#1f7a4d]">Tersimpan.</span>}
-          {state?.error && <span role="alert" className="text-sm text-[#8f2b20]">{state.error}</span>}
+          {state?.ok && <span role="status" className="text-sm font-medium text-green">Tersimpan.</span>}
+          {state?.error && <span role="alert" className="text-sm text-red">{state.error}</span>}
         </div>
 
         <div className="rounded-tag-sm border border-line bg-panel/50 p-5 text-sm leading-6 text-mute">

@@ -77,7 +77,7 @@ export function ServiceForm({ service }: { service?: Service }) {
                 onChange={() => setPricingMode(value)}
                 className="peer sr-only"
               />
-              <span className="inline-flex min-h-10 items-center rounded-full border border-line px-4 text-[13px] font-semibold text-ink/65 transition-colors peer-checked:border-ink peer-checked:bg-ink peer-checked:text-paper">
+              <span className="inline-flex min-h-10 items-center rounded-full border border-line px-4 text-[13px] font-semibold text-ink/65 transition-colors peer-checked:border-cyan peer-checked:bg-cyan peer-checked:text-[#04252b]">
                 {label}
               </span>
             </label>
@@ -146,8 +146,8 @@ export function ServiceForm({ service }: { service?: Service }) {
         <button type="submit" disabled={pending} className="btn-primary min-h-11 px-5 text-sm">
           {pending ? "Menyimpan…" : edit ? "Simpan layanan" : "Tambah layanan"}
         </button>
-        {state?.ok && <span role="status" className="text-sm font-medium text-[#1f7a4d]">{edit ? "Tersimpan." : "Layanan ditambahkan."}</span>}
-        {state?.error && <span role="alert" className="text-sm text-[#8f2b20]">{state.error}</span>}
+        {state?.ok && <span role="status" className="text-sm font-medium text-green">{edit ? "Tersimpan." : "Layanan ditambahkan."}</span>}
+        {state?.error && <span role="alert" className="text-sm text-red">{state.error}</span>}
       </div>
     </form>
   );

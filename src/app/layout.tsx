@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { ServiceWorkerRegister } from "@/components/PWA";
+import { PressBackground } from "@/components/Press";
 import "./globals.css";
 
 const sans = localFont({
@@ -31,13 +32,14 @@ export const metadata: Metadata = {
   icons: { icon: "/icon.svg", apple: "/icons/icon-192.png" },
 };
 
-export const viewport: Viewport = { themeColor: "#0d0d0c" };
+export const viewport: Viewport = { themeColor: "#0b0d10" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className={`${sans.variable} ${serif.variable}`}>
       <body className="min-h-dvh bg-paper font-sans text-ink antialiased">
         <ServiceWorkerRegister />
+        <PressBackground />
         <a href="#konten" className="skip-link">
           Lewati ke konten
         </a>

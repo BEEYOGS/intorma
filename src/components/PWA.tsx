@@ -122,7 +122,7 @@ export function InstallButton() {
           </div>
 
           <div aria-hidden="true" className="h-0.5 bg-line">
-            <div className="h-full bg-ink/45 install-timer" />
+            <div className="h-full bg-cyan install-timer" />
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
+import { Barcode, CmykChips, CropCorners, RegMark, Reveal, Ticker } from "@/components/Press";
 import { getServices, type Service } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { priceLabel } from "@/lib/pricing";
@@ -11,10 +12,10 @@ import { waLink } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 const steps = [
-  ["01", "Isi brief", "Ceritakan kebutuhan dan referensi yang kamu suka. Sekitar dua menit."],
-  ["02", "Konfirmasi", "Kami baca brief-nya, lalu bahas lingkup, harga, dan jadwal lewat WhatsApp."],
-  ["03", "Pengerjaan", "Status dan catatan progres bisa kamu pantau kapan saja dari halaman lacak."],
-  ["04", "Selesai", "File final dikirim sesuai kesepakatan. Pembayaran ditandai lunas oleh admin."],
+  ["01", "Isi brief", "Ceritakan kebutuhan dan referensi yang kamu suka. Sekitar dua menit.", "text-cyan"],
+  ["02", "Konfirmasi", "Kami baca brief-nya, lalu bahas lingkup, harga, dan jadwal lewat WhatsApp.", "text-magenta"],
+  ["03", "Pengerjaan", "Status dan catatan progres bisa kamu pantau kapan saja dari halaman lacak.", "text-yellow"],
+  ["04", "Selesai", "File final dikirim sesuai kesepakatan. Pembayaran ditandai lunas oleh admin.", "text-green"],
 ];
 
 const faq = [
@@ -40,28 +41,33 @@ const faq = [
   ],
 ];
 
-function ServiceRows({ items }: { items: Service[] }) {
+function ServiceRows({ items, accent }: { items: Service[]; accent: "cyan" | "magenta" }) {
+  const bar = accent === "cyan" ? "bg-cyan" : "bg-magenta";
+  const hoverText = accent === "cyan" ? "group-hover:text-cyan" : "group-hover:text-magenta";
   return (
     <ul className="border-t border-line">
       {items.map((service, index) => (
         <li key={service.id}>
           <Link
             href={`/order?layanan=${service.id}`}
-            className="group grid grid-cols-[2rem_minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1 border-b border-line py-5 transition-colors hover:bg-sand/60 sm:grid-cols-[3rem_minmax(0,1fr)_8.5rem_7rem_1.5rem] sm:items-center sm:gap-x-6 sm:px-4 sm:py-6"
+            className="group relative grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1 border-b border-line py-5 transition-colors hover:bg-panel/60 sm:grid-cols-[3.5rem_minmax(0,1fr)_9rem_7rem_1.5rem] sm:items-center sm:gap-x-6 sm:px-4 sm:py-6"
           >
-            <span className="row-span-2 pt-1 font-serif text-lg italic text-ink/30 sm:row-span-1 sm:pt-0">
+            <span aria-hidden className={`absolute left-0 top-0 h-full w-[3px] origin-top scale-y-0 transition-transform duration-300 group-hover:scale-y-100 ${bar}`} />
+            <span className="row-span-2 pt-1 font-mono text-sm text-mute sm:row-span-1 sm:pt-0">
               {String(index + 1).padStart(2, "0")}
             </span>
             <span className="min-w-0">
-              <span className="block text-lg font-semibold leading-snug tracking-tight sm:text-xl">{service.name}</span>
+              <span className={`block text-lg font-semibold leading-snug tracking-tight transition-colors sm:text-xl ${hoverText}`}>
+                {service.name}
+              </span>
               <span className="mt-1 block text-sm leading-5 text-mute">{service.blurb}</span>
             </span>
             <span className="row-span-2 text-right sm:row-span-1">
-              <span className="block text-[13px] font-semibold sm:text-sm">{priceLabel(service)}</span>
+              <span className="block font-mono text-[13px] font-semibold tabular-nums sm:text-sm">{priceLabel(service)}</span>
               <span className="mt-1 block text-xs text-mute sm:hidden">± {service.days} hari</span>
             </span>
-            <span className="hidden text-sm text-mute sm:block sm:text-right">± {service.days} hari</span>
-            <span aria-hidden="true" className="hidden text-ink/30 transition-transform group-hover:translate-x-1 group-hover:text-ink sm:block">
+            <span className="hidden font-mono text-xs text-mute sm:block sm:text-right">± {service.days} hari</span>
+            <span aria-hidden className={`hidden text-mute transition-all duration-300 group-hover:translate-x-1 sm:block ${hoverText}`}>
               →
             </span>
           </Link>
@@ -85,21 +91,33 @@ export default async function Home() {
     <>
       <Nav />
       <main id="konten">
-        <section className="border-b border-line">
-          <div className="wrap grid gap-14 pb-14 pt-12 sm:pt-16 lg:grid-cols-[1.08fr_.92fr] lg:items-end lg:gap-20 lg:pb-20">
+        {/* --------------------------------------------------------------- Hero */}
+        <section className="relative overflow-hidden border-b border-line">
+          <div className="wrap grid gap-14 pb-16 pt-12 sm:pt-16 lg:grid-cols-[1.08fr_.92fr] lg:items-center lg:gap-16 lg:pb-24">
             <div className="max-w-2xl">
-              <p className="eyebrow">Studio desain independen — Indonesia</p>
-              <h1 className="display mt-6 text-[clamp(2.9rem,7.4vw,6.2rem)]">
+              <p className="enter eyebrow flex items-center gap-2.5" style={{ "--enter-delay": "0ms" } as React.CSSProperties}>
+                <RegMark className="size-3.5 text-cyan" />
+                Studio desain &amp; cetak — Indonesia
+              </p>
+              <h1 className="enter display mt-7 text-[clamp(2.9rem,7.4vw,6.2rem)]" style={{ "--enter-delay": "90ms" } as React.CSSProperties}>
                 Ide kamu,
                 <br />
                 dibikin{" "}
-                <span className="font-serif font-normal italic tracking-[-0.02em]">kelihatan.</span>
+                <span className="relative inline-block font-serif font-normal italic tracking-[-0.02em]">
+                  kelihatan.
+                  <span aria-hidden className="absolute -bottom-1 left-0 flex h-[5px] w-full gap-[3px] sm:-bottom-2">
+                    <span className="h-full flex-1 bg-cyan" />
+                    <span className="h-full flex-1 bg-magenta" />
+                    <span className="h-full flex-1 bg-yellow" />
+                    <span className="h-full flex-1 bg-ink/70" />
+                  </span>
+                </span>
               </h1>
-              <p className="mt-7 max-w-lg text-[15px] leading-7 text-ink/65 sm:text-base sm:leading-8">
+              <p className="enter mt-8 max-w-lg text-[15px] leading-7 text-ink/65 sm:text-base sm:leading-8" style={{ "--enter-delay": "180ms" } as React.CSSProperties}>
                 Logo, poster, konten sosial, kemasan, sampai spanduk dan kartu nama. Pilih layanan, isi
                 jumlahnya, dan harga langsung terhitung—tanpa perlu tanya-tanya dulu.
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="enter mt-9 flex flex-wrap items-center gap-3" style={{ "--enter-delay": "270ms" } as React.CSSProperties}>
                 <Link href="/order" className="btn-primary">
                   Mulai pesan <span aria-hidden="true">→</span>
                 </Link>
@@ -107,232 +125,296 @@ export default async function Home() {
                   Lacak pesanan
                 </Link>
               </div>
-              <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-mute">
-                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-ink/30" />Harga dihitung otomatis</li>
-                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-ink/30" />Kabar progres via WhatsApp</li>
-                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-ink/30" />Bisa dilacak online</li>
+              <ul className="enter mt-10 flex flex-wrap gap-x-6 gap-y-2 font-mono text-[12px] uppercase tracking-[0.08em] text-mute" style={{ "--enter-delay": "360ms" } as React.CSSProperties}>
+                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-cyan" />Harga otomatis</li>
+                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-magenta" />Kabar via WhatsApp</li>
+                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-yellow" />Lacak online</li>
               </ul>
             </div>
 
-            <aside aria-label="Ringkasan studio" className="relative overflow-hidden rounded-tag-lg bg-ink p-7 text-paper sm:p-9">
+            <aside
+              aria-label="Ringkasan studio"
+              className="enter relative border border-line bg-panel/80 p-7 shadow-ticket sm:p-9"
+              style={{ "--enter-delay": "220ms" } as React.CSSProperties}
+            >
+              <CropCorners />
               <div className="flex items-start justify-between gap-6">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-paper/60">Mulai dari</p>
-                  <p className="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">
+                  <p className="eyebrow">Mulai dari</p>
+                  <p className="mt-3 font-mono text-4xl font-bold tabular-nums tracking-tight text-cyan sm:text-5xl">
                     {minPrice ? rupiah(minPrice) : "Sesuai brief"}
                   </p>
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icon.svg" alt="" className="h-14 w-14 shrink-0 opacity-90" />
+                <img src="/icon.svg" alt="" className="h-14 w-14 shrink-0 rounded-tag-sm bg-ink p-1.5" />
               </div>
 
-              <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-paper/15 pt-6 text-sm">
+              <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-line pt-6 text-sm">
                 <div>
-                  <dt className="text-paper/60">Layanan</dt>
-                  <dd className="mt-1 font-semibold">{services.length} pilihan</dd>
+                  <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-mute">Layanan</dt>
+                  <dd className="mt-1.5 font-semibold">{services.length} pilihan</dd>
                 </div>
                 <div>
-                  <dt className="text-paper/60">Pengerjaan</dt>
-                  <dd className="mt-1 font-semibold">{minDays}–{maxDays} hari</dd>
+                  <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-mute">Pengerjaan</dt>
+                  <dd className="mt-1.5 font-semibold">{minDays}–{maxDays} hari</dd>
                 </div>
                 <div>
-                  <dt className="text-paper/60">Pembayaran</dt>
-                  <dd className="mt-1 font-semibold">{payment.enabled ? payment.bankName || "Transfer" : "Via WhatsApp"}</dd>
+                  <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-mute">Pembayaran</dt>
+                  <dd className="mt-1.5 font-semibold">{payment.enabled ? payment.bankName || "Transfer" : "Via WhatsApp"}</dd>
                 </div>
                 <div>
-                  <dt className="text-paper/60">Konfirmasi</dt>
-                  <dd className="mt-1 font-semibold">WhatsApp</dd>
+                  <dt className="font-mono text-[11px] uppercase tracking-[0.16em] text-mute">Konfirmasi</dt>
+                  <dd className="mt-1.5 font-semibold">WhatsApp</dd>
                 </div>
               </dl>
 
-              <div className="mt-8 flex items-center justify-between gap-4 border-t border-paper/15 pt-6">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/int.svg" alt="in.torma — Creative without idea" className="h-7 w-auto invert" />
-                <span className="text-[10px] uppercase tracking-[0.18em] text-paper/55">Creative without idea</span>
+              <div className="mt-8 border-t border-line pt-6">
+                <Barcode value="INTORMA-STUDIO" height={30} className="text-ink/70" label="" />
+                <div className="mt-4 flex items-center justify-between gap-4">
+                  <CmykChips />
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-mute">Creative without idea</span>
+                </div>
               </div>
             </aside>
           </div>
         </section>
 
-        <section id="layanan" className="scroll-mt-20 border-b border-line">
+        <Ticker items={["Logo", "Poster", "Feed Instagram", "Kemasan", "Spanduk", "Kartu Nama", "Stiker", "Thumbnail"]} />
+
+        {/* ------------------------------------------------------------ Layanan */}
+        <section id="layanan" className="scroll-mt-24 border-b border-line">
           <div className="wrap py-16 sm:py-24">
-            <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
-              <div>
-                <p className="eyebrow">Layanan &amp; harga</p>
-                <h2 className="display mt-5 text-4xl sm:text-5xl">Pilih bentuk yang kamu butuhkan.</h2>
+            <Reveal>
+              <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
+                <div>
+                  <p className="eyebrow flex items-center gap-2.5">
+                    <RegMark className="size-3.5 text-magenta" />
+                    Layanan &amp; harga
+                  </p>
+                  <h2 className="display mt-5 text-4xl sm:text-5xl">Pilih bentuk yang kamu butuhkan.</h2>
+                </div>
+                <p className="max-w-md text-sm leading-6 text-mute lg:justify-self-end">
+                  Harga di bawah adalah titik awal. Setiap proyek punya kebutuhan sendiri, jadi harga final
+                  selalu dikonfirmasi sebelum mulai.
+                </p>
               </div>
-              <p className="max-w-md text-sm leading-6 text-mute lg:justify-self-end">
-                Harga di bawah adalah titik awal. Setiap proyek punya kebutuhan sendiri, jadi harga final
-                selalu dikonfirmasi sebelum mulai.
+            </Reveal>
+
+            <div className="mt-10 space-y-12 sm:mt-14">
+              <Reveal>
+                <section aria-labelledby="grp-desain">
+                  <div className="mb-3 flex items-baseline gap-3">
+                    <span aria-hidden className="h-3 w-3 bg-cyan" />
+                    <h3 id="grp-desain" className="font-serif text-2xl italic text-ink/80">Desain</h3>
+                    <span aria-hidden className="h-px flex-1 bg-line" />
+                    <span className="font-mono text-xs text-mute">{design.length} layanan</span>
+                  </div>
+                  <ServiceRows items={design} accent="cyan" />
+                </section>
+              </Reveal>
+
+              <Reveal>
+                <section aria-labelledby="grp-cetak">
+                  <div className="mb-3 flex items-baseline gap-3">
+                    <span aria-hidden className="h-3 w-3 bg-magenta" />
+                    <h3 id="grp-cetak" className="font-serif text-2xl italic text-ink/80">Cetak</h3>
+                    <span aria-hidden className="h-px flex-1 bg-line" />
+                    <span className="font-mono text-xs text-mute">{print.length} layanan</span>
+                  </div>
+                  <ServiceRows items={print} accent="magenta" />
+                </section>
+              </Reveal>
+            </div>
+
+            <Reveal>
+              <p className="mt-10 text-sm text-mute">
+                Belum tahu harus pilih apa?{" "}
+                <a
+                  href={waLink("Halo in.torma, saya belum tahu butuh layanan apa. Boleh minta arahan?")}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="link-accent"
+                >
+                  Ceritakan saja lewat WhatsApp
+                </a>
+                .
               </p>
-            </div>
-
-            <div className="mt-10 space-y-10 sm:mt-12">
-              <section aria-labelledby="grp-desain">
-                <div className="mb-3 flex items-baseline gap-3">
-                  <h3 id="grp-desain" className="font-serif text-xl italic text-ink/55">Desain</h3>
-                  <span aria-hidden className="h-px flex-1 bg-line" />
-                  <span className="text-xs text-mute">{design.length} layanan</span>
-                </div>
-                <ServiceRows items={design} />
-              </section>
-
-              <section aria-labelledby="grp-cetak">
-                <div className="mb-3 flex items-baseline gap-3">
-                  <h3 id="grp-cetak" className="font-serif text-xl italic text-ink/55">Cetak</h3>
-                  <span aria-hidden className="h-px flex-1 bg-line" />
-                  <span className="text-xs text-mute">{print.length} layanan</span>
-                </div>
-                <ServiceRows items={print} />
-              </section>
-            </div>
-
-            <p className="mt-8 text-sm text-mute">
-              Belum tahu harus pilih apa?{" "}
-              <a
-                href={waLink("Halo in.torma, saya belum tahu butuh layanan apa. Boleh minta arahan?")}
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink"
-              >
-                Ceritakan saja lewat WhatsApp
-              </a>
-              .
-            </p>
+            </Reveal>
           </div>
         </section>
 
-        <section id="cara-kerja" className="scroll-mt-20 border-b border-line bg-sand/70">
-          <div className="wrap py-16 sm:py-24">
-            <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
-              <div>
-                <p className="eyebrow">Cara kerja</p>
-                <h2 className="display mt-5 text-4xl sm:text-5xl">Jelas dari awal sampai akhir.</h2>
+        {/* ---------------------------------------------------------- Cara kerja */}
+        <section id="cara-kerja" className="relative scroll-mt-24 overflow-hidden border-b border-line bg-sand/80">
+          <div aria-hidden className="pointer-events-none absolute -right-40 top-0 size-[30rem] rounded-full bg-magenta/[0.05] blur-[110px]" />
+          <div className="wrap relative py-16 sm:py-24">
+            <Reveal>
+              <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
+                <div>
+                  <p className="eyebrow flex items-center gap-2.5">
+                    <RegMark className="size-3.5 text-yellow" />
+                    Cara kerja
+                  </p>
+                  <h2 className="display mt-5 text-4xl sm:text-5xl">Jelas dari awal sampai akhir.</h2>
+                </div>
+                <p className="max-w-md text-sm leading-6 text-mute lg:justify-self-end">
+                  Kamu tahu apa yang sedang dikerjakan, kapan kira-kira selesai, dan di mana bisa melihat
+                  progresnya.
+                </p>
               </div>
-              <p className="max-w-md text-sm leading-6 text-mute lg:justify-self-end">
-                Kamu tahu apa yang sedang dikerjakan, kapan kira-kira selesai, dan di mana bisa melihat
-                progresnya.
-              </p>
-            </div>
+            </Reveal>
 
-            <ol className="mt-10 grid gap-8 border-t border-ink/15 pt-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-              {steps.map(([number, title, description]) => (
-                <li key={number} className="border-l border-ink/15 pl-5">
-                  <span className="font-serif text-2xl italic text-ink/30">{number}</span>
-                  <h3 className="mt-6 text-lg font-semibold tracking-tight">{title}</h3>
-                  <p className="mt-2 max-w-xs text-sm leading-6 text-ink/60">{description}</p>
-                </li>
+            <ol className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+              {steps.map(([number, title, description, color], i) => (
+                <Reveal key={number} delay={i * 110}>
+                  <li className="relative h-full border border-line bg-panel/50 p-6">
+                    <CropCorners className="border-line" />
+                    <span className={`font-serif text-4xl italic ${color}`}>{number}</span>
+                    <h3 className="mt-6 text-lg font-semibold tracking-tight">{title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-ink/60">{description}</p>
+                  </li>
+                </Reveal>
               ))}
             </ol>
           </div>
         </section>
 
-        <section id="pembayaran" className="scroll-mt-20 border-b border-line">
-          <div className="wrap grid gap-10 py-16 sm:py-24 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
-            <div>
-              <p className="eyebrow">Pembayaran</p>
-              <h2 className="display mt-5 text-4xl sm:text-5xl">
-                Transfer bank,
-                <br />
-                <span className="font-serif font-normal italic tracking-[-0.02em]">tanpa ribet.</span>
-              </h2>
-              <p className="mt-6 max-w-md text-sm leading-6 text-ink/65">
-                Pembayaran dilakukan setelah harga dan lingkup kerja disepakati lewat WhatsApp. Setelah
-                transfer, konfirmasi lewat chat yang sama supaya pesanan bisa segera diproses.
-              </p>
-              <ul className="mt-6 space-y-2 text-sm text-mute">
-                <li className="flex gap-2.5"><span aria-hidden className="mt-[0.45rem] status-dot bg-ink/30" />Nominal sesuai kesepakatan, bukan estimasi di daftar.</li>
-                <li className="flex gap-2.5"><span aria-hidden className="mt-[0.45rem] status-dot bg-ink/30" />Status pembayaran ditandai lunas oleh admin.</li>
-                <li className="flex gap-2.5"><span aria-hidden className="mt-[0.45rem] status-dot bg-ink/30" />Bukti transfer bisa dikirim langsung di WhatsApp.</li>
-              </ul>
-            </div>
-
-            <div className="rounded-tag-lg border border-line bg-panel/60 p-6 sm:p-8">
-              <p className="eyebrow">Rekening tujuan</p>
-              {payment.enabled ? (
-                <>
-                  <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
-                    {hasBankLogo(payment.bankName) && (
-                      <span className="grid h-12 shrink-0 place-items-center rounded-tag-sm border border-line bg-ink px-3">
-                        <BankLogo bank={payment.bankName} className="h-7 w-auto" />
-                      </span>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-sm text-mute">Transfer {payment.bankName || "bank"}</p>
-                      <p className="mt-0.5 break-all text-3xl font-semibold tabular-nums tracking-tight sm:text-4xl">{payment.bankAccount}</p>
-                    </div>
-                    <CopyButton value={payment.bankAccount} label="Salin" />
-                  </div>
-                  {payment.bankHolder && <p className="mt-3 text-sm text-ink/60">a.n. {payment.bankHolder}</p>}
-                  {payment.note && <p className="mt-5 border-t border-line pt-4 text-sm leading-6 text-mute">{payment.note}</p>}
-                  <a
-                    href={waLink("Halo in.torma, saya mau konfirmasi transfer pesanan.")}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-outline mt-6 w-full sm:w-auto"
-                  >
-                    Konfirmasi via WhatsApp <span aria-hidden="true">→</span>
-                  </a>
-                </>
-              ) : (
-                <p className="mt-5 text-sm leading-6 text-mute">
-                  Instruksi transfer sedang tidak ditampilkan. Pembayaran dibahas langsung lewat WhatsApp
-                  setelah harga disepakati.
+        {/* ---------------------------------------------------------- Pembayaran */}
+        <section id="pembayaran" className="scroll-mt-24 border-b border-line">
+          <div className="wrap grid gap-12 py-16 sm:py-24 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
+            <Reveal>
+              <div>
+                <p className="eyebrow flex items-center gap-2.5">
+                  <RegMark className="size-3.5 text-green" />
+                  Pembayaran
                 </p>
-              )}
-            </div>
+                <h2 className="display mt-5 text-4xl sm:text-5xl">
+                  Transfer bank,
+                  <br />
+                  <span className="font-serif font-normal italic tracking-[-0.02em]">tanpa ribet.</span>
+                </h2>
+                <p className="mt-6 max-w-md text-sm leading-6 text-ink/65">
+                  Pembayaran dilakukan setelah harga dan lingkup kerja disepakati lewat WhatsApp. Setelah
+                  transfer, konfirmasi lewat chat yang sama supaya pesanan bisa segera diproses.
+                </p>
+                <ul className="mt-7 space-y-3 text-sm text-mute">
+                  <li className="flex gap-3"><span aria-hidden className="mt-[0.4rem] status-dot bg-yellow" />Nominal sesuai kesepakatan, bukan estimasi di daftar.</li>
+                  <li className="flex gap-3"><span aria-hidden className="mt-[0.4rem] status-dot bg-green" />Status pembayaran ditandai lunas oleh admin.</li>
+                  <li className="flex gap-3"><span aria-hidden className="mt-[0.4rem] status-dot bg-cyan" />Bukti transfer bisa dikirim langsung di WhatsApp.</li>
+                </ul>
+              </div>
+            </Reveal>
+
+            <Reveal delay={120}>
+              <div className="ticket p-7 shadow-ticket sm:p-9">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-paper/55">Rekening tujuan</p>
+                  <CmykChips className="size-2" />
+                </div>
+                {payment.enabled ? (
+                  <>
+                    <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+                      {hasBankLogo(payment.bankName) && (
+                        <span className="grid h-12 shrink-0 place-items-center rounded-tag-sm border border-paper/15 bg-paper px-3">
+                          <BankLogo bank={payment.bankName} className="h-7 w-auto" />
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm text-paper/60">Transfer {payment.bankName || "bank"}</p>
+                        <p className="mt-0.5 break-all font-mono text-3xl font-bold tabular-nums tracking-tight sm:text-4xl">
+                          {payment.bankAccount}
+                        </p>
+                      </div>
+                    </div>
+                    {payment.bankHolder && <p className="mt-3 text-sm text-paper/60">a.n. {payment.bankHolder}</p>}
+                    <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-dashed border-paper/25 pt-5">
+                      <CopyButton value={payment.bankAccount} label="Salin nomor" className="!border-paper/25 !bg-paper/5 !text-paper hover:!border-paper hover:!text-paper" />
+                      <a
+                        href={waLink("Halo in.torma, saya mau konfirmasi transfer pesanan.")}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-on-dark min-h-10 px-4 text-sm"
+                      >
+                        Konfirmasi via WhatsApp <span aria-hidden="true">→</span>
+                      </a>
+                    </div>
+                    {payment.note && <p className="mt-5 text-sm leading-6 text-paper/55">{payment.note}</p>}
+                  </>
+                ) : (
+                  <p className="mt-6 text-sm leading-6 text-paper/60">
+                    Instruksi transfer sedang tidak ditampilkan. Pembayaran dibahas langsung lewat WhatsApp
+                    setelah harga disepakati.
+                  </p>
+                )}
+              </div>
+            </Reveal>
           </div>
         </section>
 
+        {/* ----------------------------------------------------------------- FAQ */}
         <section className="border-b border-line">
           <div className="wrap grid gap-10 py-16 sm:py-24 lg:grid-cols-[.75fr_1.25fr]">
-            <div>
-              <p className="eyebrow">Pertanyaan</p>
-              <h2 className="display mt-5 text-4xl sm:text-5xl">Hal yang sering ditanya.</h2>
-              <p className="mt-5 max-w-xs text-sm leading-6 text-mute">
-                Masih ada yang lain?{" "}
-                <a href={waLink()} target="_blank" rel="noreferrer" className="font-semibold text-ink underline decoration-ink/25 underline-offset-4 hover:decoration-ink">
-                  Chat kami
-                </a>
-                , dibalas manusia—bukan bot.
-              </p>
-            </div>
-            <div className="border-t border-line">
-              {faq.map(([question, answer]) => (
-                <details key={question} className="group border-b border-line">
-                  <summary className="flex cursor-pointer items-center justify-between gap-5 py-5 text-[15px] font-semibold leading-6">
-                    {question}
-                    <span aria-hidden className="text-xl font-normal text-ink/35 transition-transform duration-200 group-open:rotate-45">+</span>
-                  </summary>
-                  <p className="max-w-xl pb-5 text-sm leading-6 text-ink/60">{answer}</p>
-                </details>
-              ))}
-            </div>
+            <Reveal>
+              <div>
+                <p className="eyebrow flex items-center gap-2.5">
+                  <RegMark className="size-3.5 text-blue" />
+                  Pertanyaan
+                </p>
+                <h2 className="display mt-5 text-4xl sm:text-5xl">Hal yang sering ditanya.</h2>
+                <p className="mt-5 max-w-xs text-sm leading-6 text-mute">
+                  Masih ada yang lain?{" "}
+                  <a href={waLink()} target="_blank" rel="noreferrer" className="link-accent">
+                    Chat kami
+                  </a>
+                  , dibalas manusia—bukan bot.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal delay={100}>
+              <div className="border-t border-line">
+                {faq.map(([question, answer]) => (
+                  <details key={question} className="group border-b border-line">
+                    <summary className="flex cursor-pointer items-center justify-between gap-5 py-5 text-[15px] font-semibold leading-6 transition-colors hover:text-cyan">
+                      {question}
+                      <span aria-hidden className="grid size-6 shrink-0 place-items-center border border-line font-mono text-sm text-mute transition-all duration-300 group-open:rotate-45 group-open:border-cyan/60 group-open:text-cyan">
+                        +
+                      </span>
+                    </summary>
+                    <p className="max-w-xl pb-6 text-sm leading-6 text-ink/60">{answer}</p>
+                  </details>
+                ))}
+              </div>
+            </Reveal>
           </div>
         </section>
 
-        <section className="on-dark bg-[#080808] text-ink">
-          <div className="wrap grid gap-8 py-16 sm:py-24 lg:grid-cols-[1.2fr_auto] lg:items-end">
-            <div>
-              <p className="eyebrow">Mulai dari ceritamu</p>
-              <h2 className="display mt-5 text-[clamp(2.4rem,5.5vw,4.5rem)]">
-                Brief belum rapi?
-                <br />
-                <span className="font-serif font-normal italic tracking-[-0.02em]">Nggak masalah.</span>
-              </h2>
-              <p className="mt-5 max-w-lg text-sm leading-6 text-ink/60 sm:text-base sm:leading-7">
-                Pilih layanan dan isi yang sudah kamu tahu. Sisanya bisa dibicarakan setelahnya—lewat
-                WhatsApp, tanpa harus rapat.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/order" className="btn-on-dark">
-                Mulai pesan <span aria-hidden="true">→</span>
-              </Link>
-              <a href={waLink()} target="_blank" rel="noreferrer" className="btn-on-dark-line">
-                Tanya dulu
-              </a>
-            </div>
+        {/* ----------------------------------------------------------------- CTA */}
+        <section className="relative overflow-hidden">
+          <div aria-hidden className="pointer-events-none absolute -left-32 bottom-0 size-[26rem] rounded-full bg-cyan/[0.06] blur-[100px]" />
+          <div className="wrap relative grid gap-8 py-16 sm:py-24 lg:grid-cols-[1.2fr_auto] lg:items-end">
+            <Reveal>
+              <div>
+                <p className="eyebrow">Mulai dari ceritamu</p>
+                <h2 className="display mt-5 text-[clamp(2.4rem,5.5vw,4.5rem)]">
+                  Brief belum rapi?
+                  <br />
+                  <span className="font-serif font-normal italic tracking-[-0.02em] text-magenta">Nggak masalah.</span>
+                </h2>
+                <p className="mt-5 max-w-lg text-sm leading-6 text-ink/60 sm:text-base sm:leading-7">
+                  Pilih layanan dan isi yang sudah kamu tahu. Sisanya bisa dibicarakan setelahnya—lewat
+                  WhatsApp, tanpa harus rapat.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal delay={120}>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/order" className="btn-primary">
+                  Mulai pesan <span aria-hidden="true">→</span>
+                </Link>
+                <a href={waLink()} target="_blank" rel="noreferrer" className="btn-outline">
+                  Tanya dulu
+                </a>
+              </div>
+            </Reveal>
           </div>
         </section>
       </main>

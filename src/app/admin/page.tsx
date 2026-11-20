@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { StatusBadge } from "@/components/Chrome";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderEditor } from "@/components/OrderEditor";
+import { Barcode, CropCorners, RegMark } from "@/components/Press";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal } from "@/lib/format";
@@ -88,17 +89,21 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
     <AdminShell active="orders">
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div>
-          <p className="eyebrow">Admin</p>
+          <p className="eyebrow flex items-center gap-2.5">
+            <RegMark className="size-3.5 text-cyan" />
+            Admin
+          </p>
           <h1 className="display mt-4 text-4xl sm:text-5xl">Pesanan</h1>
           <p className="mt-2 text-sm text-mute">Kelola brief, harga, status, dan pembayaran.</p>
         </div>
-        <p className="text-sm text-mute">
-          Lunas terkumpul <span className="ml-1 font-semibold tabular-nums text-ink">{rupiah(paidTotal)}</span>
-        </p>
+        <div className="border border-line bg-panel/60 px-4 py-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">Lunas terkumpul</p>
+          <p className="mt-1 font-mono text-xl font-bold tabular-nums text-green">{rupiah(paidTotal)}</p>
+        </div>
       </div>
 
       {(saved || deleted) && (
-        <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-tag-sm border border-ink/15 bg-ink/[0.06] px-4 py-3 text-sm">
+        <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-green/35 bg-green/[0.07] px-4 py-3 text-sm">
           <span>{deleted ? `Pesanan ${deleted} sudah dihapus.` : "Perubahan pesanan tersimpan."}</span>
           <Link href={returnTo} className="font-semibold text-mute transition-colors hover:text-ink">
             Tutup
@@ -107,10 +112,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       )}
 
       <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Baru" value={count("menunggu")} hint="menunggu konfirmasi" href={keepSearch("/admin?s=menunggu")} />
-        <Stat label="Dikerjakan" value={count("dikerjakan") + count("revisi")} hint="termasuk revisi" />
-        <Stat label="Selesai" value={count("selesai")} hint="total pesanan selesai" />
-        <Stat label="Belum dibayar" value={unpaidCount} hint="harga sudah disepakati" href={keepSearch("/admin?p=belum")} />
+        <Stat label="Baru" value={count("menunggu")} hint="menunggu konfirmasi" href={keepSearch("/admin?s=menunggu")} accent="bg-yellow" />
+        <Stat label="Dikerjakan" value={count("dikerjakan") + count("revisi")} hint="termasuk revisi" accent="bg-cyan" />
+        <Stat label="Selesai" value={count("selesai")} hint="total pesanan selesai" accent="bg-green" />
+        <Stat label="Belum dibayar" value={unpaidCount} hint="harga sudah disepakati" href={keepSearch("/admin?p=belum")} accent="bg-magenta" />
       </div>
 
       <form action="/admin" method="get" className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -150,17 +155,17 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         </FilterLink>
       </nav>
 
-      <div className="mt-6 flex flex-wrap items-baseline justify-between gap-2 text-sm text-mute">
+      <div className="mt-6 flex flex-wrap items-baseline justify-between gap-2 font-mono text-xs text-mute">
         <p>
           {resultCount === 0
             ? "Tidak ada pesanan yang cocok."
             : `Menampilkan ${orders.length} dari ${resultCount} pesanan${q ? ` untuk “${q}”` : ""}.`}
         </p>
-        {resultCount > orders.length && <p className="text-xs">Batasi pencarian untuk melihat sisanya.</p>}
+        {resultCount > orders.length && <p>Batasi pencarian untuk melihat sisanya.</p>}
       </div>
 
       {orders.length === 0 ? (
-        <div className="mt-4 rounded-tag-lg border border-dashed border-line p-8 text-center">
+        <div className="relative mt-4 border border-dashed border-line p-8 text-center">
           <p className="font-semibold">
             {q
               ? `Tidak ada pesanan untuk “${q}”.`
@@ -193,11 +198,16 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
             return (
               <li key={o.id} className="border-b border-line">
                 <details className="group" open={o.code === openCode}>
-                  <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-1 py-5 transition-colors hover:bg-sand/50 sm:grid-cols-[7rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_1.25rem] sm:gap-4 sm:px-3">
-                    <span className="font-mono text-[13px] font-semibold tracking-wide">{o.code}</span>
+                  <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-1 py-5 transition-colors hover:bg-panel/60 sm:grid-cols-[9rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_6rem_1.25rem] sm:gap-4 sm:px-3">
+                    <span className="flex items-center gap-2.5">
+                      <span aria-hidden className="hidden h-6 w-10 shrink-0 sm:block">
+                        <Barcode value={o.code} height={24} className="text-ink/45" label="" />
+                      </span>
+                      <span className="font-mono text-[13px] font-bold tracking-wide">{o.code}</span>
+                    </span>
                     <span className="flex items-center gap-2 justify-self-end sm:hidden">
                       <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} />
-                      <span aria-hidden className="text-ink/30 transition-transform group-open:rotate-90">→</span>
+                      <span aria-hidden className="text-mute transition-transform group-open:rotate-90">→</span>
                     </span>
 
                     <span className="col-span-2 min-w-0 sm:col-span-1">
@@ -215,18 +225,18 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                     <span className="col-span-2 flex items-center justify-between gap-3 border-t border-line/70 pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
                       <span className="text-xs text-mute sm:hidden">Total</span>
                       <span className="text-right">
-                        <span className="block text-sm font-semibold tabular-nums">{price ? rupiah(price) : "—"}</span>
-                        <span className={`block text-xs ${o.paid ? "font-medium text-ink/60" : "text-mute"} sm:hidden`}>
+                        <span className="block font-mono text-sm font-semibold tabular-nums">{price ? rupiah(price) : "—"}</span>
+                        <span className={`block font-mono text-[11px] ${o.paid ? "font-medium text-green" : "text-mute"} sm:hidden`}>
                           {o.paid ? "Lunas" : price ? "Belum dibayar" : "Tanpa harga"}
                         </span>
                       </span>
                     </span>
 
-                    <span className="hidden text-right text-xs text-mute sm:block">{tanggal(o.created_at)}</span>
-                    <span aria-hidden className="hidden text-ink/30 transition-transform group-open:rotate-90 sm:block">→</span>
+                    <span className="hidden whitespace-nowrap text-right font-mono text-xs text-mute sm:block">{tanggal(o.created_at)}</span>
+                    <span aria-hidden className="hidden text-mute transition-transform group-open:rotate-90 sm:block">→</span>
                   </summary>
 
-                  <div className="grid gap-8 border-t border-line bg-panel/40 px-1 pb-7 pt-6 sm:px-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                  <div className="grid gap-8 border-t border-line bg-sand/60 px-1 pb-7 pt-6 sm:px-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                     <div className="space-y-5">
                       <div>
                         <p className="eyebrow">Brief</p>
@@ -241,7 +251,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                               href={`https://wa.me/${o.wa}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="font-medium underline decoration-ink/25 underline-offset-4 hover:decoration-ink"
+                              className="font-mono font-medium underline decoration-cyan/40 underline-offset-4 hover:decoration-cyan"
                             >
                               {o.wa}
                             </a>
@@ -255,7 +265,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                           <dt className="text-mute">Referensi</dt>
                           <dd className="mt-1 font-medium">
                             {o.ref_link ? (
-                              <a href={o.ref_link} target="_blank" rel="noreferrer" className="underline decoration-ink/25 underline-offset-4 hover:decoration-ink">
+                              <a href={o.ref_link} target="_blank" rel="noreferrer" className="underline decoration-cyan/40 underline-offset-4 hover:decoration-cyan">
                                 Buka link
                               </a>
                             ) : "—"}
@@ -289,8 +299,9 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                         returnTo={returnTo}
                       />
 
-                      <div className="rounded-tag-lg border border-[#c0392b]/25 bg-[#c0392b]/[0.04] p-5">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#e98078]">Hapus pesanan</p>
+                      <div className="relative border border-red/25 bg-red/[0.04] p-5">
+                        <CropCorners className="border-red/30" />
+                        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-red">Hapus pesanan</p>
                         <p className="mt-2 text-xs leading-5 text-mute">
                           Untuk pesanan duplikat, uji coba, atau yang sudah dibatalkan. Riwayat status ikut terhapus.
                         </p>
@@ -315,17 +326,18 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   );
 }
 
-function Stat({ label, value, hint, href }: { label: string; value: number; hint: string; href?: string }) {
+function Stat({ label, value, hint, href, accent }: { label: string; value: number; hint: string; href?: string; accent: string }) {
   const body = (
     <>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">{label}</p>
-      <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">{value}</p>
+      <span aria-hidden className={`absolute left-0 top-0 h-[3px] w-full ${accent}`} />
+      <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">{label}</p>
+      <p className="mt-2 font-mono text-3xl font-bold tabular-nums tracking-tight">{value}</p>
       <p className="mt-1 text-xs text-mute">{hint}</p>
     </>
   );
-  const className = "block rounded-tag-lg border border-line bg-panel/50 p-4 transition-colors sm:p-5";
+  const className = "relative block overflow-hidden border border-line bg-panel/60 p-4 transition-colors sm:p-5";
   return href ? (
-    <Link href={href} className={`${className} hover:border-ink/40`}>
+    <Link href={href} className={`${className} hover:border-cyan/50`}>
       {body}
     </Link>
   ) : (
@@ -338,8 +350,8 @@ function FilterLink({ href, active, children }: { href: string; active: boolean;
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`inline-flex min-h-10 items-center rounded-full border px-3.5 text-[12.5px] font-semibold transition-colors ${
-        active ? "border-ink bg-ink text-paper" : "border-line text-ink/60 hover:border-ink/40 hover:text-ink"
+      className={`inline-flex min-h-10 items-center rounded-full border px-3.5 font-mono text-[12px] font-semibold transition-colors ${
+        active ? "border-cyan bg-cyan text-[#04252b]" : "border-line text-ink/60 hover:border-cyan/50 hover:text-ink"
       }`}
     >
       {children}

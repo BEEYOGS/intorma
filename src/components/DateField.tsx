@@ -187,8 +187,8 @@ export function DateField({
                   aria-label={`${day} ${MONTHS[view.month]} ${view.year}`}
                   className={`grid size-9 place-items-center rounded-full text-[13px] font-medium tabular-nums transition-colors ${
                     selected
-                      ? "bg-ink text-paper"
-                      : `text-ink/75 hover:bg-ink/5 hover:text-ink ${isToday ? "border border-ink/30" : ""}`
+                      ? "bg-cyan text-[#04252b]"
+                      : `text-ink/75 hover:bg-ink/5 hover:text-ink ${isToday ? "border border-cyan/40" : ""}`
                   }`}
                 >
                   {day}

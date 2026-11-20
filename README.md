@@ -5,15 +5,17 @@ mendapat kode pesanan, memantau progres, dan melihat instruksi transfer. Admin m
 pesanan, layanan/harga, serta rekening pembayaran dari satu tempat.
 
 Stack: Next.js 15 (App Router) + Tailwind CSS 3 + Neon Postgres + OpenWA (opsional).
-Tampilan memakai tema gelap monokrom (latar arang, teks kertas hangat), tipografi editorial,
-dan aset logo milik sendiri. Seluruh font di-host lokal lewat `next/font/local`, jadi tidak ada
+Tampilan memakai tema **"ruang cetak"**: latar baja gelap, teks putih kertas hangat,
+tinta proses CMYK (cyan/magenta/yellow) sebagai aksen, tiket kertas berlubang,
+registration mark, crop corner, dan barcode Code39 asli. Arah visual lengkap ada di
+`DESIGN.md`. Seluruh font di-host lokal lewat `next/font/local`, jadi tidak ada
 permintaan ke Google Fonts.
 
 ## Menjalankan lokal
 
 1. `npm install`
 2. Salin `.env.example` ke `.env.local`, lalu isi nilainya.
-3. `npm run db:migrate` — membuat tabel, kolom baru, dan 6 layanan contoh.
+3. `npm run db:migrate` — membuat tabel, kolom baru, dan 10 layanan contoh.
 4. `npm run dev` → http://localhost:3000 (port bisa berbeda; lihat output Next).
 
 Halaman:
@@ -57,22 +59,21 @@ Logo BCA asli disimpan sebagai `public/bca.svg`, diambil dari [Wikimedia Commons
 ## WhatsApp (OpenWA gateway)
 
 Notifikasi WA memakai [OpenWA](https://github.com/rmyndharis/OpenWA) — gateway WhatsApp
-self-hosted (NestJS). Di mesin ini repo-nya ada di `..\OpenWA` dan dijalankan **tanpa Docker**
-memakai Node 22 portable (`.tools\node22`), karena build native `better-sqlite3` di Node 26
-butuh Visual Studio C++ yang tidak terpasang.
+self-hosted (NestJS). Di mesin ini repo-nya ada di `C:\Users\Deskprint\Documents\OpenWA`
+(diatur lewat `OPENWA_DIR` di `.env.local`) dan dijalankan **tanpa Docker** memakai
+engine **Baileys** (`ENGINE_TYPE=baileys` di `OpenWA\.env`) — tidak butuh Chrome sama
+sekali. Database gateway SQLite lokal; `AUTO_START_SESSIONS=true` membuat sesi tersambung
+otomatis tiap gateway hidup, jadi QR hanya perlu discan ulang kalau sesi logout.
 
-Persiapan sekali:
+Persiapan sekali (sudah dilakukan di mesin ini):
 
-    cd ..\OpenWA
-    # --ignore-scripts: lewati node-gyp (better-sqlite3 13 sudah bawa prebuilt N-API)
-    $env:PUPPETEER_SKIP_DOWNLOAD='1'
-    C:\Users\<user>\.tools\node22\npm.cmd install --ignore-scripts
-    # patch whatsapp-web.js yang biasanya dipasang saat install
-    C:\Users\<user>\.tools\node22\node.exe scripts\postinstall.js
-    C:\Users\<user>\.tools\node22\npm.cmd run build
+    cd C:\Users\Deskprint\Documents\OpenWA
+    npm install --ignore-scripts
+    npm run build
+    # .env gateway: ENGINE_TYPE=baileys, DATABASE_TYPE=sqlite, PORT=2785,
+    # AUTO_START_SESSIONS=true, WEBHOOK_SSRF_PROTECT=false, API_MASTER_KEY=<acak>
 
-Butuh Chrome terpasang (dipakai lewat `PUPPETEER_EXECUTABLE_PATH` di `..\OpenWA\.env`).
-`WEBHOOK_SSRF_PROTECT=false` di file itu supaya webhook boleh dikirim ke `127.0.0.1`.
+`WEBHOOK_SSRF_PROTECT=false` supaya webhook boleh dikirim ke `127.0.0.1`.
 
 Lalu dari folder `intorma`:
 
@@ -94,6 +95,16 @@ dengan nomor gateway, jadi untuk mencoba perintah ini pakai nomor WhatsApp lain 
 nomor sendiri diabaikan untuk menghindari loop).
 
 Kalau OpenWA mati, pesanan tetap tersimpan; hanya notifikasi WA yang dilewati.
+
+**Supaya notifikasi WA jalan dari situs Vercel:** Vercel tidak bisa menjangkau
+`127.0.0.1` di komputer ini. Buka tunnel publik ke gateway (port 2785), mis.:
+
+    .tools\cloudflared.exe tunnel --url http://127.0.0.1:2785 --no-autoupdate
+
+lalu isi `OPENWA_URL=https://<nama-tunnel>.trycloudflare.com` dan
+`OPENWA_KEY=<API_MASTER_KEY gateway>` di Environment Variables Vercel. URL tunnel
+cepat berubah tiap restart — untuk produksi sebenarnya, jalankan gateway di VPS
+dengan domain tetap.
 
 ## Environment
 

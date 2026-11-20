@@ -39,7 +39,7 @@ export function CopyButton({
     <button
       type="button"
       onClick={copy}
-      className={`inline-flex min-h-9 items-center gap-1.5 rounded-tag-sm border border-line bg-panel/70 px-3 text-xs font-semibold text-ink/70 transition-colors hover:border-ink hover:text-ink ${className}`}
+      className={`inline-flex min-h-9 items-center gap-1.5 rounded-tag-sm border border-line bg-panel/70 px-3 text-xs font-semibold text-ink/70 transition-colors hover:border-cyan hover:text-cyan ${className}`}
       aria-live="polite"
     >
       {copied ? "Tersalin" : label}

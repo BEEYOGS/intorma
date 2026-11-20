@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
+import { RegMark } from "@/components/Press";
 import { SettingsForm } from "@/components/SettingsForm";
 import { isAdmin } from "@/lib/auth";
 import { normalizeWA } from "@/lib/format";
@@ -18,7 +19,10 @@ export default async function SettingsAdmin() {
   return (
     <AdminShell active="settings">
       <div>
-        <p className="eyebrow">Admin</p>
+        <p className="eyebrow flex items-center gap-2.5">
+          <RegMark className="size-3.5 text-yellow" />
+          Admin
+        </p>
         <h1 className="display mt-4 text-4xl sm:text-5xl">Pengaturan</h1>
         <p className="mt-2 max-w-xl text-sm leading-6 text-mute">
           Rekening pembayaran dan info yang tampil ke klien.

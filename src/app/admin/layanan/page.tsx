@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
+import { RegMark } from "@/components/Press";
 import { ServiceForm } from "@/components/ServiceForm";
 import { isAdmin } from "@/lib/auth";
 import { getAllServices } from "@/lib/db";
@@ -16,7 +17,10 @@ export default async function ServicesAdmin() {
   return (
     <AdminShell active="services">
       <div>
-        <p className="eyebrow">Admin</p>
+        <p className="eyebrow flex items-center gap-2.5">
+          <RegMark className="size-3.5 text-magenta" />
+          Admin
+        </p>
         <h1 className="display mt-4 text-4xl sm:text-5xl">Layanan &amp; harga</h1>
         <p className="mt-2 max-w-xl text-sm leading-6 text-mute">
           Atur item yang tampil di halaman pesan. Harga di sini adalah harga awal; harga final per

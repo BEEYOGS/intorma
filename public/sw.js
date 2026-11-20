@@ -1,5 +1,5 @@
 /* in.torma service worker — only public pages are cached. */
-const CACHE = "intorma-v1";
+const CACHE = "intorma-v2";
 const SHELL = [
   "/",
   "/order",
