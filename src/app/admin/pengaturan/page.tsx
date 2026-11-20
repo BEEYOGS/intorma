@@ -3,7 +3,6 @@ import { AdminShell } from "@/components/AdminShell";
 import { RegMark } from "@/components/Press";
 import { SettingsForm } from "@/components/SettingsForm";
 import { isAdmin } from "@/lib/auth";
-import { normalizeWA } from "@/lib/format";
 import { getPaymentSettings } from "@/lib/settings";
 import { waDisplay } from "@/lib/site";
 
@@ -13,8 +12,7 @@ export const metadata = { title: "Pengaturan", robots: { index: false } };
 export default async function SettingsAdmin() {
   if (!(await isAdmin())) redirect("/admin/login");
   const payment = await getPaymentSettings();
-  const envWa = normalizeWA(process.env.ADMIN_WA ?? "");
-  const waNumber = envWa ? `+${envWa}` : waDisplay;
+  const waNumber = waDisplay;
 
   return (
     <AdminShell active="settings">

@@ -1,8 +1,9 @@
-// Gateway lokal untuk in.tarma:
+// Gateway lokal untuk in.torma:
 //   1. membuka tunnel publik (cloudflared quick tunnel) ke app Next.js
 //   2. menjalankan Next.js (kalau belum jalan)
 //   3. memastikan OpenWA gateway jalan, sesi WhatsApp aktif, dan webhook
-//      sesi itu menunjuk ke /api/wa/webhook lewat URL tunnel
+//      sesi itu menunjuk ke /api/wa/webhook lewat URL app lokal
+//   4. menjalankan worker antrean wa_outbox (notifikasi dari DB)
 //
 // Pakai: npm run gateway   (APP_PORT=3001 secara default)
 import { spawn } from "node:child_process";
@@ -186,14 +187,14 @@ async function ensureSession() {
     if (!created.ok) throw new Error(`buat sesi gagal: HTTP ${created.status} ${created.text.slice(0, 200)}`);
     session = created.json;
   }
-  if (session.status !== "ready") {
+  if (!["ready", "qr_ready", "authenticating", "initializing"].includes(String(session.status))) {
     const started = await openwaApi(`/api/sessions/${session.id}/start`, { method: "POST" });
     if (!started.ok && started.status !== 400) {
       throw new Error(`start sesi gagal: HTTP ${started.status} ${started.text.slice(0, 200)}`);
     }
-    console.log(`[gateway] sesi "${sessionName}" status: ${started.json?.status ?? session.status}`);
   }
-  return session;
+  const info = await openwaApi(`/api/sessions/${session.id}`);
+  return info.json ?? session;
 }
 
 async function ensureWebhook(sessionId, webhookUrl) {
@@ -229,9 +230,7 @@ try {
   console.warn("[gateway] lanjut tanpa URL publik (link pesan memakai localhost).");
 }
 const siteUrl = publicUrl || localApp;
-// Webhook dikirim ke app di mesin yang sama; OpenWA dijalankan dengan
-// WEBHOOK_SSRF_PROTECT=false sehingga 127.0.0.1 diizinkan. URL tunnel tidak
-// dipakai untuk webhook karena DNS quick tunnel bisa belum siap / berubah.
+// Webhook ke app lokal (OpenWA di mesin yang sama, SSRF protect lokal dimatikan di gateway).
 const webhookUrl = `${localApp}/api/wa/webhook?s=${encodeURIComponent(secret)}`;
 
 const running = await reachable(localApp);
@@ -259,6 +258,15 @@ try {
   await ensureOpenwa();
   const session = await ensureSession();
   const hook = await ensureWebhook(session.id, webhookUrl);
+
+  // Kirim pesan wa_outbox dari database (berguna juga untuk deployment publik).
+  const agent = run("agent", process.execPath, [join(root, "scripts", "wa-agent.mjs")], {
+    cwd: root,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  prefix(agent.stdout, "[agent]");
+  prefix(agent.stderr, "[agent]");
+
   const line = "-".repeat(64);
   console.log(`\n${line}
   Situs lokal : ${localApp}
@@ -267,6 +275,7 @@ try {
   OpenWA API  : ${openwaUrl}
   Sesi WA     : ${sessionName} (${session.id}) status ${session.status}
   Webhook sesi: ${hook.id ?? "?"} ${hook.updated ? "(URL diperbarui)" : "(baru/ sudah benar)"}
+  Worker antre: berjalan (wa_outbox)
 ${line}
   ${session.status === "ready" ? "WhatsApp sudah tertaut." : "Belum tertaut: jalankan `npm run wa:session` lalu scan QR."}
   Ctrl+C untuk menghentikan tunnel + app + OpenWA.

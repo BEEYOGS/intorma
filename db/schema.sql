@@ -58,6 +58,30 @@ create table if not exists app_settings (
   updated_at timestamptz not null default now()
 );
 
+-- Antrean WhatsApp. Vercel tidak bisa menjangkau OpenWA yang berjalan di
+-- komputer lokal, jadi notifikasi disimpan di sini lalu dikirim oleh
+-- `npm run wa:agent` di mesin yang menjalankan OpenWA.
+create table if not exists wa_outbox (
+  id bigserial primary key,
+  to_number text not null,
+  chat_id text,
+  content text not null,
+  status text not null default 'pending',
+  attempts int not null default 0,
+  last_error text,
+  idempotency_key text,
+  next_attempt_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  sent_at timestamptz
+);
+
+alter table wa_outbox add column if not exists chat_id text;
+alter table wa_outbox add column if not exists idempotency_key text;
+
+create index if not exists wa_outbox_pending_idx on wa_outbox(status, next_attempt_at);
+create unique index if not exists wa_outbox_idempotency_idx
+  on wa_outbox(idempotency_key) where idempotency_key is not null;
+
 insert into app_settings (key, value) values
   ('payment_enabled', '1'),
   ('bank_name', 'BCA'),

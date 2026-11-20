@@ -35,8 +35,8 @@ export default async function OrderPage({
               <span className="font-serif font-normal italic tracking-[-0.02em] text-ink">kebutuhanmu.</span>
             </h1>
             <p className="enter mt-6 max-w-xl text-sm leading-6 text-ink/65 sm:text-base sm:leading-7" style={{ "--enter-delay": "120ms" } as React.CSSProperties}>
-              Satu formulir, sekitar dua menit. Setelah terkirim kamu mendapat kode pesanan dan salinannya
-              lewat WhatsApp.
+              Satu formulir, sekitar dua menit. Setelah terkirim kode pesanan langsung tampil di layar,
+              dan salinannya kami kirim lewat WhatsApp.
             </p>
           </div>
         </div>

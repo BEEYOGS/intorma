@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/Chrome";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderEditor } from "@/components/OrderEditor";
 import { Barcode, CropCorners, RegMark } from "@/components/Press";
+import { WhatsAppLink } from "@/components/WhatsApp";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal } from "@/lib/format";
@@ -247,14 +248,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                         <div>
                           <dt className="text-mute">WhatsApp</dt>
                           <dd className="mt-1">
-                            <a
-                              href={`https://wa.me/${o.wa}`}
-                              target="_blank"
-                              rel="noreferrer"
+                            <WhatsAppLink
+                              text={`Halo ${o.name}, saya dari in.torma soal pesanan ${o.code}.`}
                               className="font-mono font-medium underline decoration-ink/40 underline-offset-4 hover:decoration-ink"
                             >
                               {o.wa}
-                            </a>
+                            </WhatsAppLink>
                           </dd>
                         </div>
                         <div>
@@ -278,9 +277,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       </dl>
 
                       <div className="flex flex-wrap gap-2 pt-1">
-                        <a href={`https://wa.me/${o.wa}`} target="_blank" rel="noreferrer" className="btn-outline min-h-10 px-4 text-sm">
+                        <WhatsAppLink
+                          text={`Halo ${o.name}, saya dari in.torma soal pesanan ${o.code}.`}
+                          className="btn-outline min-h-10 px-4 text-sm"
+                        >
                           Chat klien <span aria-hidden="true">→</span>
-                        </a>
+                        </WhatsAppLink>
                         <Link href={`/lacak/${o.code}`} className="btn-ghost min-h-10 px-4 text-sm">
                           Lihat halaman klien
                         </Link>

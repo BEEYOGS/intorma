@@ -4,12 +4,12 @@ import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav, StatusBadge } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
 import { Barcode, ToneChips, CropCorners, RegMark, Reveal } from "@/components/Press";
+import { WhatsAppLink } from "@/components/WhatsApp";
 import { sql } from "@/lib/db";
 import { jam, rupiah, tanggal } from "@/lib/format";
 import { priceBreakdown } from "@/lib/pricing";
 import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, isStatus, type Status } from "@/lib/status";
-import { waLink } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status pesanan" };
@@ -68,14 +68,16 @@ export default async function TrackPage({
                     <div>
                       <p className="eyebrow !text-ink">Pesanan diterima</p>
                       <p className="mt-2 text-xl font-semibold tracking-tight">Simpan kode pesanan kamu.</p>
-                      <p className="mt-1 text-sm text-ink/60">Salinannya juga dikirim ke WhatsApp.</p>
+                      <p className="mt-1 text-sm text-ink/60">
+                        Salinannya juga dikirim ke WhatsApp. Kalau belum masuk, simpan kode di halaman ini.
+                      </p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <CopyButton value={order.code} label="Salin kode" />
-                    <a href={waLink(`status ${order.code}`)} target="_blank" rel="noreferrer" className="btn-primary min-h-9 px-4 text-sm">
+                    <WhatsAppLink text={`status ${order.code}`} className="btn-primary min-h-9 px-4 text-sm">
                       Buka WhatsApp
-                    </a>
+                    </WhatsAppLink>
                   </div>
                 </div>
               </div>
@@ -233,14 +235,12 @@ export default async function TrackPage({
                         <CopyButton value={payment.bankAccount} label="Salin nomor rekening" className="mt-3" />
                         {payment.note && <p className="mt-3 border-t border-line pt-3 text-xs leading-5 text-ink/55">{payment.note}</p>}
                       </div>
-                      <a
-                        href={waLink(`Halo in.torma, saya mau konfirmasi transfer untuk pesanan ${order.code}.`)}
-                        target="_blank"
-                        rel="noreferrer"
+                      <WhatsAppLink
+                        text={`Halo in.torma, saya mau konfirmasi transfer untuk pesanan ${order.code}.`}
                         className="btn-primary mt-4 min-h-11 w-full px-4 text-sm"
                       >
                         Konfirmasi transfer <span aria-hidden="true">→</span>
-                      </a>
+                      </WhatsAppLink>
                       <p className="mt-2 text-xs leading-5 text-mute">Sertakan kode {order.code} di pesan supaya cepat dicek.</p>
                     </>
                   ) : (
@@ -292,14 +292,12 @@ export default async function TrackPage({
 
             <p className="text-sm leading-6 text-mute">
               Ada yang ingin diubah?{" "}
-              <a
-                href={waLink(`Halo in.torma, saya mau tanya soal pesanan ${order.code}.`)}
-                target="_blank"
-                rel="noreferrer"
+              <WhatsAppLink
+                text={`Halo in.torma, saya mau tanya soal pesanan ${order.code}.`}
                 className="link-accent"
               >
                 Chat WhatsApp
-              </a>
+              </WhatsAppLink>
               .
             </p>
           </aside>

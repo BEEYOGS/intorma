@@ -67,17 +67,24 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
 
   let order: { id: number; code: string } | undefined;
   for (let i = 0; i < 5 && !order; i++) {
+    // Satu perintah: order dan event pertama tersimpan bersama atau tidak sama
+    // sekali, jadi halaman lacak tidak pernah menampilkan order tanpa riwayat.
     const rows = await sql`
-      insert into orders (code, name, wa, service_id, brief, ref_link, deadline, qty, unit_rate, price)
-      values (${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${values.brief}, ${values.ref || null}, ${values.deadline || null},
-        ${priced.qty}, ${priced.unitRate}, ${priced.price})
-      on conflict (code) do nothing returning id, code`;
+      with inserted as (
+        insert into orders (code, name, wa, service_id, brief, ref_link, deadline, qty, unit_rate, price)
+        values (${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${values.brief}, ${values.ref || null}, ${values.deadline || null},
+          ${priced.qty}, ${priced.unitRate}, ${priced.price})
+        on conflict (code) do nothing
+        returning id, code
+      ), event as (
+        insert into order_events (order_id, status, note)
+        select id, 'menunggu', 'Pesanan diterima' from inserted
+      )
+      select id, code from inserted`;
     const inserted = rows[0] as { id: number; code: string } | undefined;
     order = inserted;
   }
   if (!order) return { error: "Gagal menyimpan pesanan. Coba kirim lagi.", values };
-
-  await sql`insert into order_events (order_id, status, note) values (${order.id}, 'menunggu', 'Pesanan diterima')`;
 
   const link = `${siteUrl()}/lacak/${order.code}`;
   await Promise.all([
@@ -104,10 +111,12 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
 }
 
 export async function lookupOrder(_prev: { error?: string } | null, f: FormData) {
-  const code = str(f, "kode").toUpperCase().replace(/\s/g, "");
-  const full = code.startsWith("INT-") ? code : `INT-${code}`;
+  // Terima "ABC123", "INT-ABC123", atau tempelan dengan spasi/tanda hubung.
+  const raw = str(f, "kode").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^INT/, "");
+  if (raw.length !== 6) return { error: "Kode pesanan terdiri dari 6 huruf/angka, mis. INT-ABC123." };
+  const full = `INT-${raw}`;
   const found = (await sql`select code from orders where code = ${full}`)[0];
-  if (!found) return { error: "Kode tidak ditemukan. Cek lagi pesan WhatsApp yang kamu terima." };
+  if (!found) return { error: "Kode tidak ditemukan. Cek lagi kode yang kamu terima." };
   redirect(`/lacak/${full}`);
 }
 

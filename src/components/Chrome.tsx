@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { InstallButton } from "@/components/PWA";
 import { Barcode, ToneChips, RegMark, ScrollProgress } from "@/components/Press";
-import { SITE_NAME, TAGLINE, waDisplay, waLink } from "@/lib/site";
+import { WhatsAppLink } from "@/components/WhatsApp";
+import { SITE_NAME, TAGLINE, waDisplay } from "@/lib/site";
 
 const wordmark = { src: "/int.svg", alt: `${SITE_NAME} — ${TAGLINE}` };
 
@@ -139,9 +140,9 @@ export function Nav() {
             ))}
             <div className="mt-8 flex items-center justify-between">
               <ToneChips />
-              <a href={waLink()} target="_blank" rel="noreferrer" className="font-mono text-xs uppercase tracking-[0.2em] text-mute">
+              <WhatsAppLink className="font-mono text-xs uppercase tracking-[0.2em] text-mute">
                 {waDisplay}
-              </a>
+              </WhatsAppLink>
             </div>
           </nav>
         </div>
@@ -162,9 +163,9 @@ export function Footer() {
               Studio desain &amp; cetak independen. Logo, poster, konten sosial, kemasan, sampai spanduk
               dan kartu nama. Brief singkat, harga jelas, progres bisa dipantau.
             </p>
-            <a href={waLink()} target="_blank" rel="noreferrer" className="btn-primary mt-7">
+            <WhatsAppLink className="btn-primary mt-7">
               Chat WhatsApp <span aria-hidden="true">→</span>
-            </a>
+            </WhatsAppLink>
             <InstallButton />
           </div>
 
@@ -178,9 +179,9 @@ export function Footer() {
             </nav>
             <div className="flex flex-col gap-3">
               <p className="eyebrow mb-1">Kontak</p>
-              <a href={waLink()} target="_blank" rel="noreferrer" className="text-ink/75 transition-colors hover:text-ink">
+              <WhatsAppLink className="text-ink/75 transition-colors hover:text-ink">
                 WhatsApp
-              </a>
+              </WhatsAppLink>
               <a href="https://instagram.com/aku.vza" target="_blank" rel="noreferrer" className="text-ink/75 transition-colors hover:text-ink">
                 Instagram @aku.vza
               </a>

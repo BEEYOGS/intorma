@@ -3,11 +3,11 @@ import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
 import { Barcode, ToneChips, CropCorners, RegMark, Reveal, Ticker } from "@/components/Press";
+import { WhatsAppLink } from "@/components/WhatsApp";
 import { getServices, type Service } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { priceLabel } from "@/lib/pricing";
 import { getPaymentSettings } from "@/lib/settings";
-import { waLink } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -230,14 +230,12 @@ export default async function Home() {
             <Reveal>
               <p className="mt-10 text-sm text-mute">
                 Belum tahu harus pilih apa?{" "}
-                <a
-                  href={waLink("Halo in.torma, saya belum tahu butuh layanan apa. Boleh minta arahan?")}
-                  target="_blank"
-                  rel="noreferrer"
+                <WhatsAppLink
+                  text="Halo in.torma, saya belum tahu butuh layanan apa. Boleh minta arahan?"
                   className="link-accent"
                 >
                   Ceritakan saja lewat WhatsApp
-                </a>
+                </WhatsAppLink>
                 .
               </p>
             </Reveal>
@@ -329,14 +327,12 @@ export default async function Home() {
                     {payment.bankHolder && <p className="mt-3 text-sm text-paper/60">a.n. {payment.bankHolder}</p>}
                     <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-dashed border-paper/25 pt-5">
                       <CopyButton value={payment.bankAccount} label="Salin nomor" className="!border-paper/25 !bg-paper/5 !text-paper hover:!border-paper hover:!text-paper" />
-                      <a
-                        href={waLink("Halo in.torma, saya mau konfirmasi transfer pesanan.")}
-                        target="_blank"
-                        rel="noreferrer"
+                      <WhatsAppLink
+                        text="Halo in.torma, saya mau konfirmasi transfer pesanan."
                         className="btn-on-dark min-h-10 px-4 text-sm"
                       >
                         Konfirmasi via WhatsApp <span aria-hidden="true">→</span>
-                      </a>
+                      </WhatsAppLink>
                     </div>
                     {payment.note && <p className="mt-5 text-sm leading-6 text-paper/55">{payment.note}</p>}
                   </>
@@ -363,9 +359,7 @@ export default async function Home() {
                 <h2 className="display mt-5 text-4xl sm:text-5xl">Hal yang sering ditanya.</h2>
                 <p className="mt-5 max-w-xs text-sm leading-6 text-mute">
                   Masih ada yang lain?{" "}
-                  <a href={waLink()} target="_blank" rel="noreferrer" className="link-accent">
-                    Chat kami
-                  </a>
+                  <WhatsAppLink className="link-accent">Chat kami</WhatsAppLink>
                   , dibalas manusia—bukan bot.
                 </p>
               </div>
@@ -411,9 +405,7 @@ export default async function Home() {
                 <Link href="/order" className="btn-primary">
                   Mulai pesan <span aria-hidden="true">→</span>
                 </Link>
-                <a href={waLink()} target="_blank" rel="noreferrer" className="btn-outline">
-                  Tanya dulu
-                </a>
+                <WhatsAppLink className="btn-outline">Tanya dulu</WhatsAppLink>
               </div>
             </Reveal>
           </div>

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   }
 
   const body = String(msg.body ?? msg.text ?? msg.content ?? "");
-  const match = body.match(/status\s+(?:INT-)?([A-Z0-9]{6})/i);
+  const match = body.match(/status\s*[:#-]?\s*(?:INT[-\s]?)?([A-Z0-9]{6})/i);
   if (!match) return NextResponse.json({ ok: true, ignored: true });
 
   const code = `INT-${match[1].toUpperCase()}`;
@@ -53,6 +53,8 @@ export async function POST(req: Request) {
     reply = lines.filter(Boolean).join("\n");
   }
 
-  await sendWA(String(msg.from).replace(/@.*/, ""), reply);
+  const sender = String(msg.from ?? msg.chatId ?? "").trim();
+  const msgId = String(msg.id ?? "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 120);
+  await sendWA(sender, reply, msgId ? { idempotencyKey: `wa-reply-${msgId}` } : undefined);
   return NextResponse.json({ ok: true });
 }

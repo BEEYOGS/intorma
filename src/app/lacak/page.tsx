@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { lookupOrder } from "@/app/actions";
 import { Footer, Nav } from "@/components/Chrome";
 import { Barcode, ToneChips, CropCorners, RegMark } from "@/components/Press";
-import { waLink } from "@/lib/site";
+import { WhatsAppLink } from "@/components/WhatsApp";
 
 export default function LacakPage() {
   const [state, action, pending] = useActionState(lookupOrder, null);
@@ -50,9 +50,9 @@ export default function LacakPage() {
                   <dt className="font-semibold">Bisa juga lewat chat</dt>
                   <dd className="mt-1 text-mute">
                     Kirim “status INT-XXXXXX” ke{" "}
-                    <a href={waLink("status INT-")} target="_blank" rel="noreferrer" className="link-accent">
+                    <WhatsAppLink text="status INT-" className="link-accent">
                       WhatsApp kami
-                    </a>{" "}
+                    </WhatsAppLink>{" "}
                     untuk balasan otomatis.
                   </dd>
                 </div>

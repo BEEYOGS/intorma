@@ -5,107 +5,98 @@ mendapat kode pesanan, memantau progres, dan melihat instruksi transfer. Admin m
 pesanan, layanan/harga, serta rekening pembayaran dari satu tempat.
 
 Stack: Next.js 15 (App Router) + Tailwind CSS 3 + Neon Postgres + OpenWA (opsional).
-Tampilan memakai tema **monochrome intorma**: ramp lima nada dari swatch merek
-(putih `#f5f7f9`, silver `#c6c8c9`, steel `#8a8d8e`, coal `#3a3d3d`, hitam),
-sudut khas kiri-atas/kanan-atas/kanan-bawah rounded dengan kiri-bawah tajam,
-tiket kertas berlubang, registration mark, crop corner, dan barcode Code39 asli.
-Arah visual lengkap ada di `DESIGN.md`. Seluruh font di-host lokal lewat `next/font/local`, jadi tidak ada
-permintaan ke Google Fonts.
+Tampilan memakai tema **monochrome intorma** (ramp swatch merek, sudut khas, tiket/barcode).
+Detail visual ada di `DESIGN.md`. Font di-host lokal lewat `next/font/local`.
+
+> URL produksi yang aktif: **https://intorma-psi.vercel.app**. Domain `torma-psi.vercel.app`
+> (tanpa `in`) bukan alias deployment ini dan akan menampilkan 404 Vercel sampai alias/dns
+> diperbaiki di pengaturan project Vercel.
 
 ## Menjalankan lokal
 
 1. `npm install`
 2. Salin `.env.example` ke `.env.local`, lalu isi nilainya.
-3. `npm run db:migrate` — membuat tabel, kolom baru, dan 10 layanan contoh.
-4. `npm run dev` → http://localhost:3000 (port bisa berbeda; lihat output Next).
+3. `npm run db:migrate` — membuat tabel, kolom baru, `wa_outbox`, dan seed layanan.
+4. `npm run dev` → http://localhost:3000 (atau port yang ditampilkan Next).
 
 Halaman:
 
 | URL | Isi |
 | --- | --- |
 | `/` | Beranda: layanan, cara kerja, pembayaran, FAQ |
-
-Harga layanan cetak dihitung otomatis dari jumlah yang diisi pelanggan (mis. spanduk
-Rp25.000/meter × panjang). Riset harga awal dan sumbernya ada di `PRICING.md`; pengaturan
-mode harga, satuan, dan batas jumlah ada di `/admin/layanan`.
-
-| `/order` | Formulir pesanan |
+| `/order` | Formulir pesanan (harga per item bisa dihitung otomatis) |
 | `/lacak` | Cari pesanan dengan kode |
 | `/lacak/INT-XXXXXX` | Status, riwayat, harga, dan pembayaran |
-| `/admin` | Daftar pesanan, filter status, edit harga/status/pembayaran |
-| `/admin/layanan` | Tambah, ubah, aktif/nonaktifkan layanan dan harga |
+| `/admin` | Daftar pesanan, filter, edit harga/status/pembayaran |
+| `/admin/layanan` | Kelola layanan dan harga |
 | `/admin/pengaturan` | Rekening pembayaran dan catatan transfer |
 
 Password admin berasal dari `ADMIN_PASSWORD`. Sesi disimpan dalam cookie bertanda tangan
-`ADMIN_SECRET` (isi string acak yang panjang).
+`ADMIN_SECRET`.
 
 ## Pembayaran
 
-Instruksi transfer disimpan di tabel `app_settings`, bukan di environment, supaya bisa diubah
-dari `/admin/pengaturan`. Nilai awal:
+Instruksi transfer disimpan di tabel `app_settings` (bisa diubah dari `/admin/pengaturan`).
+Setelah transfer terverifikasi, admin mencentang **"Pembayaran sudah masuk"** di pesanan dan
+halaman lacak klien menampilkan status **Lunas**.
 
-- Bank **BCA**
-- Nomor rekening **8171700213**
-- Atas nama **Yogi**
-
-Setelah pelanggan transfer, admin membuka pesanan di `/admin` lalu mencentang
-**“Pembayaran sudah masuk”**. Halaman lacak pelanggan langsung menampilkan status **Lunas**.
-Pelanggan juga bisa menekan tombol konfirmasi transfer yang membuka WhatsApp dengan kode
-pesanan sudah terisi.
-
-Logo BCA asli disimpan sebagai `public/bca.svg`, diambil dari [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Bank_Central_Asia.svg)
-(`Bank Central Asia.svg`, PD-textlogo). Logo hanya tampil bila nama bank di pengaturan mengandung
-“BCA”; untuk bank lain tampil teks saja. Merek BCA tetap milik PT Bank Central Asia Tbk.
+Logo BCA di `public/bca.svg` hanya tampil bila nama bank mengandung "BCA".
 
 ## WhatsApp (OpenWA gateway)
 
-Notifikasi WA memakai [OpenWA](https://github.com/rmyndharis/OpenWA) — gateway WhatsApp
-self-hosted (NestJS). Di mesin ini repo-nya ada di `C:\Users\Deskprint\Documents\OpenWA`
-(diatur lewat `OPENWA_DIR` di `.env.local`) dan dijalankan **tanpa Docker** memakai
-engine **Baileys** (`ENGINE_TYPE=baileys` di `OpenWA\.env`) — tidak butuh Chrome sama
-sekali. Database gateway SQLite lokal; `AUTO_START_SESSIONS=true` membuat sesi tersambung
-otomatis tiap gateway hidup, jadi QR hanya perlu discan ulang kalau sesi logout.
+Integrasi memakai [OpenWA](https://openwa.dev) gateway self-hosted. Ada tiga fungsi berbeda:
 
-Persiapan sekali (sudah dilakukan di mesin ini):
+1. **Tautan chat publik** (`wa.me` / WhatsApp Web) — selalu bekerja, tidak butuh gateway.
+2. **Notifikasi keluar** (order baru ke admin, update status ke pelanggan) — dikirim lewat OpenWA.
+3. **Balasan otomatis masuk** (`status INT-XXXXXX`) — masuk lewat webhook OpenWA ke `/api/wa/webhook`.
 
-    cd C:\Users\Deskprint\Documents\OpenWA
-    npm install --ignore-scripts
-    npm run build
-    # .env gateway: ENGINE_TYPE=baileys, DATABASE_TYPE=sqlite, PORT=2785,
-    # AUTO_START_SESSIONS=true, WEBHOOK_SSRF_PROTECT=false, API_MASTER_KEY=<acak>
+Karena **Vercel tidak bisa menjangkau OpenWA di `localhost`**, notifikasi keluar dari deployment
+Vercel disimpan ke tabel `wa_outbox` di database, lalu dikirim oleh worker yang berjalan di
+komputer yang menjalankan OpenWA.
 
-`WEBHOOK_SSRF_PROTECT=false` supaya webhook boleh dikirim ke `127.0.0.1`.
+### Jalankan OpenWA + worker (notifikasi dari Vercel)
 
-Lalu dari folder `intorma`:
+1. Jalankan gateway OpenWA dan pastikan `.env.local` berisi `OPENWA_URL`, `OPENWA_KEY`,
+   `OPENWA_SESSION`, `DATABASE_URL`.
+2. Tautkan sesi WhatsApp (scan QR):
 
-    npm run openwa        # gateway di http://127.0.0.1:2785
-    npm run wa:session    # buat/start sesi "intorma", simpan QR ke .tools\qr-intorma.png
-    # buka PNG itu -> WhatsApp > Perangkat tertaut -> scan
+   ```bash
+   npm run wa:session
+   ```
 
-    npm run gateway       # tunnel publik + Next.js + daftarkan webhook sesi otomatis
+   Buka `.tools/qr-<sesi>.html` (auto-refresh) lalu scan dari WhatsApp → Perangkat tertaut.
+3. Jalankan worker antrean:
 
-`npm run gateway` membuka tunnel cloudflared, memastikan sesi WhatsApp aktif, lalu membuat /
-memperbarui webhook sesi ke `http://127.0.0.1:3001/api/wa/webhook?s=<OPENWA_WEBHOOK_SECRET>`
-(event `message.received`). Webhook memakai alamat lokal (bukan URL tunnel) karena OpenWA
-berjalan di mesin yang sama; URL tunnel hanya dipakai untuk link di pesan. URL tunnel berubah
-tiap kali dijalankan.
+   ```bash
+   npm run wa:agent
+   ```
 
-Balasan otomatis: pelanggan kirim `status INT-XXXXXX` ke nomor WhatsApp gateway, lalu dibalas
-status, total, status pembayaran, dan rekening bila belum lunas. Nomor admin di `ADMIN_WA` sama
-dengan nomor gateway, jadi untuk mencoba perintah ini pakai nomor WhatsApp lain (pesan dari
-nomor sendiri diabaikan untuk menghindari loop).
+4. Daftarkan webhook ke URL publik agar balasan `status INT-XXXXXX` masuk ke situs produksi:
 
-Kalau OpenWA mati, pesanan tetap tersimpan; hanya notifikasi WA yang dilewati.
+   ```bash
+   SITE_WEBHOOK_URL=https://intorma-psi.vercel.app npm run wa:webhook
+   ```
 
-**Supaya notifikasi WA jalan dari situs Vercel:** Vercel tidak bisa menjangkau
-`127.0.0.1` di komputer ini. Buka tunnel publik ke gateway (port 2785), mis.:
+   Pastikan `OPENWA_WEBHOOK_SECRET` di `.env.local` **sama** dengan nilai di environment Vercel.
+5. Cek kondisi:
 
-    .tools\cloudflared.exe tunnel --url http://127.0.0.1:2785 --no-autoupdate
+   ```bash
+   npm run wa:check
+   ```
 
-lalu isi `OPENWA_URL=https://<nama-tunnel>.trycloudflare.com` dan
-`OPENWA_KEY=<API_MASTER_KEY gateway>` di Environment Variables Vercel. URL tunnel
-cepat berubah tiap restart — untuk produksi sebenarnya, jalankan gateway di VPS
-dengan domain tetap.
+### Mode lokal/gateway terpadu
+
+Jika Next.js dan OpenWA berjalan di mesin yang sama, `npm run gateway` bisa membantu
+menjalankan tunnel/app/gateway/webhook lokal sekaligus worker antrean (lihat `scripts/gateway.mjs`).
+Sesuaikan path OpenWA di `scripts/openwa.mjs` bila perlu.
+
+### Catatan penting
+
+- Nomor admin di `ADMIN_WA` sebaiknya **bukan** nomor yang sama dengan akun WhatsApp gateway,
+  supaya uji perintah status tidak bentrok dengan pesan `fromMe`.
+- Pesan WA bersifat *best effort*: jika gateway/worker belum siap, order tetap tersimpan dan
+  notifikasi tertunda di antrean (atau perlu dikirim ulang secara manual).
+- Untuk produksi stabil, jalankan OpenWA + `wa:agent` di VPS/komputer yang selalu hidup.
 
 ## Environment
 
@@ -114,100 +105,46 @@ dengan domain tetap.
 | `DATABASE_URL` | Wajib | Connection string Neon (pakai yang pooled) |
 | `ADMIN_PASSWORD` | Wajib | Password halaman admin |
 | `ADMIN_SECRET` | Wajib | Kunci acak panjang untuk tanda tangan cookie sesi |
-| `NEXT_PUBLIC_SITE_URL` | Disarankan | URL publik situs untuk link di pesan WA. Tanpa ini, Vercel memakai `VERCEL_URL` otomatis |
-| `ADMIN_WA` | Opsional | Nomor yang menerima notifikasi pesanan baru |
-| `OPENWA_URL` | Opsional | Alamat gateway yang bisa diakses publik, mis. `https://wa.domain.com` |
-| `OPENWA_KEY` | Opsional | API key admin gateway (header `X-API-Key`) |
-| `OPENWA_SESSION` | Opsional | Nama atau UUID sesi WhatsApp, default `intorma` |
-| `OPENWA_WEBHOOK_SECRET` | Opsional | Dicek di `?s=` oleh `/api/wa/webhook` |
-
-## Aplikasi yang bisa di-download & pembagian akses
-
-Situs ini adalah **PWA (Progressive Web App)**—istilah untuk website yang bisa dibuka di browser
-*dan* dipasang ke layar utama seperti aplikasi. Jadi **bukan aplikasi WhatsApp / gateway WA**, bukan
-juga aplikasi terpisah yang harus di-update manual. Satu source code, satu database, fitur web dan
-"app" identik. Aplikasinya tetap online (butuh internet), sama seperti web.
-
-- Buka situs di Chrome/Edge → menu ⋮ → **Install / Add to Home Screen**.
-- Tombol **“Install aplikasi”** juga muncul di footer saat browser mendukung.
-- Ikon dan splash memakai **file SVG yang sama dengan web** (`public/icon.svg`). PNG 192/512 dan
-  versi maskable di `public/icons/` dihasilkan dari SVG itu juga, supaya tampilannya identik.
-- Service worker hanya menyimpan halaman publik (`/`, `/order`, `/lacak`) untuk fallback offline.
-  **Halaman `/admin` dan `/api/` tidak pernah di-cache**, jadi data pesanan tidak tertinggal di
-  perangkat orang lain.
-
-### Pembagian akses
-- **Pelanggan / orang lain**: cukup dapat link publik `https://domain-kamu.com`. Mereka bisa pesan,
-  melihat harga otomatis, dan lacak pesanan. Tidak perlu login.
-- **Kamu (admin)**: buka `https://domain-kamu.com/admin` lalu masukkan `ADMIN_PASSWORD`.
-  URL admin tidak ditampilkan di navigasi publik—jangan dibagikan ke grup pelanggan.
-- Cookie admin bertanda tangan + middleware menolak akses `/admin` tanpa sesi, dan setiap server
-  action masih memeriksa ulang status admin. Tombol **Keluar** di header admin menghapus sesi.
+| `NEXT_PUBLIC_SITE_URL` | Disarankan | URL publik situs (link di pesan WA/webhook) |
+| `NEXT_PUBLIC_WA_NUMBER` | Disarankan | Nomor WhatsApp publik untuk tombol chat |
+| `ADMIN_WA` | Opsional | Nomor penerima notifikasi pesanan baru |
+| `OPENWA_URL` | Opsional | URL OpenWA (jangan localhost di Vercel) |
+| `OPENWA_KEY` | Opsional | API key OpenWA (`x-api-key`) |
+| `OPENWA_SESSION` | Opsional | Nama/ID sesi WhatsApp, default `intorma` |
+| `OPENWA_WEBHOOK_SECRET` | Opsional | Rahasia query `?s=` untuk `/api/wa/webhook` |
+| `WA_QUEUE_ONLY` | Opsional | `1` untuk memaksa antrean, tidak kirim langsung |
+| `WA_POLL_MS` | Opsional | Interval polling worker (ms), default 5000 |
 
 ## Deploy ke Vercel
 
-`vercel.json` sudah disiapkan: framework Next.js, `npm install` + `npm run build`, output `.next`,
-dan beberapa header keamanan dasar. Tidak perlu mengubahnya.
+`vercel.json` sudah disiapkan. Langkah umum:
 
-Aplikasi Next.js bisa langsung di-deploy ke Vercel; **gateway OpenWA tidak bisa** karena butuh
-proses Chrome/WhatsApp yang berjalan terus. Langkahnya:
-
-1. Import repository ini di Vercel (atau jalankan `vercel --prod` dari folder `intorma`).
-2. Isi Environment Variables di **Project Settings → Environment Variables** untuk
-   **Production** (dan Preview bila perlu):
-
-   ```text
-   DATABASE_URL=postgresql://...@...neon.tech/...?sslmode=require
-   ADMIN_PASSWORD=ganti-dengan-password-kuat
-   ADMIN_SECRET=string-acak-panjang-minimal-32-karakter
-   ADMIN_WA=6289...
-   NEXT_PUBLIC_SITE_URL=https://domain-kamu.com
-   ```
-
-   `NEXT_PUBLIC_SITE_URL` dipakai saat build untuk tautan di pesan WhatsApp. Kalau belum punya
-   domain, biarkan kosong—kode memakai `VERCEL_URL` otomatis.
-
-3. Jalankan migrasi **sekali** ke database produksi dari mesin lokal:
+1. Hubungkan repo/project ke Vercel (`beeyogs-projects/in.torma`).
+2. Isi Environment Variables (Production/Preview sesuai kebutuhan): `DATABASE_URL`, `ADMIN_PASSWORD`,
+   `ADMIN_SECRET`, `NEXT_PUBLIC_SITE_URL=https://intorma-psi.vercel.app`, `NEXT_PUBLIC_WA_NUMBER`,
+   `ADMIN_WA`, `OPENWA_WEBHOOK_SECRET`, dll. **Jangan** set `OPENWA_URL` ke localhost.
+3. Jalankan migrasi sekali ke database produksi:
 
    ```bash
-   cd intorma
-   # isi dulu DATABASE_URL di .env.local dengan connection-string produksi
    npm run db:migrate
    ```
 
-   Migrasi aman diulang (idempoten) dan tidak menghapus data yang sudah ada. Jangan
-   menaruh connection-string produksi di chat atau file yang ter-commit.
-
-4. Cek deploy: buka `https://domain-kamu.com`, lalu `/admin` dan pastikan login berhasil.
-
-5. **WhatsApp (opsional tapi disarankan)**: jalankan OpenWA di VPS/komputer yang selalu hidup
-   dengan alamat HTTPS publik, lalu isi juga:
-
-   ```text
-   OPENWA_URL=https://wa.domain-kamu.com
-   OPENWA_KEY=api-key-gateway
-   OPENWA_SESSION=intorma
-   OPENWA_WEBHOOK_SECRET=rahasia-webhook
-   ```
-
-   Daftarkan webhook sesi ke:
-
-   ```text
-   https://domain-kamu.com/api/wa/webhook?s=<OPENWA_WEBHOOK_SECRET>
-   ```
-
-   event `message.received`. Pelanggan bisa kirim `status INT-XXXXXX` dan dibalas otomatis.
-   Kalau `OPENWA_*` kosong atau gateway tidak bisa dijangkau Vercel, pesanan tetap tersimpan
-   dan halaman lacak tetap jalan—hanya notifikasi WA yang dilewati.
-
-> Catatan: jangan pernah commit `.env.local`. File sudah masuk `.gitignore`.
+4. Pastikan domain/alias Vercel mengarah ke deployment yang benar (`intorma-psi.vercel.app`).
+5. Untuk notifikasi WA dari Vercel, jalankan `npm run wa:agent` di mesin dengan OpenWA aktif dan
+   daftarkan webhook publik (`npm run wa:webhook`).
 
 ## Struktur singkat
 
-    db/schema.sql            tabel + seed layanan (idempoten)
-    scripts/migrate.mjs      menjalankan schema.sql
-    scripts/gateway.mjs      tunnel + Next + sesi & webhook OpenWA
-    src/app/actions.ts       server action: order, login, admin CRUD, WA
-    src/app/api/wa/webhook   balasan otomatis "status KODE"
-    src/components           Nav/Footer, form order, editor admin
-    src/lib                  db, auth, settings, format, status, WA
+```text
+db/schema.sql            tabel + wa_outbox + seed layanan (idempoten)
+scripts/migrate.mjs      menjalankan schema.sql
+scripts/wa-agent.mjs     worker kirim antrean wa_outbox via OpenWA
+scripts/wa-webhook.mjs   daftar/update webhook OpenWA ke situs publik
+scripts/wa-check.mjs     diagnosa gateway/sesi/webhook/antrean
+src/app/actions.ts       server action: order, login, admin CRUD, WA
+src/app/api/wa/webhook   balasan otomatis "status INT-XXXXXX"
+src/components           UI (Chrome, form order, editor admin, WhatsApp link)
+src/lib                  db, auth, settings, format, status, pricing, wa, site
+```
+
+> Jangan commit `.env.local` atau kredensial apa pun.

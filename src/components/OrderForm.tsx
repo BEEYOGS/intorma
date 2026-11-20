@@ -5,10 +5,10 @@ import { createOrder } from "@/app/actions";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { DateField } from "@/components/DateField";
 import { Barcode, ToneChips, CropCorners, RegMark } from "@/components/Press";
+import { WhatsAppLink } from "@/components/WhatsApp";
 import type { Service } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { calculatePrice, formatQty, priceLabel } from "@/lib/pricing";
-import { waLink } from "@/lib/site";
 
 type PaymentInfo = {
   enabled: boolean;
@@ -267,8 +267,8 @@ export function OrderForm({
             {!pending && <span aria-hidden="true">→</span>}
           </button>
           <p className="text-sm leading-6 text-mute sm:max-w-[18rem] sm:text-right">
-            Setelah terkirim kamu dapat kode pesanan dan salinannya di WhatsApp. Harga final tetap
-            dikonfirmasi admin sebelum produksi.
+            Setelah terkirim kode pesanan langsung tampil di layar dan salinannya dikirim ke WhatsApp.
+            Harga final tetap dikonfirmasi admin sebelum produksi.
           </p>
         </div>
       </form>
@@ -334,9 +334,9 @@ export function OrderForm({
             <Barcode value={(chosen?.id ?? "INTORMA").toUpperCase()} height={24} className="text-ink/35" label="" />
             <p className="mt-4 text-xs leading-5 text-mute">
               Belum yakin harus pilih apa?{" "}
-              <a href={waLink("Halo in.torma, saya mau tanya soal layanan desain.")} target="_blank" rel="noreferrer" className="link-accent">
+              <WhatsAppLink text="Halo in.torma, saya mau tanya soal layanan desain." className="link-accent">
                 Tanya dulu lewat WhatsApp
-              </a>.
+              </WhatsAppLink>.
             </p>
           </div>
         </div>
