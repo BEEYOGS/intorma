@@ -1,26 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
-export default function ErrorPage({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function ErrorPage({ error }: { error: Error }) {
+  const [message] = useState(error.message || "Terjadi kesalahan.");
   return (
-    <main id="konten" className="grid min-h-dvh place-items-center px-5 py-16">
-      <div className="w-full max-w-md">
-        <p className="eyebrow">Ada gangguan</p>
-        <h1 className="display mt-5 text-4xl sm:text-5xl">Halaman gagal dimuat.</h1>
-        <p className="mt-4 text-sm leading-6 text-ink/65">
-          Coba muat ulang sebentar lagi. Kalau masih gagal, hubungi kami lewat WhatsApp supaya pesanan
-          tetap bisa diproses.
-        </p>
-        <div className="mt-7 flex flex-wrap gap-3">
-          <button type="button" onClick={reset} className="btn-primary">
-            Coba lagi
-          </button>
-          <Link href="/" className="btn-outline">
-            Kembali ke beranda
-          </Link>
+    <div className="animate-in">
+      <div className="wrap py-16 sm:py-24">
+        <p className="eyebrow mb-2">Error</p>
+        <h1 className="display text-2xl sm:text-3xl mb-4">Ada yang salah.</h1>
+        <div className="card p-5 mb-6 max-w-lg">
+          <p className="mono text-sm text-[var(--text-2)]">{message}</p>
         </div>
+        <Link href="/" className="btn btn-primary">Kembali ke beranda</Link>
       </div>
-    </main>
+    </div>
   );
 }

@@ -1,49 +1,36 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { ServiceWorkerRegister } from "@/components/PWA";
-import { PressBackground } from "@/components/Press";
+import { TopBar } from "@/components/TopBar";
+import { isAdmin } from "@/lib/auth";
 import "./globals.css";
 
-const sans = localFont({
+const fontSans = localFont({
   src: "./fonts/instrument-sans-latin.woff2",
   weight: "400 700",
   variable: "--font-sans",
   display: "swap",
-  fallback: ["system-ui", "Segoe UI", "sans-serif"],
-});
-
-const serif = localFont({
-  src: [
-    { path: "./fonts/instrument-serif-latin.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/instrument-serif-italic-latin.woff2", weight: "400", style: "italic" },
-  ],
-  variable: "--font-serif",
-  display: "swap",
-  fallback: ["Georgia", "serif"],
+  fallback: ["system-ui", "sans-serif"],
 });
 
 export const metadata: Metadata = {
-  title: { default: "in.torma — jasa desain", template: "%s — in.torma" },
-  description:
-    "Studio desain independen. Logo, poster, konten sosial, sampai kemasan. Pesan lewat brief singkat, pantau status pesanan, dan bayar lewat transfer BCA.",
+  title: { default: "in.torma — Studio desain & cetak", template: "%s — in.torma" },
+  description: "Logo, poster, konten sosial, kemasan, sampai spanduk dan kartu nama. Brief singkat, harga jelas, progres bisa dipantau.",
   applicationName: "in.torma",
-  manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "in.torma", statusBarStyle: "black-translucent" },
-  icons: { icon: "/icon.svg", apple: "/icons/icon-192.png" },
 };
 
-export const viewport: Viewport = { themeColor: "#070809" };
+export const viewport: Viewport = {
+  themeColor: "#090c10",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className={`${sans.variable} ${serif.variable}`}>
-      <body className="min-h-dvh bg-paper font-sans text-ink antialiased">
-        <ServiceWorkerRegister />
-        <PressBackground />
-        <a href="#konten" className="skip-link">
-          Lewati ke konten
-        </a>
-        {children}
+    <html lang="id" className={fontSans.variable}>
+      <body className="min-h-dvh bg-[var(--bg)] text-[var(--text)]">
+        <TopBar isAdmin={await isAdmin()} />
+        <main>{children}</main>
       </body>
     </html>
   );

@@ -5,38 +5,20 @@ import { getPaymentSettings, paymentLines } from "@/lib/settings";
 import { STATUS_META, isStatus, type Status } from "@/lib/status";
 import { sendWA, siteUrl } from "@/lib/wa";
 
-/**
- * Webhook OpenWA gateway. Daftarkan webhook per sesi ke:
- *   https://domainmu/api/wa/webhook?s=SECRET
- * Klien bisa balas "status INT-ABC123" dan langsung dapat status terbarunya.
- *
- * Payload OpenWA: { event: "message.received", sessionId, data: { id, from, body, ... } }
- */
 export async function POST(req: Request) {
   const secret = process.env.OPENWA_WEBHOOK_SECRET;
-  if (!secret || new URL(req.url).searchParams.get("s") !== secret) {
-    return NextResponse.json({ ok: false }, { status: 401 });
-  }
-
+  if (!secret || new URL(req.url).searchParams.get("s") !== secret) return NextResponse.json({ ok: false }, { status: 401 });
   const payload = await req.json().catch(() => null);
   const msg = payload?.data;
-  if (payload?.event !== "message.received" || !msg) {
-    return NextResponse.json({ ok: true, ignored: true });
-  }
-
+  if (payload?.event !== "message.received" || !msg) return NextResponse.json({ ok: true, ignored: true });
   const from = String(msg.from ?? msg.chatId ?? "");
   const isGroup = msg.isGroup === true || msg.isGroupMsg === true || from.endsWith("@g.us");
-  if (!from || msg.fromMe === true || isGroup) {
-    return NextResponse.json({ ok: true, ignored: true });
-  }
-
+  if (!from || msg.fromMe === true || isGroup) return NextResponse.json({ ok: true, ignored: true });
   const body = String(msg.body ?? msg.text ?? msg.content ?? "");
-  const match = body.match(/status\s+(?:INT-)?([A-Z0-9]{6})/i);
+  const match = body.match(/status\s*[:#-]?\s*(?:INT[-\s]?)?([A-Z0-9]{6})/i);
   if (!match) return NextResponse.json({ ok: true, ignored: true });
-
   const code = `INT-${match[1].toUpperCase()}`;
   const order = (await sql`select code, status, price, note, paid from orders where code = ${code}`)[0];
-
   let reply: string;
   if (!order) {
     reply = `Kode ${code} tidak ditemukan. Cek lagi kodenya.`;
@@ -52,7 +34,6 @@ export async function POST(req: Request) {
     ];
     reply = lines.filter(Boolean).join("\n");
   }
-
-  await sendWA(String(msg.from).replace(/@.*/, ""), reply);
+  await sendWA(from.replace(/@.*/, ""), reply);
   return NextResponse.json({ ok: true });
 }

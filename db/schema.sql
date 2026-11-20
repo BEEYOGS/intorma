@@ -30,18 +30,6 @@ create table if not exists orders (
   updated_at timestamptz not null default now()
 );
 
--- untuk database yang dibuat sebelum kolom pembayaran ada
-alter table orders add column if not exists paid boolean not null default false;
-alter table orders add column if not exists paid_at timestamptz;
-alter table orders add column if not exists qty numeric(10,2);
-alter table orders add column if not exists unit_rate numeric(10,2);
-
--- untuk database yang dibuat sebelum harga per item ada
-alter table services add column if not exists pricing_mode text not null default 'flat';
-alter table services add column if not exists unit_label text not null default '';
-alter table services add column if not exists min_qty numeric(10,2) not null default 1;
-alter table services add column if not exists max_qty numeric(10,2) not null default 10000;
-
 create table if not exists order_events (
   id serial primary key,
   order_id int not null references orders(id) on delete cascade,
@@ -49,8 +37,6 @@ create table if not exists order_events (
   note text,
   created_at timestamptz not null default now()
 );
-
-create index if not exists orders_status_idx on orders(status, created_at desc);
 
 create table if not exists app_settings (
   key text primary key,

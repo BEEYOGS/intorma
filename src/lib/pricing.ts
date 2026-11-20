@@ -1,4 +1,16 @@
-import type { Service } from "./db";
+export type Service = {
+  id: string;
+  name: string;
+  blurb: string;
+  price_from: number;
+  days: number;
+  sort: number;
+  active: boolean;
+  pricing_mode: string;
+  unit_label: string;
+  min_qty: number;
+  max_qty: number;
+};
 
 export type PriceResult = {
   price: number | null;

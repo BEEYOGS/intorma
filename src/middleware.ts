@@ -1,15 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-/**
- * Gerbang pertama untuk area admin. Pemeriksaan tanda tangan cookie tetap
- * dilakukan di src/lib/auth.ts pada setiap halaman/server action.
- */
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (path !== "/admin/login" && !request.cookies.has("int_admin")) {
+  if (path.startsWith("/admin/") && path !== "/admin/login" && !request.cookies.has("int_admin")) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
+  }
+  if (request.method !== "GET" && path.startsWith("/admin/") && !request.cookies.has("int_admin")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/admin/:path*"] };
+export const config = { matcher: ["/admin/:path*", "/contact"] };
