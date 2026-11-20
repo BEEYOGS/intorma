@@ -90,20 +90,20 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div>
           <p className="eyebrow flex items-center gap-2.5">
-            <RegMark className="size-3.5 text-cyan" />
+            <RegMark className="size-3.5 text-ink" />
             Admin
           </p>
           <h1 className="display mt-4 text-4xl sm:text-5xl">Pesanan</h1>
           <p className="mt-2 text-sm text-mute">Kelola brief, harga, status, dan pembayaran.</p>
         </div>
-        <div className="border border-line bg-panel/60 px-4 py-3">
+        <div className="rounded-tag border border-line bg-panel/60 px-4 py-3">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">Lunas terkumpul</p>
-          <p className="mt-1 font-mono text-xl font-bold tabular-nums text-green">{rupiah(paidTotal)}</p>
+          <p className="mt-1 font-mono text-xl font-bold tabular-nums text-ink">{rupiah(paidTotal)}</p>
         </div>
       </div>
 
       {(saved || deleted) && (
-        <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-green/35 bg-green/[0.07] px-4 py-3 text-sm">
+        <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-tag-sm border border-ink/35 bg-ink/[0.07] px-4 py-3 text-sm">
           <span>{deleted ? `Pesanan ${deleted} sudah dihapus.` : "Perubahan pesanan tersimpan."}</span>
           <Link href={returnTo} className="font-semibold text-mute transition-colors hover:text-ink">
             Tutup
@@ -112,10 +112,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       )}
 
       <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Baru" value={count("menunggu")} hint="menunggu konfirmasi" href={keepSearch("/admin?s=menunggu")} accent="bg-yellow" />
-        <Stat label="Dikerjakan" value={count("dikerjakan") + count("revisi")} hint="termasuk revisi" accent="bg-cyan" />
-        <Stat label="Selesai" value={count("selesai")} hint="total pesanan selesai" accent="bg-green" />
-        <Stat label="Belum dibayar" value={unpaidCount} hint="harga sudah disepakati" href={keepSearch("/admin?p=belum")} accent="bg-magenta" />
+        <Stat label="Baru" value={count("menunggu")} hint="menunggu konfirmasi" href={keepSearch("/admin?s=menunggu")} accent="bg-steel" />
+        <Stat label="Dikerjakan" value={count("dikerjakan") + count("revisi")} hint="termasuk revisi" accent="bg-ink" />
+        <Stat label="Selesai" value={count("selesai")} hint="total pesanan selesai" accent="bg-ink" />
+        <Stat label="Belum dibayar" value={unpaidCount} hint="harga sudah disepakati" href={keepSearch("/admin?p=belum")} accent="bg-silver" />
       </div>
 
       <form action="/admin" method="get" className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -165,7 +165,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       </div>
 
       {orders.length === 0 ? (
-        <div className="relative mt-4 border border-dashed border-line p-8 text-center">
+        <div className="relative mt-4 rounded-tag-lg border border-dashed border-line p-8 text-center">
           <p className="font-semibold">
             {q
               ? `Tidak ada pesanan untuk “${q}”.`
@@ -226,7 +226,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       <span className="text-xs text-mute sm:hidden">Total</span>
                       <span className="text-right">
                         <span className="block font-mono text-sm font-semibold tabular-nums">{price ? rupiah(price) : "—"}</span>
-                        <span className={`block font-mono text-[11px] ${o.paid ? "font-medium text-green" : "text-mute"} sm:hidden`}>
+                        <span className={`block font-mono text-[11px] ${o.paid ? "font-medium text-ink" : "text-mute"} sm:hidden`}>
                           {o.paid ? "Lunas" : price ? "Belum dibayar" : "Tanpa harga"}
                         </span>
                       </span>
@@ -251,7 +251,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                               href={`https://wa.me/${o.wa}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="font-mono font-medium underline decoration-cyan/40 underline-offset-4 hover:decoration-cyan"
+                              className="font-mono font-medium underline decoration-ink/40 underline-offset-4 hover:decoration-ink"
                             >
                               {o.wa}
                             </a>
@@ -265,7 +265,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                           <dt className="text-mute">Referensi</dt>
                           <dd className="mt-1 font-medium">
                             {o.ref_link ? (
-                              <a href={o.ref_link} target="_blank" rel="noreferrer" className="underline decoration-cyan/40 underline-offset-4 hover:decoration-cyan">
+                              <a href={o.ref_link} target="_blank" rel="noreferrer" className="underline decoration-ink/40 underline-offset-4 hover:decoration-ink">
                                 Buka link
                               </a>
                             ) : "—"}
@@ -299,9 +299,9 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                         returnTo={returnTo}
                       />
 
-                      <div className="relative border border-red/25 bg-red/[0.04] p-5">
-                        <CropCorners className="border-red/30" />
-                        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-red">Hapus pesanan</p>
+                      <div className="relative rounded-tag-lg border border-dashed border-silver/30 bg-silver/[0.04] p-5">
+                        <CropCorners className="border-silver/30" />
+                        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-silver">Hapus pesanan</p>
                         <p className="mt-2 text-xs leading-5 text-mute">
                           Untuk pesanan duplikat, uji coba, atau yang sudah dibatalkan. Riwayat status ikut terhapus.
                         </p>
@@ -335,9 +335,9 @@ function Stat({ label, value, hint, href, accent }: { label: string; value: numb
       <p className="mt-1 text-xs text-mute">{hint}</p>
     </>
   );
-  const className = "relative block overflow-hidden border border-line bg-panel/60 p-4 transition-colors sm:p-5";
+  const className = "relative block overflow-hidden rounded-tag-lg border border-line bg-panel/60 p-4 transition-colors sm:p-5";
   return href ? (
-    <Link href={href} className={`${className} hover:border-cyan/50`}>
+    <Link href={href} className={`${className} hover:border-ink/50`}>
       {body}
     </Link>
   ) : (
@@ -350,8 +350,8 @@ function FilterLink({ href, active, children }: { href: string; active: boolean;
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`inline-flex min-h-10 items-center rounded-full border px-3.5 font-mono text-[12px] font-semibold transition-colors ${
-        active ? "border-cyan bg-cyan text-[#04252b]" : "border-line text-ink/60 hover:border-cyan/50 hover:text-ink"
+      className={`inline-flex min-h-10 items-center rounded-tag-sm border px-3.5 font-mono text-[12px] font-semibold transition-colors ${
+        active ? "border-ink bg-ink text-paper" : "border-line text-ink/60 hover:border-ink/50 hover:text-ink"
       }`}
     >
       {children}

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav, StatusBadge } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
-import { Barcode, CmykChips, CropCorners, RegMark, Reveal } from "@/components/Press";
+import { Barcode, ToneChips, CropCorners, RegMark, Reveal } from "@/components/Press";
 import { sql } from "@/lib/db";
 import { jam, rupiah, tanggal } from "@/lib/format";
 import { priceBreakdown } from "@/lib/pricing";
@@ -60,13 +60,13 @@ export default async function TrackPage({
         <div className="border-b border-line">
           <div className="wrap pb-10 pt-9 sm:pb-12 sm:pt-12">
             {baru && (
-              <div className="enter relative mb-10 overflow-hidden border border-cyan/35 bg-cyan/[0.06] p-6 sm:p-7">
+              <div className="enter relative mb-10 overflow-hidden rounded-tag-lg border border-ink/35 bg-ink/[0.06] p-6 sm:p-7">
                 <CropCorners />
                 <div className="flex flex-wrap items-start justify-between gap-6">
                   <div className="flex items-start gap-4">
-                    <RegMark className="mt-1 size-5 shrink-0 text-cyan" />
+                    <RegMark className="mt-1 size-5 shrink-0 text-ink" />
                     <div>
-                      <p className="eyebrow !text-cyan">Pesanan diterima</p>
+                      <p className="eyebrow !text-ink">Pesanan diterima</p>
                       <p className="mt-2 text-xl font-semibold tracking-tight">Simpan kode pesanan kamu.</p>
                       <p className="mt-1 text-sm text-ink/60">Salinannya juga dikirim ke WhatsApp.</p>
                     </div>
@@ -105,7 +105,7 @@ export default async function TrackPage({
         <div className="wrap grid gap-8 py-10 sm:py-14 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-12">
           <div>
             <Reveal>
-              <section aria-labelledby="status-sekarang" className="relative border border-line bg-panel/70 p-6 sm:p-7">
+              <section aria-labelledby="status-sekarang" className="relative rounded-tag-lg border border-line bg-panel/70 p-6 sm:p-7">
                 <CropCorners className="border-line" />
                 <p className="eyebrow">Status sekarang</p>
                 <div className="mt-4 flex items-start gap-4">
@@ -119,11 +119,11 @@ export default async function TrackPage({
             </Reveal>
 
             {st === "batal" ? (
-              <p className="mt-4 border border-red/40 bg-red/[0.07] px-4 py-3 text-sm text-red">
+              <p className="mt-4 rounded-tag-sm border border-dashed border-ash/50 bg-ash/[0.08] px-4 py-3 text-sm text-mute">
                 Pesanan ini dibatalkan. Kalau ini keliru, langsung chat kami lewat WhatsApp.
               </p>
             ) : st === "revisi" ? (
-              <p className="mt-4 border border-magenta/35 bg-magenta/[0.06] px-4 py-3 text-sm text-ink/75">
+              <p className="mt-4 rounded-tag-sm border border-dashed border-silver/35 bg-silver/[0.06] px-4 py-3 text-sm text-ink/75">
                 Pesanan sedang tahap revisi. Admin akan mengabari lewat WhatsApp begitu ada kabar.
               </p>
             ) : (
@@ -136,7 +136,7 @@ export default async function TrackPage({
                     <li key={s} className="relative">
                       <span aria-hidden className="absolute left-0 top-[13px] h-px w-full bg-line" />
                       <span
-                        className={`relative grid size-7 place-items-center rounded-full border font-mono text-[11px] font-bold ${
+                        className={`relative grid size-7 place-items-center rounded-tag-xs border font-mono text-[11px] font-bold ${
                           done || current ? "border-transparent text-paper" : "border-line bg-paper text-mute"
                         }`}
                         style={done || current ? { background: color } : undefined}
@@ -153,8 +153,8 @@ export default async function TrackPage({
             )}
 
             <Reveal>
-              <section aria-label="Langkah berikutnya" className="mt-5 flex gap-3 border border-line bg-sand/80 px-4 py-3.5">
-                <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-cyan font-mono text-[11px] font-bold text-paper">→</span>
+              <section aria-label="Langkah berikutnya" className="mt-5 flex gap-3 rounded-tag-sm border border-line bg-sand/80 px-4 py-3.5">
+                <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-tag-xs bg-ink font-mono text-[11px] font-bold text-paper">→</span>
                 <div>
                   <p className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-mute">Langkah berikutnya</p>
                   <p className="mt-1 text-sm leading-6 text-ink/70">{nextStep}</p>
@@ -165,7 +165,7 @@ export default async function TrackPage({
             <Reveal>
               <section aria-labelledby="riwayat" className="mt-10">
                 <h2 id="riwayat" className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
-                  <RegMark className="size-3.5 text-magenta" />
+                  <RegMark className="size-3.5 text-silver" />
                   Riwayat
                 </h2>
                 <ol className="mt-5 border-l border-line">
@@ -190,7 +190,7 @@ export default async function TrackPage({
               <div className="ticket p-5 shadow-ticket sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-paper/55">Tiket pesanan</p>
-                  <CmykChips className="size-2" />
+                  <ToneChips className="size-2" />
                 </div>
                 <p className="mt-4 font-mono text-2xl font-bold tracking-tight">{order.code}</p>
                 <Barcode value={order.code} height={40} className="mt-3 text-paper" />
@@ -202,11 +202,11 @@ export default async function TrackPage({
 
             {order.price ? (
               <Reveal delay={80}>
-                <section aria-label="Pembayaran" className="border border-line bg-panel/70 p-5 sm:p-6">
+                <section aria-label="Pembayaran" className="rounded-tag-lg border border-line bg-panel/70 p-5 sm:p-6">
                   <div className="flex items-center justify-between gap-3">
                     <p className="eyebrow">Pembayaran</p>
-                    <span className={`tag ${order.paid ? "!border-green/60 !bg-green/10 !text-green" : "!border-yellow/50 !bg-yellow/10 !text-yellow"}`}>
-                      <span aria-hidden className="status-dot" style={{ background: order.paid ? "#3fe08c" : "#ffd23f" }} />
+                    <span className={`tag ${order.paid ? "!border-ink/60 !bg-ink/10 !text-ink" : "!border-steel/50 !bg-steel/10 !text-steel"}`}>
+                      <span aria-hidden className="status-dot" style={{ background: order.paid ? "#ffffff" : "#8a8d8e" }} />
                       {order.paid ? "Lunas" : "Belum dibayar"}
                     </span>
                   </div>
@@ -220,7 +220,7 @@ export default async function TrackPage({
                     </p>
                   ) : payment.enabled && payment.bankAccount ? (
                     <>
-                      <div className="mt-5 border border-line bg-sand/80 p-4">
+                      <div className="mt-5 rounded-tag-sm border border-line bg-sand/80 p-4">
                         {hasBankLogo(payment.bankName) && (
                           <span className="mb-3 inline-flex rounded-tag-sm border border-line bg-ink px-2.5 py-1.5">
                             <BankLogo bank={payment.bankName} className="h-5 w-auto" />
@@ -252,7 +252,7 @@ export default async function TrackPage({
               </Reveal>
             ) : (
               <Reveal delay={80}>
-                <section aria-label="Pembayaran" className="border border-dashed border-line p-5 sm:p-6">
+                <section aria-label="Pembayaran" className="rounded-tag-lg border border-dashed border-line p-5 sm:p-6">
                   <p className="eyebrow">Pembayaran</p>
                   <p className="mt-3 font-semibold">Menunggu harga dari admin</p>
                   <p className="mt-1 text-sm leading-6 text-mute">
@@ -263,7 +263,7 @@ export default async function TrackPage({
             )}
 
             <Reveal delay={140}>
-              <section aria-label="Detail pesanan" className="border border-line p-5 sm:p-6">
+              <section aria-label="Detail pesanan" className="rounded-tag-lg border border-line p-5 sm:p-6">
                 <p className="eyebrow">Detail</p>
                 <dl className="mt-4 space-y-3 text-sm">
                   <div className="flex items-baseline justify-between gap-4">
@@ -284,7 +284,7 @@ export default async function TrackPage({
                   </div>
                 </dl>
                 <details className="group mt-5 border-t border-line pt-4">
-                  <summary className="cursor-pointer text-sm font-semibold transition-colors hover:text-cyan">Lihat brief asli</summary>
+                  <summary className="cursor-pointer text-sm font-semibold transition-colors hover:text-ink">Lihat brief asli</summary>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink/60">{order.brief}</p>
                 </details>
               </section>

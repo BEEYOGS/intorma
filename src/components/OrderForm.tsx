@@ -4,7 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { createOrder } from "@/app/actions";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { DateField } from "@/components/DateField";
-import { Barcode, CmykChips, CropCorners, RegMark } from "@/components/Press";
+import { Barcode, ToneChips, CropCorners, RegMark } from "@/components/Press";
 import type { Service } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { calculatePrice, formatQty, priceLabel } from "@/lib/pricing";
@@ -55,10 +55,10 @@ export function OrderForm({
     setQty((prev) => String(Math.min(max, Math.max(min, (Number(prev) || 0) + delta))));
   }
 
-  function serviceCard(s: Service, accent: "cyan" | "magenta") {
+  function serviceCard(s: Service, accent: "ink" | "silver") {
     const on = selected === s.id;
-    const ring = accent === "cyan" ? "border-cyan bg-cyan/[0.08]" : "border-magenta bg-magenta/[0.08]";
-    const dot = accent === "cyan" ? "bg-cyan" : "bg-magenta";
+    const ring = accent === "ink" ? "border-ink bg-ink/[0.08]" : "border-silver bg-silver/[0.08]";
+    const dot = accent === "ink" ? "bg-ink" : "bg-silver";
     return (
       <label key={s.id} className="block cursor-pointer">
         <input
@@ -71,11 +71,11 @@ export function OrderForm({
           required
         />
         <span
-          className={`relative flex h-full flex-col justify-between gap-4 border p-4 transition-all duration-200 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cyan ${
+          className={`relative flex h-full flex-col justify-between gap-4 rounded-tag border p-4 transition-all duration-200 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink ${
             on ? `${ring} shadow-ticket` : "border-line bg-panel/50 hover:border-mute/50 hover:bg-panel"
           }`}
         >
-          <span aria-hidden className={`absolute right-3 top-3 grid size-5 place-items-center rounded-full border transition-all ${on ? "border-transparent" : "border-line"}`}>
+          <span aria-hidden className={`absolute right-3 top-3 grid size-5 place-items-center rounded-tag-xs border transition-all ${on ? "border-transparent" : "border-line"}`}>
             <span className={`size-2.5 rounded-full transition-transform ${dot} ${on ? "scale-100" : "scale-0"}`} />
           </span>
           <span>
@@ -83,7 +83,7 @@ export function OrderForm({
             <span className="mt-1 block text-[13px] leading-5 text-mute">{s.blurb}</span>
           </span>
           <span className="flex items-center justify-between gap-3 border-t border-line/80 pt-3 font-mono text-[12px]">
-            <span className={`font-semibold tabular-nums ${on ? (accent === "cyan" ? "text-cyan" : "text-magenta") : "text-ink/80"}`}>
+            <span className={`font-semibold tabular-nums ${on ? (accent === "ink" ? "text-ink" : "text-silver") : "text-ink/80"}`}>
               {priceLabel(s)}
             </span>
             <span className="text-mute">± {s.days} hari</span>
@@ -99,9 +99,9 @@ export function OrderForm({
       <form ref={formRef} action={action} className="space-y-12">
         <ol className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line pb-4 font-mono text-[12px] uppercase tracking-[0.1em] text-mute">
           {[
-            ["01", "Pilih layanan", "text-cyan"],
-            ["02", "Isi detail", "text-magenta"],
-            ["03", "Kirim & pantau", "text-yellow"],
+            ["01", "Pilih layanan", "text-ink"],
+            ["02", "Isi detail", "text-silver"],
+            ["03", "Kirim & pantau", "text-steel"],
           ].map(([n, label, color], index) => (
             <li key={n} className="flex items-center gap-3">
               <span className={`font-serif text-base italic ${color}`}>{n}</span>
@@ -111,8 +111,8 @@ export function OrderForm({
           ))}
         </ol>
 
-        <div className="flex items-start gap-3 border border-cyan/25 bg-cyan/[0.05] px-4 py-3.5">
-          <RegMark className="mt-0.5 size-4 shrink-0 text-cyan" />
+        <div className="flex items-start gap-3 rounded-tag-sm border border-ink/25 bg-ink/[0.05] px-4 py-3.5">
+          <RegMark className="mt-0.5 size-4 shrink-0 text-ink" />
           <p className="text-sm leading-6 text-ink/70">
             <span className="font-semibold text-ink">Harga tampil di bawah dan dihitung otomatis.</span>{" "}
             Pilih layanan dan isi jumlahnya—totalnya langsung terlihat sebelum kamu mengirim.
@@ -120,7 +120,7 @@ export function OrderForm({
         </div>
 
         {state?.error && (
-          <div role="alert" className="flex gap-3 border border-red/40 bg-red/[0.08] px-4 py-3.5 text-sm text-red">
+          <div role="alert" className="flex gap-3 rounded-tag-sm border border-dashed border-silver/40 bg-silver/[0.08] px-4 py-3.5 text-sm text-silver">
             <span aria-hidden className="mt-0.5 font-mono font-bold">!</span>
             <p>{state.error}</p>
           </div>
@@ -132,19 +132,19 @@ export function OrderForm({
           <div className="space-y-8">
             <div>
               <p className="mb-3 flex items-center gap-3">
-                <span aria-hidden className="h-3 w-3 bg-cyan" />
+                <span aria-hidden className="h-3 w-3 bg-ink" />
                 <span className="font-serif text-xl italic text-ink/80">Desain</span>
                 <span aria-hidden className="h-px flex-1 bg-line" />
               </p>
-              <div className="grid gap-2.5 sm:grid-cols-2">{services.filter((s) => s.pricing_mode !== "per_unit").map((s) => serviceCard(s, "cyan"))}</div>
+              <div className="grid gap-2.5 sm:grid-cols-2">{services.filter((s) => s.pricing_mode !== "per_unit").map((s) => serviceCard(s, "ink"))}</div>
             </div>
             <div>
               <p className="mb-3 flex items-center gap-3">
-                <span aria-hidden className="h-3 w-3 bg-magenta" />
+                <span aria-hidden className="h-3 w-3 bg-silver" />
                 <span className="font-serif text-xl italic text-ink/80">Cetak</span>
                 <span aria-hidden className="h-px flex-1 bg-line" />
               </p>
-              <div className="grid gap-2.5 sm:grid-cols-2">{printServices.map((s) => serviceCard(s, "magenta"))}</div>
+              <div className="grid gap-2.5 sm:grid-cols-2">{printServices.map((s) => serviceCard(s, "silver"))}</div>
             </div>
           </div>
         </fieldset>
@@ -155,12 +155,12 @@ export function OrderForm({
             <p className="mb-5 text-sm text-mute">
               Isi jumlah {unit}. Harga otomatis tersesuaikan—kalau lebih banyak atau kurang, langsung berubah.
             </p>
-            <div className="relative border border-line bg-panel/60 p-5">
-              <CropCorners className="border-magenta/40" />
+            <div className="relative rounded-tag-lg border border-line bg-panel/60 p-5">
+              <CropCorners className="border-silver/40" />
               <label className="block">
                 <span className="label">Jumlah ({unit})</span>
                 <div className="flex items-stretch gap-2">
-                  <button type="button" onClick={() => stepQty(-1)} aria-label={`Kurangi ${unit}`} className="grid size-12 shrink-0 place-items-center border border-line font-mono text-lg text-ink/70 transition-colors hover:border-magenta hover:text-magenta">
+                  <button type="button" onClick={() => stepQty(-1)} aria-label={`Kurangi ${unit}`} className="grid size-12 shrink-0 place-items-center rounded-tag-sm border border-line font-mono text-lg text-ink/70 transition-colors hover:border-silver hover:text-silver">
                     −
                   </button>
                   <input
@@ -175,7 +175,7 @@ export function OrderForm({
                     className="field min-h-12 flex-1 text-center font-mono text-lg font-semibold tabular-nums"
                     required
                   />
-                  <button type="button" onClick={() => stepQty(1)} aria-label={`Tambah ${unit}`} className="grid size-12 shrink-0 place-items-center border border-line font-mono text-lg text-ink/70 transition-colors hover:border-magenta hover:text-magenta">
+                  <button type="button" onClick={() => stepQty(1)} aria-label={`Tambah ${unit}`} className="grid size-12 shrink-0 place-items-center rounded-tag-sm border border-line font-mono text-lg text-ink/70 transition-colors hover:border-silver hover:text-silver">
                     +
                   </button>
                 </div>
@@ -191,22 +191,22 @@ export function OrderForm({
                 </div>
                 <div className="text-right">
                   <p className="eyebrow">Total sementara</p>
-                  <p className="mt-1 font-mono text-3xl font-bold tabular-nums tracking-tight text-magenta">
+                  <p className="mt-1 font-mono text-3xl font-bold tabular-nums tracking-tight text-silver">
                     {priced?.price != null ? rupiah(priced.price) : "—"}
                   </p>
                   <p className="mt-1 text-[11px] text-mute">Belum termasuk finishing/ongkir.</p>
                 </div>
               </div>
-              {priced?.error && <p className="mt-3 text-sm text-red">{priced.error}</p>}
+              {priced?.error && <p className="mt-3 text-sm text-silver">{priced.error}</p>}
             </div>
           </fieldset>
         )}
 
-        <div className="border border-line bg-panel/60 p-5 lg:hidden">
+        <div className="rounded-tag-lg border border-line bg-panel/60 p-5 lg:hidden">
           <p className="eyebrow">Ringkasan</p>
           <p className="mt-2 font-semibold">{chosen?.name ?? "Pilih layanan"}</p>
           {breakdown && <p className="mt-1 font-mono text-sm text-mute">{breakdown}</p>}
-          <p className="mt-3 font-mono text-3xl font-bold tabular-nums tracking-tight text-cyan">
+          <p className="mt-3 font-mono text-3xl font-bold tabular-nums tracking-tight text-ink">
             {priced?.price != null ? rupiah(priced.price) : "Belum dihitung"}
           </p>
         </div>
@@ -274,11 +274,11 @@ export function OrderForm({
       </form>
 
       <aside aria-label="Ringkasan pesanan" className="hidden lg:sticky lg:top-24 lg:block">
-        <div className="relative border border-line bg-panel/70 p-6 shadow-ticket">
+        <div className="relative rounded-tag-xl border border-line bg-panel/70 p-6 shadow-ticket">
           <CropCorners />
           <div className="flex items-center justify-between gap-3">
             <p className="eyebrow">Ringkasan</p>
-            <CmykChips className="size-2" />
+            <ToneChips className="size-2" />
           </div>
           <p className="mt-4 text-lg font-semibold leading-snug">{chosen?.name ?? "Pilih layanan"}</p>
           <p className="mt-1 text-sm text-mute">{chosen?.blurb ?? "Belum ada layanan dipilih."}</p>
@@ -308,7 +308,7 @@ export function OrderForm({
 
           <div className="mt-6 border-t border-dashed border-line pt-5">
             <p className="eyebrow">Total sementara</p>
-            <p className="mt-2 font-mono text-4xl font-bold tabular-nums tracking-tight text-cyan">
+            <p className="mt-2 font-mono text-4xl font-bold tabular-nums tracking-tight text-ink">
               {priced?.price != null ? rupiah(priced.price) : "—"}
             </p>
             {breakdown && <p className="mt-1 font-mono text-xs text-mute">{breakdown}</p>}
@@ -318,7 +318,7 @@ export function OrderForm({
           </div>
 
           {payment.enabled && (payment.bankAccount || payment.note) && (
-            <div className="mt-5 border border-line bg-sand/80 px-4 py-3 text-[13px] leading-5 text-ink/70">
+            <div className="mt-5 rounded-tag-sm border border-line bg-sand/80 px-4 py-3 text-[13px] leading-5 text-ink/70">
               {hasBankLogo(payment.bankName) && (
                 <span className="mb-2 inline-flex rounded-tag-sm border border-line bg-ink px-2.5 py-1.5 align-middle">
                   <BankLogo bank={payment.bankName} className="h-5 w-auto" />
@@ -347,7 +347,7 @@ export function OrderForm({
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="eyebrow">Total</p>
-            <p className="truncate font-mono text-xl font-bold tabular-nums text-cyan">
+            <p className="truncate font-mono text-xl font-bold tabular-nums text-ink">
               {priced?.price != null ? rupiah(priced.price) : "Belum dihitung"}
             </p>
           </div>

@@ -20,7 +20,7 @@ export default async function SettingsAdmin() {
     <AdminShell active="settings">
       <div>
         <p className="eyebrow flex items-center gap-2.5">
-          <RegMark className="size-3.5 text-yellow" />
+          <RegMark className="size-3.5 text-steel" />
           Admin
         </p>
         <h1 className="display mt-4 text-4xl sm:text-5xl">Pengaturan</h1>

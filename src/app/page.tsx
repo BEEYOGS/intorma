@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
-import { Barcode, CmykChips, CropCorners, RegMark, Reveal, Ticker } from "@/components/Press";
+import { Barcode, ToneChips, CropCorners, RegMark, Reveal, Ticker } from "@/components/Press";
 import { getServices, type Service } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { priceLabel } from "@/lib/pricing";
@@ -12,10 +12,10 @@ import { waLink } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 const steps = [
-  ["01", "Isi brief", "Ceritakan kebutuhan dan referensi yang kamu suka. Sekitar dua menit.", "text-cyan"],
-  ["02", "Konfirmasi", "Kami baca brief-nya, lalu bahas lingkup, harga, dan jadwal lewat WhatsApp.", "text-magenta"],
-  ["03", "Pengerjaan", "Status dan catatan progres bisa kamu pantau kapan saja dari halaman lacak.", "text-yellow"],
-  ["04", "Selesai", "File final dikirim sesuai kesepakatan. Pembayaran ditandai lunas oleh admin.", "text-green"],
+  ["01", "Isi brief", "Ceritakan kebutuhan dan referensi yang kamu suka. Sekitar dua menit.", "text-ink"],
+  ["02", "Konfirmasi", "Kami baca brief-nya, lalu bahas lingkup, harga, dan jadwal lewat WhatsApp.", "text-silver"],
+  ["03", "Pengerjaan", "Status dan catatan progres bisa kamu pantau kapan saja dari halaman lacak.", "text-steel"],
+  ["04", "Selesai", "File final dikirim sesuai kesepakatan. Pembayaran ditandai lunas oleh admin.", "text-white"],
 ];
 
 const faq = [
@@ -41,9 +41,9 @@ const faq = [
   ],
 ];
 
-function ServiceRows({ items, accent }: { items: Service[]; accent: "cyan" | "magenta" }) {
-  const bar = accent === "cyan" ? "bg-cyan" : "bg-magenta";
-  const hoverText = accent === "cyan" ? "group-hover:text-cyan" : "group-hover:text-magenta";
+function ServiceRows({ items, accent }: { items: Service[]; accent: "ink" | "silver" }) {
+  const bar = accent === "ink" ? "bg-ink" : "bg-silver";
+  const hoverText = accent === "ink" ? "group-hover:text-ink" : "group-hover:text-silver";
   return (
     <ul className="border-t border-line">
       {items.map((service, index) => (
@@ -93,22 +93,23 @@ export default async function Home() {
       <main id="konten">
         {/* --------------------------------------------------------------- Hero */}
         <section className="relative overflow-hidden border-b border-line">
+          <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.05] via-transparent to-transparent" />
           <div className="wrap grid gap-14 pb-16 pt-12 sm:pt-16 lg:grid-cols-[1.08fr_.92fr] lg:items-center lg:gap-16 lg:pb-24">
             <div className="max-w-2xl">
               <p className="enter eyebrow flex items-center gap-2.5" style={{ "--enter-delay": "0ms" } as React.CSSProperties}>
-                <RegMark className="size-3.5 text-cyan" />
+                <RegMark className="size-3.5 text-ink" />
                 Studio desain &amp; cetak — Indonesia
               </p>
               <h1 className="enter display mt-7 text-[clamp(2.9rem,7.4vw,6.2rem)]" style={{ "--enter-delay": "90ms" } as React.CSSProperties}>
                 Ide kamu,
                 <br />
                 dibikin{" "}
-                <span className="relative inline-block font-serif font-normal italic tracking-[-0.02em]">
+                <span className="relative inline-block bg-gradient-to-br from-ink via-silver to-steel bg-clip-text font-serif font-normal italic tracking-[-0.02em] text-transparent">
                   kelihatan.
                   <span aria-hidden className="absolute -bottom-1 left-0 flex h-[5px] w-full gap-[3px] sm:-bottom-2">
-                    <span className="h-full flex-1 bg-cyan" />
-                    <span className="h-full flex-1 bg-magenta" />
-                    <span className="h-full flex-1 bg-yellow" />
+                    <span className="h-full flex-1 bg-ink" />
+                    <span className="h-full flex-1 bg-silver" />
+                    <span className="h-full flex-1 bg-steel" />
                     <span className="h-full flex-1 bg-ink/70" />
                   </span>
                 </span>
@@ -126,22 +127,22 @@ export default async function Home() {
                 </Link>
               </div>
               <ul className="enter mt-10 flex flex-wrap gap-x-6 gap-y-2 font-mono text-[12px] uppercase tracking-[0.08em] text-mute" style={{ "--enter-delay": "360ms" } as React.CSSProperties}>
-                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-cyan" />Harga otomatis</li>
-                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-magenta" />Kabar via WhatsApp</li>
-                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-yellow" />Lacak online</li>
+                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-ink" />Harga otomatis</li>
+                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-silver" />Kabar via WhatsApp</li>
+                <li className="flex items-center gap-2"><span aria-hidden className="status-dot bg-steel" />Lacak online</li>
               </ul>
             </div>
 
             <aside
               aria-label="Ringkasan studio"
-              className="enter relative border border-line bg-panel/80 p-7 shadow-ticket sm:p-9"
+              className="enter relative rounded-tag-xl border border-line bg-panel/80 p-7 shadow-ticket sm:p-9"
               style={{ "--enter-delay": "220ms" } as React.CSSProperties}
             >
               <CropCorners />
               <div className="flex items-start justify-between gap-6">
                 <div>
                   <p className="eyebrow">Mulai dari</p>
-                  <p className="mt-3 font-mono text-4xl font-bold tabular-nums tracking-tight text-cyan sm:text-5xl">
+                  <p className="mt-3 font-mono text-4xl font-bold tabular-nums tracking-tight text-ink sm:text-5xl">
                     {minPrice ? rupiah(minPrice) : "Sesuai brief"}
                   </p>
                 </div>
@@ -171,7 +172,7 @@ export default async function Home() {
               <div className="mt-8 border-t border-line pt-6">
                 <Barcode value="INTORMA-STUDIO" height={30} className="text-ink/70" label="" />
                 <div className="mt-4 flex items-center justify-between gap-4">
-                  <CmykChips />
+                  <ToneChips />
                   <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-mute">Creative without idea</span>
                 </div>
               </div>
@@ -188,7 +189,7 @@ export default async function Home() {
               <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
                 <div>
                   <p className="eyebrow flex items-center gap-2.5">
-                    <RegMark className="size-3.5 text-magenta" />
+                    <RegMark className="size-3.5 text-silver" />
                     Layanan &amp; harga
                   </p>
                   <h2 className="display mt-5 text-4xl sm:text-5xl">Pilih bentuk yang kamu butuhkan.</h2>
@@ -204,24 +205,24 @@ export default async function Home() {
               <Reveal>
                 <section aria-labelledby="grp-desain">
                   <div className="mb-3 flex items-baseline gap-3">
-                    <span aria-hidden className="h-3 w-3 bg-cyan" />
+                    <span aria-hidden className="h-3 w-3 rounded-[3px_3px_3px_0] bg-ink" />
                     <h3 id="grp-desain" className="font-serif text-2xl italic text-ink/80">Desain</h3>
                     <span aria-hidden className="h-px flex-1 bg-line" />
                     <span className="font-mono text-xs text-mute">{design.length} layanan</span>
                   </div>
-                  <ServiceRows items={design} accent="cyan" />
+                  <ServiceRows items={design} accent="ink" />
                 </section>
               </Reveal>
 
               <Reveal>
                 <section aria-labelledby="grp-cetak">
                   <div className="mb-3 flex items-baseline gap-3">
-                    <span aria-hidden className="h-3 w-3 bg-magenta" />
+                    <span aria-hidden className="h-3 w-3 rounded-[3px_3px_3px_0] bg-silver" />
                     <h3 id="grp-cetak" className="font-serif text-2xl italic text-ink/80">Cetak</h3>
                     <span aria-hidden className="h-px flex-1 bg-line" />
                     <span className="font-mono text-xs text-mute">{print.length} layanan</span>
                   </div>
-                  <ServiceRows items={print} accent="magenta" />
+                  <ServiceRows items={print} accent="silver" />
                 </section>
               </Reveal>
             </div>
@@ -245,13 +246,13 @@ export default async function Home() {
 
         {/* ---------------------------------------------------------- Cara kerja */}
         <section id="cara-kerja" className="relative scroll-mt-24 overflow-hidden border-b border-line bg-sand/80">
-          <div aria-hidden className="pointer-events-none absolute -right-40 top-0 size-[30rem] rounded-full bg-magenta/[0.05] blur-[110px]" />
+          <div aria-hidden className="pointer-events-none absolute -right-40 top-0 size-[30rem] rounded-full bg-silver/[0.05] blur-[110px]" />
           <div className="wrap relative py-16 sm:py-24">
             <Reveal>
               <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr] lg:items-end">
                 <div>
                   <p className="eyebrow flex items-center gap-2.5">
-                    <RegMark className="size-3.5 text-yellow" />
+                    <RegMark className="size-3.5 text-steel" />
                     Cara kerja
                   </p>
                   <h2 className="display mt-5 text-4xl sm:text-5xl">Jelas dari awal sampai akhir.</h2>
@@ -266,7 +267,7 @@ export default async function Home() {
             <ol className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
               {steps.map(([number, title, description, color], i) => (
                 <Reveal key={number} delay={i * 110}>
-                  <li className="relative h-full border border-line bg-panel/50 p-6">
+                  <li className="relative h-full rounded-tag-lg border border-line bg-panel/50 p-6">
                     <CropCorners className="border-line" />
                     <span className={`font-serif text-4xl italic ${color}`}>{number}</span>
                     <h3 className="mt-6 text-lg font-semibold tracking-tight">{title}</h3>
@@ -284,7 +285,7 @@ export default async function Home() {
             <Reveal>
               <div>
                 <p className="eyebrow flex items-center gap-2.5">
-                  <RegMark className="size-3.5 text-green" />
+                  <RegMark className="size-3.5 text-ink" />
                   Pembayaran
                 </p>
                 <h2 className="display mt-5 text-4xl sm:text-5xl">
@@ -297,9 +298,9 @@ export default async function Home() {
                   transfer, konfirmasi lewat chat yang sama supaya pesanan bisa segera diproses.
                 </p>
                 <ul className="mt-7 space-y-3 text-sm text-mute">
-                  <li className="flex gap-3"><span aria-hidden className="mt-[0.4rem] status-dot bg-yellow" />Nominal sesuai kesepakatan, bukan estimasi di daftar.</li>
-                  <li className="flex gap-3"><span aria-hidden className="mt-[0.4rem] status-dot bg-green" />Status pembayaran ditandai lunas oleh admin.</li>
-                  <li className="flex gap-3"><span aria-hidden className="mt-[0.4rem] status-dot bg-cyan" />Bukti transfer bisa dikirim langsung di WhatsApp.</li>
+                  <li className="flex gap-3"><span aria-hidden className="mt-[0.4rem] status-dot bg-steel" />Nominal sesuai kesepakatan, bukan estimasi di daftar.</li>
+                  <li className="flex gap-3"><span aria-hidden className="mt-[0.4rem] status-dot bg-ink" />Status pembayaran ditandai lunas oleh admin.</li>
+                  <li className="flex gap-3"><span aria-hidden className="mt-[0.4rem] status-dot bg-silver" />Bukti transfer bisa dikirim langsung di WhatsApp.</li>
                 </ul>
               </div>
             </Reveal>
@@ -308,7 +309,7 @@ export default async function Home() {
               <div className="ticket p-7 shadow-ticket sm:p-9">
                 <div className="flex items-center justify-between gap-4">
                   <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-paper/55">Rekening tujuan</p>
-                  <CmykChips className="size-2" />
+                  <ToneChips className="size-2" />
                 </div>
                 {payment.enabled ? (
                   <>
@@ -356,7 +357,7 @@ export default async function Home() {
             <Reveal>
               <div>
                 <p className="eyebrow flex items-center gap-2.5">
-                  <RegMark className="size-3.5 text-blue" />
+                  <RegMark className="size-3.5 text-steel" />
                   Pertanyaan
                 </p>
                 <h2 className="display mt-5 text-4xl sm:text-5xl">Hal yang sering ditanya.</h2>
@@ -373,9 +374,9 @@ export default async function Home() {
               <div className="border-t border-line">
                 {faq.map(([question, answer]) => (
                   <details key={question} className="group border-b border-line">
-                    <summary className="flex cursor-pointer items-center justify-between gap-5 py-5 text-[15px] font-semibold leading-6 transition-colors hover:text-cyan">
+                    <summary className="flex cursor-pointer items-center justify-between gap-5 py-5 text-[15px] font-semibold leading-6 transition-colors hover:text-ink">
                       {question}
-                      <span aria-hidden className="grid size-6 shrink-0 place-items-center border border-line font-mono text-sm text-mute transition-all duration-300 group-open:rotate-45 group-open:border-cyan/60 group-open:text-cyan">
+                      <span aria-hidden className="grid size-6 shrink-0 place-items-center rounded-tag-xs border border-line font-mono text-sm text-mute transition-all duration-300 group-open:rotate-45 group-open:border-ink/60 group-open:text-ink">
                         +
                       </span>
                     </summary>
@@ -389,7 +390,7 @@ export default async function Home() {
 
         {/* ----------------------------------------------------------------- CTA */}
         <section className="relative overflow-hidden">
-          <div aria-hidden className="pointer-events-none absolute -left-32 bottom-0 size-[26rem] rounded-full bg-cyan/[0.06] blur-[100px]" />
+          <div aria-hidden className="pointer-events-none absolute -left-32 bottom-0 size-[26rem] rounded-full bg-ink/[0.06] blur-[100px]" />
           <div className="wrap relative grid gap-8 py-16 sm:py-24 lg:grid-cols-[1.2fr_auto] lg:items-end">
             <Reveal>
               <div>
@@ -397,7 +398,7 @@ export default async function Home() {
                 <h2 className="display mt-5 text-[clamp(2.4rem,5.5vw,4.5rem)]">
                   Brief belum rapi?
                   <br />
-                  <span className="font-serif font-normal italic tracking-[-0.02em] text-magenta">Nggak masalah.</span>
+                  <span className="font-serif font-normal italic tracking-[-0.02em] text-silver">Nggak masalah.</span>
                 </h2>
                 <p className="mt-5 max-w-lg text-sm leading-6 text-ink/60 sm:text-base sm:leading-7">
                   Pilih layanan dan isi yang sudah kamu tahu. Sisanya bisa dibicarakan setelahnya—lewat

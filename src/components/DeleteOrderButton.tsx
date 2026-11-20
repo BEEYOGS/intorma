@@ -39,7 +39,7 @@ export function DeleteOrderButton({
       <button
         type="button"
         onClick={open}
-        className="inline-flex min-h-10 items-center gap-2 rounded-tag-sm border border-red/40 px-4 text-sm font-semibold text-red transition-colors hover:border-red hover:bg-red/10"
+        className="inline-flex min-h-10 items-center gap-2 rounded-tag-sm border border-silver/40 px-4 text-sm font-semibold text-silver transition-colors hover:border-silver hover:bg-silver/10"
       >
         Hapus pesanan
         <span aria-hidden="true">→</span>
@@ -54,7 +54,7 @@ export function DeleteOrderButton({
         className="w-[min(92vw,28rem)] rounded-tag-lg border border-line bg-panel p-0 text-ink shadow-2xl"
       >
         <div className="p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-red">Zona berbahaya</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-silver">Zona berbahaya</p>
           <h3 id={`hapus-${id}`} className="mt-3 text-xl font-semibold tracking-tight">
             Hapus pesanan {code}?
           </h3>
@@ -85,7 +85,7 @@ export function DeleteOrderButton({
             </label>
 
             {state?.error && (
-              <p role="alert" className="rounded-tag-sm border border-red/40 bg-red/10 px-3 py-2 text-sm text-red">
+              <p role="alert" className="rounded-tag-sm border border-dashed border-silver/40 bg-silver/10 px-3 py-2 text-sm text-silver">
                 {state.error}
               </p>
             )}
@@ -97,7 +97,7 @@ export function DeleteOrderButton({
               <button
                 type="submit"
                 disabled={pending || !matched}
-                className="inline-flex min-h-10 items-center justify-center rounded-tag-sm bg-red px-4 text-sm font-semibold text-white transition-colors hover:bg-red/80 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex min-h-10 items-center justify-center rounded-tag-sm bg-silver px-4 text-sm font-semibold text-paper transition-colors hover:bg-silver/80 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {pending ? "Menghapus…" : "Ya, hapus pesanan"}
               </button>

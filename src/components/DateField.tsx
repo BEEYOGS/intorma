@@ -151,16 +151,16 @@ export function DateField({
         <div
           role="dialog"
           aria-label="Pilih tanggal"
-          className="absolute left-0 right-0 z-30 mt-2 rounded-tag-sm border border-line bg-panel p-4 shadow-[0_18px_40px_-24px_rgba(11,11,11,0.45)]"
+          className="absolute left-0 right-0 z-30 mt-2 rounded-tag-lg border border-line bg-panel p-4 shadow-[0_18px_40px_-24px_rgba(11,11,11,0.45)]"
         >
           <div className="flex items-center justify-between gap-2">
-            <button type="button" onClick={() => moveMonth(-1)} aria-label="Bulan sebelumnya" className="grid size-9 place-items-center rounded-full text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink">
+            <button type="button" onClick={() => moveMonth(-1)} aria-label="Bulan sebelumnya" className="grid size-9 place-items-center rounded-tag-xs text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink">
               <Arrow dir="left" />
             </button>
             <p aria-live="polite" className="text-sm font-semibold">
               {MONTHS[view.month]} {view.year}
             </p>
-            <button type="button" onClick={() => moveMonth(1)} aria-label="Bulan berikutnya" className="grid size-9 place-items-center rounded-full text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink">
+            <button type="button" onClick={() => moveMonth(1)} aria-label="Bulan berikutnya" className="grid size-9 place-items-center rounded-tag-xs text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink">
               <Arrow dir="right" />
             </button>
           </div>
@@ -185,10 +185,10 @@ export function DateField({
                   aria-pressed={selected}
                   aria-current={isToday ? "date" : undefined}
                   aria-label={`${day} ${MONTHS[view.month]} ${view.year}`}
-                  className={`grid size-9 place-items-center rounded-full text-[13px] font-medium tabular-nums transition-colors ${
+                  className={`grid size-9 place-items-center rounded-tag-xs text-[13px] font-medium tabular-nums transition-colors ${
                     selected
-                      ? "bg-cyan text-[#04252b]"
-                      : `text-ink/75 hover:bg-ink/5 hover:text-ink ${isToday ? "border border-cyan/40" : ""}`
+                      ? "bg-ink text-paper"
+                      : `text-ink/75 hover:bg-ink/5 hover:text-ink ${isToday ? "border border-ink/40" : ""}`
                   }`}
                 >
                   {day}

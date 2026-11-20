@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { adminLogout } from "@/app/actions";
-import { CmykChips } from "@/components/Press";
+import { ToneChips } from "@/components/Press";
 import { SITE_NAME } from "@/lib/site";
 
 const tabs = [
@@ -26,7 +26,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
             href={t.href}
             aria-current={on ? "page" : undefined}
             className={`whitespace-nowrap rounded-tag-sm px-3.5 py-2 text-sm font-medium transition-colors ${
-              on ? "bg-cyan text-[#04252b]" : "text-ink/55 hover:bg-ink/5 hover:text-ink"
+              on ? "bg-ink text-paper" : "text-ink/55 hover:bg-ink/5 hover:text-ink"
             }`}
           >
             {t.label}
@@ -44,20 +44,20 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
             <Link href="/admin" aria-label={`${SITE_NAME} admin`} className="flex shrink-0 items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/int.svg" alt={SITE_NAME} className="h-7 w-auto" />
-              <span className="tag hidden !border-magenta/40 !text-magenta md:inline-flex">Admin</span>
+              <span className="tag hidden !border-silver/40 !text-silver md:inline-flex">Admin</span>
             </Link>
             {nav(false)}
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <CmykChips className="mr-2 hidden size-2 lg:inline-flex" />
+            <ToneChips className="mr-2 hidden size-2 lg:inline-flex" />
             <Link
               href="/"
-              className="hidden rounded-full px-3 py-2 text-sm font-medium text-ink/55 transition-colors hover:bg-ink/5 hover:text-cyan md:inline-flex"
+              className="hidden rounded-tag-sm px-3 py-2 text-sm font-medium text-ink/55 transition-colors hover:bg-ink/5 hover:text-ink md:inline-flex"
             >
               Lihat situs
             </Link>
             <form action={adminLogout}>
-              <button className="rounded-full px-3 py-2 text-sm font-medium text-ink/55 transition-colors hover:bg-red/10 hover:text-red">
+              <button className="rounded-tag-sm px-3 py-2 text-sm font-medium text-ink/55 transition-colors hover:bg-silver/10 hover:text-silver">
                 Keluar
               </button>
             </form>

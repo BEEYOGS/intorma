@@ -1,23 +1,22 @@
 import type { Config } from "tailwindcss";
 
-// Ruang cetak: arang dingin + tinta proses C/M/Y/K. Warna status ikut palet proses.
+// Monochrome intorma: ramp lima nada dari swatch merek (terang -> hitam).
+// Sudut khas: kiri-atas, kanan-atas, kanan-bawah rounded; kiri-bawah tajam.
 export default {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        ink: "#f2efe6",
-        paper: "#0b0d10",
-        panel: "#13161c",
-        sand: "#0f1218",
-        line: "#252b35",
-        mute: "#8e97a6",
-        cyan: "#2ee6ff",
-        magenta: "#ff3d8e",
-        yellow: "#ffd23f",
-        green: "#3fe08c",
-        red: "#ff5c5c",
-        blue: "#5aa7ff",
+        ink: "#f5f7f9",
+        silver: "#c6c8c9",
+        steel: "#8a8d8e",
+        coal: "#3a3d3d",
+        ash: "#6d7275",
+        paper: "#070809",
+        panel: "#14161a",
+        sand: "#0e1013",
+        line: "#2b2f33",
+        mute: "#9ba0a3",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "Segoe UI", "sans-serif"],
@@ -25,14 +24,16 @@ export default {
         mono: ["ui-monospace", "SFMono-Regular", "Cascadia Mono", "Consolas", "monospace"],
       },
       borderRadius: {
-        tag: "0.75rem",
-        "tag-sm": "0.5rem",
-        "tag-lg": "1rem",
+        "tag-xs": "0.35rem 0.35rem 0.35rem 0",
+        "tag-sm": "0.7rem 0.7rem 0.7rem 0",
+        tag: "1.1rem 1.1rem 1.1rem 0",
+        "tag-lg": "1.6rem 1.6rem 1.6rem 0",
+        "tag-xl": "2.2rem 2.2rem 2.2rem 0",
       },
       letterSpacing: { tightest: "-0.05em" },
       boxShadow: {
         ticket: "0 24px 60px -28px rgba(0,0,0,0.85)",
-        glow: "0 0 0 1px rgba(46,230,255,0.35), 0 0 24px -6px rgba(46,230,255,0.35)",
+        glow: "0 0 0 1px rgba(245,247,249,0.35), 0 0 24px -6px rgba(245,247,249,0.3)",
       },
     },
   },

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { InstallButton } from "@/components/PWA";
-import { Barcode, CmykChips, RegMark, ScrollProgress } from "@/components/Press";
+import { Barcode, ToneChips, RegMark, ScrollProgress } from "@/components/Press";
 import { SITE_NAME, TAGLINE, waDisplay, waLink } from "@/lib/site";
 
 const wordmark = { src: "/int.svg", alt: `${SITE_NAME} — ${TAGLINE}` };
@@ -69,13 +69,13 @@ export function Nav() {
                 href={l.href}
                 aria-current={active === l.id ? "true" : undefined}
                 className={`relative py-1 transition-colors ${
-                  active === l.id ? "text-cyan" : "text-ink/65 hover:text-ink"
+                  active === l.id ? "text-ink" : "text-ink/65 hover:text-ink"
                 }`}
               >
                 {l.label}
                 <span
                   aria-hidden
-                  className={`absolute -bottom-0.5 left-0 h-px bg-cyan transition-all duration-300 ${
+                  className={`absolute -bottom-0.5 left-0 h-px bg-ink transition-all duration-300 ${
                     active === l.id ? "w-full" : "w-0"
                   }`}
                 />
@@ -84,13 +84,13 @@ export function Nav() {
             <Link
               href="/lacak"
               className={`relative py-1 transition-colors ${
-                pathname.startsWith("/lacak") ? "text-cyan" : "text-ink/65 hover:text-ink"
+                pathname.startsWith("/lacak") ? "text-ink" : "text-ink/65 hover:text-ink"
               }`}
             >
               Lacak pesanan
               <span
                 aria-hidden
-                className={`absolute -bottom-0.5 left-0 h-px bg-cyan transition-all duration-300 ${
+                className={`absolute -bottom-0.5 left-0 h-px bg-ink transition-all duration-300 ${
                   pathname.startsWith("/lacak") ? "w-full" : "w-0"
                 }`}
               />
@@ -100,7 +100,7 @@ export function Nav() {
           <div className="flex items-center gap-1.5">
             <Link
               href="/lacak"
-              className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-ink/65 transition-colors hover:bg-ink/5 hover:text-ink md:hidden"
+              className="inline-flex min-h-11 items-center rounded-tag-sm px-3 text-sm font-medium text-ink/65 transition-colors hover:bg-ink/5 hover:text-ink md:hidden"
             >
               Lacak
             </Link>
@@ -130,7 +130,7 @@ export function Nav() {
                 key={l.id}
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className="enter flex items-center justify-between border-b border-line py-5 text-2xl font-bold tracking-tight text-ink transition-colors hover:text-cyan"
+                className="enter flex items-center justify-between border-b border-line py-5 text-2xl font-bold tracking-tight text-ink transition-colors hover:text-ink"
                 style={{ "--enter-delay": `${i * 60}ms` } as React.CSSProperties}
               >
                 {l.label}
@@ -138,7 +138,7 @@ export function Nav() {
               </Link>
             ))}
             <div className="mt-8 flex items-center justify-between">
-              <CmykChips />
+              <ToneChips />
               <a href={waLink()} target="_blank" rel="noreferrer" className="font-mono text-xs uppercase tracking-[0.2em] text-mute">
                 {waDisplay}
               </a>
@@ -171,17 +171,17 @@ export function Footer() {
           <div className="grid grid-cols-2 gap-8 text-sm">
             <nav aria-label="Tautan situs" className="flex flex-col gap-3">
               <p className="eyebrow mb-1">Situs</p>
-              <Link href="/order" className="text-ink/75 transition-colors hover:text-cyan">Pesan desain</Link>
-              <Link href="/lacak" className="text-ink/75 transition-colors hover:text-cyan">Lacak pesanan</Link>
-              <Link href="/#layanan" className="text-ink/75 transition-colors hover:text-cyan">Layanan &amp; harga</Link>
-              <Link href="/#pembayaran" className="text-ink/75 transition-colors hover:text-cyan">Pembayaran</Link>
+              <Link href="/order" className="text-ink/75 transition-colors hover:text-ink">Pesan desain</Link>
+              <Link href="/lacak" className="text-ink/75 transition-colors hover:text-ink">Lacak pesanan</Link>
+              <Link href="/#layanan" className="text-ink/75 transition-colors hover:text-ink">Layanan &amp; harga</Link>
+              <Link href="/#pembayaran" className="text-ink/75 transition-colors hover:text-ink">Pembayaran</Link>
             </nav>
             <div className="flex flex-col gap-3">
               <p className="eyebrow mb-1">Kontak</p>
-              <a href={waLink()} target="_blank" rel="noreferrer" className="text-ink/75 transition-colors hover:text-cyan">
+              <a href={waLink()} target="_blank" rel="noreferrer" className="text-ink/75 transition-colors hover:text-ink">
                 WhatsApp
               </a>
-              <a href="https://instagram.com/aku.vza" target="_blank" rel="noreferrer" className="text-ink/75 transition-colors hover:text-cyan">
+              <a href="https://instagram.com/aku.vza" target="_blank" rel="noreferrer" className="text-ink/75 transition-colors hover:text-ink">
                 Instagram @aku.vza
               </a>
               <span className="font-mono text-xs text-mute">{waDisplay}</span>
@@ -191,9 +191,9 @@ export function Footer() {
 
         <div className="flex flex-col gap-5 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-xs text-mute">
-            <RegMark className="size-3.5 text-cyan/60" />
+            <RegMark className="size-3.5 text-ink/60" />
             <p>© {new Date().getFullYear()} {SITE_NAME}</p>
-            <CmykChips className="size-2" />
+            <ToneChips className="size-2" />
           </div>
           <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-mute">{TAGLINE}</p>
         </div>
@@ -215,7 +215,7 @@ export function StatusDot({ color, label }: { color: string; label: string }) {
 
 export function StatusBadge({ color, label }: { color: string; label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-line bg-panel/80 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-ink/85">
+    <span className="inline-flex items-center gap-2 rounded-tag-sm border border-line bg-panel/80 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-ink/85">
       <span aria-hidden className="status-dot" style={{ background: color, boxShadow: `0 0 8px ${color}66` }} />
       {label}
     </span>

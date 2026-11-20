@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /* ---------------------------------------------------------------------------
-   Bahasa visual "ruang cetak": registration mark, crop mark, chip CMYK,
+   Bahasa visual monochrome intorma: registration mark, crop mark, chip nada abu,
    barcode Code39 asli untuk kode pesanan, reveal saat scroll, dan latar berlapis.
+   Sudut khas: kiri-atas/kanan-atas/kanan-bawah rounded, kiri-bawah tajam.
    --------------------------------------------------------------------------- */
 
-export function RegMark({ className = "size-4 text-cyan" }: { className?: string }) {
+export function RegMark({ className = "size-4 text-ink" }: { className?: string }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className}>
       <circle cx="12" cy="12" r="7" />
@@ -16,7 +17,7 @@ export function RegMark({ className = "size-4 text-cyan" }: { className?: string
   );
 }
 
-export function CropCorners({ className = "border-cyan/45" }: { className?: string }) {
+export function CropCorners({ className = "border-ink/45" }: { className?: string }) {
   const base = `cropmark ${className}`;
   return (
     <>
@@ -28,12 +29,12 @@ export function CropCorners({ className = "border-cyan/45" }: { className?: stri
   );
 }
 
-export function CmykChips({ className = "size-2.5" }: { className?: string }) {
+export function ToneChips({ className = "size-2.5" }: { className?: string }) {
   return (
     <span aria-hidden className="inline-flex items-center gap-1">
-      <span className={`${className} bg-cyan`} />
-      <span className={`${className} bg-magenta`} />
-      <span className={`${className} bg-yellow`} />
+      <span className={`${className} bg-ink`} />
+      <span className={`${className} bg-silver`} />
+      <span className={`${className} bg-steel`} />
       <span className={`${className} border border-line bg-paper`} />
     </span>
   );
@@ -146,7 +147,7 @@ export function Reveal({
 }
 
 export function Ticker({ items }: { items: string[] }) {
-  const accents = ["text-cyan", "text-magenta", "text-yellow", "text-ink/50"];
+  const accents = ["text-ink", "text-silver", "text-steel", "text-ink/50"];
   const row = (hidden: boolean) => (
     <div aria-hidden={hidden || undefined} className="flex shrink-0 items-center">
       {items.map((item, i) => (
@@ -176,9 +177,9 @@ export function PressBackground() {
         className="dotgrid absolute inset-0"
         style={{ maskImage: "radial-gradient(ellipse 90% 60% at 50% 0%, black 30%, transparent 75%)", WebkitMaskImage: "radial-gradient(ellipse 90% 60% at 50% 0%, black 30%, transparent 75%)" }}
       />
-      <div className="glow-drift absolute -left-48 -top-48 size-[44rem] rounded-full bg-cyan/[0.07] blur-[120px]" />
-      <div className="glow-drift-late absolute -right-56 top-[30%] size-[40rem] rounded-full bg-magenta/[0.06] blur-[130px]" />
-      <div className="glow-drift absolute -bottom-64 left-[20%] size-[36rem] rounded-full bg-yellow/[0.04] blur-[130px]" />
+      <div className="glow-drift absolute -left-48 -top-48 size-[44rem] rounded-full bg-ink/[0.07] blur-[120px]" />
+      <div className="glow-drift-late absolute -right-56 top-[30%] size-[40rem] rounded-full bg-silver/[0.06] blur-[130px]" />
+      <div className="glow-drift absolute -bottom-64 left-[20%] size-[36rem] rounded-full bg-steel/[0.04] blur-[130px]" />
       <div className="grain absolute inset-0 opacity-[0.05]" />
     </div>
   );
@@ -210,7 +211,7 @@ export function ScrollProgress() {
   return (
     <div aria-hidden className="fixed inset-x-0 top-0 z-[60] h-[2px] bg-transparent">
       <div
-        className="h-full bg-gradient-to-r from-cyan via-magenta to-yellow transition-[width] duration-150 ease-out"
+        className="h-full bg-gradient-to-r from-ink via-silver to-steel transition-[width] duration-150 ease-out"
         style={{ width: `${progress * 100}%` }}
       />
     </div>

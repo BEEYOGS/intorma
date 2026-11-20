@@ -1,4 +1,4 @@
-# in.torma design direction — "ruang cetak"
+# in.torma design direction — monochrome press
 
 ## Brand
 
@@ -6,39 +6,59 @@
 - Use `public/int.svg` as the full wordmark (light artwork, for dark backgrounds) and `public/icon.svg` as the symbol (dark gradient artwork, place on a light chip). Do not redraw, crop, recolor, or typeset a substitute logo.
 - Preserve the tagline “Creative without idea” wherever the full wordmark appears.
 
-## Art direction: ruang cetak (the press room)
+## Art direction: monochrome press
 
-The site is styled as a modern print production floor: CMYK process inks on dark
-press steel, paper tickets, registration marks, crop corners, and real Code39
-barcodes. Every decorative element is borrowed from printing, not from generic
-dashboard UI.
+The site is styled as a modern print production floor rendered entirely in the
+brand's five-tone grayscale ramp: near-black press steel, paper-white ink,
+paper tickets, registration marks, crop corners, and real Code39 barcodes.
+No chromatic color anywhere — hierarchy comes from luminance, weight, and
+pattern (solid / dashed / strike), never from hue.
+
+### Signature shape
+
+Every button, card, input, pill, dialog, and ticket uses the intorma corner
+pattern: **top-left, top-right, bottom-right rounded; bottom-left square**.
+Tailwind radius tokens carry the pattern as a four-value `border-radius`:
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `rounded-tag-xs` | `0.35rem … 0` | day cells, checkboxes, micro chips |
+| `rounded-tag-sm` | `0.7rem … 0` | inputs, tags, pills, small buttons |
+| `rounded-tag` | `1.1rem … 0` | primary buttons, service cards |
+| `rounded-tag-lg` | `1.6rem … 0` | panels, dialogs, forms |
+| `rounded-tag-xl` | `2.2rem … 0` | hero spec sheet, feature cards |
+
+Side-specific utilities (`rounded-l-*`) must not use these tokens (four-value
+shorthand is invalid per-corner); use arbitrary values like
+`rounded-[0_0.7rem_0.7rem_0]` for joined input groups.
 
 ### Palette (Tailwind tokens)
 
 | Token | Hex | Role |
 | --- | --- | --- |
-| `paper` | `#0b0d10` | page background (press steel, near-black cool) |
-| `panel` | `#13161c` | raised surface |
-| `sand` | `#0f1218` | inset surface / alternate section |
-| `line` | `#252b35` | hairline borders |
-| `ink` | `#f2efe6` | primary text (warm paper white) |
-| `mute` | `#8e97a6` | secondary text (cool gray) |
-| `cyan` | `#2ee6ff` | process C — primary action, active nav, focus |
-| `magenta` | `#ff3d8e` | process M — print services, serif-italic accents, admin tag |
-| `yellow` | `#ffd23f` | process Y — warnings, "menunggu" status |
-| `green` | `#3fe08c` | success, "selesai", lunas |
-| `red` | `#ff5c5c` | danger, "batal", delete zones |
-| `blue` | `#5aa7ff` | informational spare |
+| `paper` | `#070809` | page background (near-black) |
+| `panel` | `#14161a` | raised surface |
+| `sand` | `#0e1013` | inset surface / alternate section |
+| `line` | `#2b2f33` | hairline borders |
+| `coal` | `#3a3d3d` | scrollbar thumb, dark chips |
+| `ash` | `#6d7275` | "batal" status, cancelled cues |
+| `steel` | `#8a8d8e` | tertiary accent, "menunggu" |
+| `mute` | `#9ba0a3` | secondary text |
+| `silver` | `#c6c8c9` | secondary accent, "dikerjakan", danger text |
+| `ink` | `#f5f7f9` | primary text & primary action fill |
 
-Status colors are fixed in `src/lib/status.ts`: menunggu=yellow,
-dikerjakan=cyan, revisi=magenta, selesai=green, batal=red. Reuse them everywhere
-(badges, dots, steppers, timeline, admin pills) — never invent per-page variants.
+Status tones are fixed in `src/lib/status.ts`: menunggu=steel,
+dikerjakan=silver, revisi=ink (dashed), selesai=white (solid fill, dark text),
+batal=ash (strike). Reuse them everywhere (badges, dots, steppers, timeline,
+admin pills) — never invent per-page variants. Patterns, not hues, separate
+adjacent tones.
 
 ### Typography
 
 - Display/body: Instrument Sans (variable, local `next/font/local`).
 - Editorial accent: Instrument Serif italic for one emphasized word per heading
-  ("kelihatan.", "Nggak masalah.", "tanpa ribet.") with a CMYK underline rule.
+  ("kelihatan.", "Nggak masalah.", "tanpa ribet.") with a grayscale underline
+  rule; the hero word uses a white→silver→steel gradient clip.
 - Data voice: system monospace stack for codes, prices, labels, eyebrows,
   barcodes captions — uppercase, tracked, tabular-nums.
 
@@ -48,23 +68,25 @@ dikerjakan=cyan, revisi=magenta, selesai=green, batal=red. Reuse them everywhere
   order rows, hero spec sheet, footer. Sanitizes input to the Code39 charset.
 - `RegMark` — crosshair registration mark for eyebrows and section headers.
 - `CropCorners` — four corner crop marks on feature cards and dialogs.
-- `CmykChips` — four tiny ink squares (C/M/Y/K) as a brand flourish.
+- `ToneChips` — four tiny grayscale squares (ink/silver/steel/paper) as a brand flourish.
 - `Reveal` — IntersectionObserver fade/rise, once, honors reduced motion.
 - `Ticker` — marquee of service names between hero and services.
-- `PressBackground` — fixed layered glows (cyan/magenta/yellow, very low alpha),
-  feTurbulence grain, dot grid. `ScrollProgress` — 2px C→M→Y top bar.
+- `PressBackground` — fixed layered white/silver/steel glows (very low alpha),
+  feTurbulence grain, dot grid. `ScrollProgress` — 2px ink→silver→steel top bar.
 - `.ticket` (globals.css) — light paper card with perforated edges (radial-gradient
-  mask), dark ink text; used for bank payment card and tracking ticket.
+  mask) and the signature radius, dark ink text; used for bank payment card and
+  tracking ticket.
 
 ### Interaction rules
 
-- Primary button: cyan fill, near-black text, hover → white + cyan glow.
-- Active nav/filter: cyan fill or cyan underline; scrollspy on home anchors.
-- Status pills (admin): `.status-pill` with `--pill` CSS variable per status;
-  checked state tints border/background via `color-mix`.
-- Service radio cards: cyan accent for Desain group, magenta for Cetak group.
+- Primary button: ink fill, near-black text, hover → white + white glow.
+- Active nav/filter: ink fill or ink underline; scrollspy on home anchors.
+- Status pills (admin): `.status-pill` with `--pill` CSS variable per status and
+  `data-tone` (`solid` / `dashed` / `strike`); checked state tints via `color-mix`.
+- Service radio cards: ink accent for Desain group, silver for Cetak group.
 - Quantity stepper: ± buttons, live total in sticky summary and mobile bottom bar.
-- Destructive actions: red-bordered zone + dialog that requires typing the order code.
+- Destructive actions: dashed silver zone + dialog that requires typing the order code.
+- Error/alert blocks: dashed silver border (pattern = warning, no red).
 - All motion disabled under `prefers-reduced-motion`.
 
 ## Interface
@@ -73,6 +95,6 @@ dikerjakan=cyan, revisi=magenta, selesai=green, batal=red. Reuse them everywhere
 - Prices and turnaround estimates come only from service data. Do not fabricate
   customer logos, metrics, testimonials, or delivery promises.
 - Keep pages responsive, keyboard accessible, and readable at high contrast.
-  Descriptive alt text for meaningful images; visible cyan focus states.
-- PWA: public pages cached by `sw.js` (cache name `intorma-v2`); `/admin` and
+  Descriptive alt text for meaningful images; visible ink focus states.
+- PWA: public pages cached by `sw.js` (cache name `intorma-v3`); `/admin` and
   `/api` are never cached. Manifest theme matches `paper`.

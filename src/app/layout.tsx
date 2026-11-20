@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   icons: { icon: "/icon.svg", apple: "/icons/icon-192.png" },
 };
 
-export const viewport: Viewport = { themeColor: "#0b0d10" };
+export const viewport: Viewport = { themeColor: "#070809" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

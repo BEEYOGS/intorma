@@ -94,14 +94,14 @@ export function InstallButton() {
               type="button"
               onClick={hidePopup}
               aria-label="Tutup notifikasi"
-              className="absolute right-3 top-3 grid size-8 place-items-center rounded-full text-ink/45 transition-colors hover:bg-ink/5 hover:text-ink"
+              className="absolute right-3 top-3 grid size-8 place-items-center rounded-tag-xs text-ink/45 transition-colors hover:bg-ink/5 hover:text-ink"
             >
               ✕
             </button>
 
             <div className="flex items-start gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon.svg" alt="" className="size-12 shrink-0 rounded-tag-sm bg-[#f4f1ea] p-1" />
+              <img src="/icon.svg" alt="" className="size-12 shrink-0 rounded-tag-sm bg-ink p-1" />
               <div className="min-w-0">
                 <p className="eyebrow">Lebih mudah lewat aplikasi</p>
                 <h2 className="mt-1.5 text-lg font-semibold tracking-tight">Pasang in.torma</h2>
@@ -122,7 +122,7 @@ export function InstallButton() {
           </div>
 
           <div aria-hidden="true" className="h-0.5 bg-line">
-            <div className="h-full bg-cyan install-timer" />
+            <div className="h-full bg-ink install-timer" />
           </div>
         </div>
       )}

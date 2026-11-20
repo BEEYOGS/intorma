@@ -31,7 +31,7 @@ export function OrderEditor({
   const status = (STATUSES as readonly string[]).includes(order.status) ? (order.status as Status) : "menunggu";
 
   return (
-    <form action={action} className="relative border border-line bg-panel/70 p-5">
+    <form action={action} className="relative rounded-tag-lg border border-line bg-panel/70 p-5">
       <CropCorners className="border-line" />
       <input type="hidden" name="id" value={order.id} />
       <input type="hidden" name="returnTo" value={returnTo} />
@@ -43,7 +43,8 @@ export function OrderEditor({
             <label key={s} className="cursor-pointer">
               <input type="radio" name="status" value={s} defaultChecked={status === s} className="peer sr-only" />
               <span
-                className="status-pill inline-flex items-center gap-2 rounded-full border border-line bg-sand/70 px-3 py-2 font-mono text-[11.5px] font-semibold text-ink/70 transition-all peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cyan"
+                className="status-pill inline-flex items-center gap-2 rounded-tag-sm border border-line bg-sand/70 px-3 py-2 font-mono text-[11.5px] font-semibold text-ink/70 transition-all peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink"
+                data-tone={STATUS_META[s].tone}
                 style={{ "--pill": STATUS_META[s].color } as React.CSSProperties}
               >
                 <span aria-hidden className="status-dot" style={{ background: STATUS_META[s].color }} />
@@ -73,7 +74,7 @@ export function OrderEditor({
             {servicePrice ? `Harga layanan: ${rupiah(servicePrice)} — boleh disesuaikan dengan kesepakatan.` : "Kosongkan kalau harga belum disepakati."}
           </span>
           {priceBreakdown(order.price, order.qty, order.unitRate, order.unitLabel, rupiah) && (
-            <span className="mt-1 block font-mono text-xs font-medium text-cyan">
+            <span className="mt-1 block font-mono text-xs font-medium text-ink">
               Dihitung otomatis: {priceBreakdown(order.price, order.qty, order.unitRate, order.unitLabel, rupiah)}
             </span>
           )}
@@ -94,7 +95,7 @@ export function OrderEditor({
       <div className="mt-5 grid gap-3">
         <label className="block cursor-pointer">
           <input type="checkbox" name="paid" defaultChecked={order.paid} className="peer sr-only" />
-          <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cyan">
+          <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink">
             <span aria-hidden className="check-box">✓</span>
             <span>
               <span className="block text-sm font-semibold">Pembayaran sudah masuk</span>
@@ -105,7 +106,7 @@ export function OrderEditor({
 
         <label className="block cursor-pointer">
           <input type="checkbox" name="notify" defaultChecked className="peer sr-only" />
-          <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cyan">
+          <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink">
             <span aria-hidden className="check-box">✓</span>
             <span>
               <span className="block text-sm font-semibold">Kabari klien lewat WhatsApp</span>
@@ -119,8 +120,8 @@ export function OrderEditor({
         <button type="submit" disabled={pending} className="btn-primary min-h-11 px-5 text-sm">
           {pending ? "Menyimpan…" : "Simpan perubahan"}
         </button>
-        {state?.ok && <span role="status" className="font-mono text-sm font-medium text-green">Tersimpan.</span>}
-        {state?.error && <span role="alert" className="text-sm text-red">{state.error}</span>}
+        {state?.ok && <span role="status" className="font-mono text-sm font-medium text-ink">Tersimpan.</span>}
+        {state?.error && <span role="alert" className="text-sm text-silver">{state.error}</span>}
       </div>
     </form>
   );

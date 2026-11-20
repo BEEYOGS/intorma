@@ -74,11 +74,11 @@ export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; 
           <button type="submit" disabled={pending} className="btn-primary min-h-11 px-5 text-sm">
             {pending ? "Menyimpan…" : "Simpan pengaturan"}
           </button>
-          {state?.ok && <span role="status" className="text-sm font-medium text-green">Tersimpan.</span>}
-          {state?.error && <span role="alert" className="text-sm text-red">{state.error}</span>}
+          {state?.ok && <span role="status" className="text-sm font-medium text-ink">Tersimpan.</span>}
+          {state?.error && <span role="alert" className="text-sm text-silver">{state.error}</span>}
         </div>
 
-        <div className="rounded-tag-sm border border-line bg-panel/50 p-5 text-sm leading-6 text-mute">
+        <div className="rounded-tag-lg border border-line bg-panel/50 p-5 text-sm leading-6 text-mute">
           <p className="font-semibold text-ink">Konfirmasi transfer</p>
           <p className="mt-1">
             Klien diarahkan mengirim konfirmasi ke WhatsApp <span className="font-medium text-ink/80">{waNumber}</span>.

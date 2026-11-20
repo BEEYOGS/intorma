@@ -5,10 +5,11 @@ mendapat kode pesanan, memantau progres, dan melihat instruksi transfer. Admin m
 pesanan, layanan/harga, serta rekening pembayaran dari satu tempat.
 
 Stack: Next.js 15 (App Router) + Tailwind CSS 3 + Neon Postgres + OpenWA (opsional).
-Tampilan memakai tema **"ruang cetak"**: latar baja gelap, teks putih kertas hangat,
-tinta proses CMYK (cyan/magenta/yellow) sebagai aksen, tiket kertas berlubang,
-registration mark, crop corner, dan barcode Code39 asli. Arah visual lengkap ada di
-`DESIGN.md`. Seluruh font di-host lokal lewat `next/font/local`, jadi tidak ada
+Tampilan memakai tema **monochrome intorma**: ramp lima nada dari swatch merek
+(putih `#f5f7f9`, silver `#c6c8c9`, steel `#8a8d8e`, coal `#3a3d3d`, hitam),
+sudut khas kiri-atas/kanan-atas/kanan-bawah rounded dengan kiri-bawah tajam,
+tiket kertas berlubang, registration mark, crop corner, dan barcode Code39 asli.
+Arah visual lengkap ada di `DESIGN.md`. Seluruh font di-host lokal lewat `next/font/local`, jadi tidak ada
 permintaan ke Google Fonts.
 
 ## Menjalankan lokal
