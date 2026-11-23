@@ -43,6 +43,27 @@ Kolom lama `services.pricing_mode` sengaja tidak diubah agar aplikasi yang sudah
 model baru ada di `services.pricing_model`. Rincian pesanan disimpan sebagai snapshot di
 `orders.options`, jadi pesanan lama tetap menampilkan harga yang saat itu disepakati.
 
-Untuk produk cetak, pelanggan menempel link file (Google Drive/WeTransfer). Pembayaran memakai
-transfer manual dan admin mencocokkannya dari `/admin`. Notifikasi WhatsApp diantrekan lewat
-`wa_outbox`; jalankan `npm run openwa` dan `npm run wa:agent` di mesin yang sama dengan gateway.
+Untuk produk cetak, pelanggan bisa **upload langsung** (maksimal 4 MB, disimpan di tabel
+`uploads` dan diakses lewat `/api/upload/<kode>`) atau menempel link Google Drive/WeTransfer.
+Notifikasi WhatsApp diantrekan lewat `wa_outbox`; jalankan `npm run openwa` dan `npm run wa:agent`
+di mesin yang sama dengan gateway.
+
+### Pembayaran
+
+Dua jalur bisa dipakai berdampingan:
+
+- **Transfer manual** (default): atur rekening di `/admin/pengaturan`. Admin mencentang
+  “Pembayaran sudah masuk” di `/admin` setelah mengecek bukti transfer.
+- **Midtrans Snap** (opsional): isi `MIDTRANS_SERVER_KEY` di environment. Tombol “Bayar sekarang”
+  akan muncul di halaman lacak, dan webhook `/api/payment/webhook` menandai pesanan lunas otomatis
+  setelah status `settlement`/`capture`. Set `MIDTRANS_IS_PRODUCTION=1` setelah pindah ke akun
+  produksi, lalu daftarkan URL webhook tersebut di dashboard Midtrans.
+
+Tanpa server key, alur tetap memakai transfer manual seperti sebelumnya.
+
+### Kelola opsi dari admin
+
+Buka `/admin/layanan`, lalu buka layanan yang ingin diatur. Di bawah form harga ada bagian
+**Opsi & finishing** untuk menambah grup (bahan, ukuran, finishing, paket) dan nilainya—termasuk
+harga tambahan, basis hitung (per item/per m² atau sekali pesanan), opsi default, dan status aktif.
+Perubahan langsung dipakai halaman `/order` tanpa menjalankan SQL manual.

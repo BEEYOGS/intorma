@@ -15,6 +15,7 @@ export type ServiceOption = {
   price_delta: number;
   delta_basis: "unit" | "order";
   is_default: boolean;
+  active: boolean;
   sort: number;
 };
 
@@ -25,6 +26,7 @@ export type ServiceOptionGroup = {
   help: string;
   select_type: "single" | "multi";
   required: boolean;
+  active: boolean;
   sort: number;
   options: ServiceOption[];
 };
@@ -94,18 +96,22 @@ function normalizeOption(row: Record<string, unknown>): ServiceOption {
     price_delta: Number(row.price_delta ?? 0),
     delta_basis: row.delta_basis === "order" ? "order" : "unit",
     is_default: Boolean(row.is_default),
+    active: row.active === undefined ? true : Boolean(row.active),
     sort: Number(row.sort ?? 0),
   };
 }
 
-async function loadOptionGroups(serviceIds: string[]): Promise<Map<string, ServiceOptionGroup[]>> {
+async function loadOptionGroups(
+  serviceIds: string[],
+  includeInactive = false,
+): Promise<Map<string, ServiceOptionGroup[]>> {
   const map = new Map<string, ServiceOptionGroup[]>();
   if (!serviceIds.length) return map;
 
   const groups = (await sql.query(
-    `select id, service_id, code, label, help, select_type, required, sort
+    `select id, service_id, code, label, help, select_type, required, active, sort
        from service_option_groups
-      where active and service_id = any($1::text[])
+      where ${includeInactive ? "true" : "active"} and service_id = any($1::text[])
       order by sort, id`,
     [serviceIds],
   )) as Array<Record<string, unknown>>;
@@ -113,9 +119,9 @@ async function loadOptionGroups(serviceIds: string[]): Promise<Map<string, Servi
 
   const groupIds = groups.map((g) => Number(g.id));
   const options = (await sql.query(
-    `select id, group_id, code, label, description, price_delta, delta_basis, is_default, sort
+    `select id, group_id, code, label, description, price_delta, delta_basis, is_default, active, sort
        from service_options
-      where active and group_id = any($1::int[])
+      where ${includeInactive ? "true" : "active"} and group_id = any($1::int[])
       order by sort, id`,
     [groupIds],
   )) as Array<Record<string, unknown>>;
@@ -138,6 +144,7 @@ async function loadOptionGroups(serviceIds: string[]): Promise<Map<string, Servi
       help: String(row.help ?? ""),
       select_type: row.select_type === "multi" ? "multi" : "single",
       required: Boolean(row.required),
+      active: row.active === undefined ? true : Boolean(row.active),
       sort: Number(row.sort ?? 0),
       options: optionsByGroup.get(Number(row.id)) ?? [],
     });
@@ -163,6 +170,13 @@ export async function getServicesWithOptions(): Promise<Service[]> {
 export async function getAllServices(): Promise<Service[]> {
   const rows = await sql.query(`select ${serviceColumns} from services order by sort, name`);
   return (rows as Array<Record<string, unknown>>).map(normalizeService);
+}
+
+/** Untuk halaman admin: semua layanan beserta opsi aktifnya. */
+export async function getAllServicesWithOptions(): Promise<Service[]> {
+  const services = await getAllServices();
+  const groups = await loadOptionGroups(services.map((s) => s.id), true);
+  return services.map((s) => ({ ...s, option_groups: groups.get(s.id) ?? [] }));
 }
 
 export async function getService(id: string): Promise<Service | null> {

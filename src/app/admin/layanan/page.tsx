@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
+import { OptionEditor } from "@/components/OptionEditor";
 import { ServiceForm } from "@/components/ServiceForm";
 import { isAdmin } from "@/lib/auth";
-import { getAllServices } from "@/lib/db";
+import { getAllServicesWithOptions } from "@/lib/db";
 import { priceLabel } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export const metadata = { title: "Layanan", robots: { index: false } };
 
 export default async function ServicesAdmin() {
   if (!(await isAdmin())) redirect("/admin/login");
-  const services = await getAllServices();
+  const services = await getAllServicesWithOptions();
   const active = services.filter((s) => s.active).length;
 
   return (
@@ -65,6 +66,9 @@ export default async function ServicesAdmin() {
               </summary>
               <div className="border-t border-line px-5 py-6">
                 <ServiceForm service={s} />
+                <div className="mt-6">
+                  <OptionEditor service={s} />
+                </div>
               </div>
             </details>
           ))}

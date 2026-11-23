@@ -177,9 +177,28 @@ insert into services (id, name, blurb, price_from, days, sort, pricing_mode, uni
   ('feed', 'Feed Instagram', 'Satu set postingan dengan gaya yang seragam.', 200000, 3, 3, 'flat', '', 1, 10000),
   ('kemasan', 'Kemasan dan label', 'Label produk, stiker, dan desain kemasan.', 300000, 4, 4, 'flat', '', 1, 10000),
   ('thumbnail', 'Thumbnail dan cover', 'Thumbnail video, cover podcast, atau sampul.', 60000, 1, 5, 'flat', '', 1, 10000),
-  ('spanduk-flexi', 'Spanduk Flexi China 280gr', 'Cetak banner outdoor. Harga per meter, finishing bisa dibicarakan.', 25000, 2, 6, 'per_unit', 'meter', 1, 1000),
+  ('spanduk-flexi', 'Spanduk Flexi', 'Cetak banner outdoor. Pilih bahan dan finishing; harga per m².', 25000, 2, 6, 'per_unit', 'meter', 1, 1000),
   ('poster-a3', 'Cetak Poster A3+', 'Cetak poster A3+ full color, art paper 150gr. Harga per lembar.', 5000, 1, 7, 'per_unit', 'lembar', 1, 5000),
   ('kartu-nama', 'Cetak Kartu Nama', 'Kartu nama art carton, 1 box isi 100 lembar. Harga per box.', 25000, 2, 8, 'per_unit', 'box', 1, 100),
   ('stiker-vinyl', 'Cetak Stiker Vinyl A3+', 'Stiker vinyl tahan air, A3+. Harga per lembar.', 15000, 2, 9, 'per_unit', 'lembar', 1, 5000),
-  ('lain', 'Belum tahu butuh apa', 'Ceritakan saja kebutuhanmu, nanti kami arahkan.', 0, 3, 10, 'flat', '', 1, 10000)
+  ('lain', 'Belum tahu butuh apa', 'Ceritakan saja kebutuhanmu, nanti kami arahkan.', 0, 3, 10, 'flat', '', 1, 10000),
+  ('x-banner', 'X-Banner', 'Banner portable dengan kaki X, cocok untuk pameran dan promo.', 85000, 2, 11, 'per_unit', 'pcs', 1, 100),
+  ('poster-a2', 'Cetak Poster A2', 'Poster A2 full color untuk display toko dan acara.', 9000, 1, 12, 'per_unit', 'lembar', 1, 5000),
+  ('kartu-pos', 'Kartu Pos', 'Kartu pos cetak full color, cocok untuk undangan dan merchandising.', 3500, 2, 13, 'per_unit', 'lembar', 1, 5000),
+  ('stiker-label', 'Stiker Label Produk', 'Stiker label kemasan dalam various ukuran, siap tempel.', 500, 2, 14, 'per_unit', 'lembar', 1, 10000),
+  ('foto-produk', 'Foto Produk', 'Pemotretan dan editing foto produk untuk katalog dan marketplace.', 150000, 3, 15, 'flat', '', 1, 10000),
+  ('desain-web', 'Desain Website', 'Desain tampilan website/landing page beserta panduan handoff.', 750000, 7, 16, 'flat', '', 1, 10000),
+  ('copywriting', 'Copywriting', 'Naskah promosi untuk website, iklan, dan media sosial.', 200000, 3, 17, 'flat', '', 1, 10000)
 on conflict (id) do nothing;
+
+-- File yang diunggah pelanggan disimpan sementara di database. Untuk produksi
+-- dengan file besar, gunakan storage eksternal (S3/Supabase) dan simpan URL-nya.
+create table if not exists uploads (
+  id serial primary key,
+  code text not null unique,
+  file_name text not null,
+  mime text not null,
+  size int not null,
+  data bytea not null,
+  created_at timestamptz not null default now()
+);

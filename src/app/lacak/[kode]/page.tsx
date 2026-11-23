@@ -4,9 +4,11 @@ import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav, StatusBadge } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
+import { PayButton } from "@/components/PayButton";
 import { sql } from "@/lib/db";
 import { jam, rupiah, tanggal } from "@/lib/format";
 import { priceBreakdown } from "@/lib/pricing";
+import { gatewayEnabled } from "@/lib/payment";
 import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, isStatus, type Status } from "@/lib/status";
 
@@ -47,6 +49,7 @@ export default async function TrackPage({
   const quoteLines = snapshot?.lines ?? [];
   const selectedOptions = snapshot?.options ?? [];
 
+  const gateway = gatewayEnabled();
   const [events, payment] = await Promise.all([
     sql`select status, note, created_at from order_events where order_id = ${order.id} order by created_at desc`,
     getPaymentSettings(),
@@ -241,6 +244,16 @@ export default async function TrackPage({
                   Berita transfer: <span className="font-mono font-semibold">{order.code}</span>
                 </p>
 
+                {!order.paid && gateway && (
+                  <div className="mt-5 border-t border-line pt-4">
+                    <p className="eyebrow mb-2">Bayar online</p>
+                    <PayButton code={order.code} />
+                    <p className="mt-2 text-xs leading-5 text-mute">
+                      Setelah pembayaran berhasil, status pesanan otomatis berubah menjadi lunas.
+                    </p>
+                  </div>
+                )}
+
                 {order.paid ? (
                   <p className="mt-4 border-t border-line pt-4 text-sm leading-6 text-mute">
                     Terima kasih, pembayaran sudah dikonfirmasi admin.
@@ -299,6 +312,16 @@ export default async function TrackPage({
                   <dt className="text-mute">Atas nama</dt>
                   <dd className="text-right font-medium">{order.name}</dd>
                 </div>
+                {order.file_url && (
+                  <div className="flex items-baseline justify-between gap-4">
+                    <dt className="text-mute">File cetak</dt>
+                    <dd className="text-right font-medium">
+                      <a href={order.file_url} target="_blank" rel="noreferrer" className="underline decoration-line underline-offset-4 hover:decoration-current">
+                        Buka file
+                      </a>
+                    </dd>
+                  </div>
+                )}
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-mute">Target selesai</dt>
                   <dd className="text-right font-medium">{order.deadline ? tanggal(order.deadline) : "Fleksibel"}</dd>

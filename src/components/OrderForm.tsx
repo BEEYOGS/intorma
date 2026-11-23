@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useRef, useState, type ChangeEvent } from "react";
 import { createOrder, type OrderState } from "@/app/actions";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { DateField } from "@/components/DateField";
@@ -64,6 +64,9 @@ export function OrderForm({
   const [width, setWidth] = useState(v.width || "");
   const [height, setHeight] = useState(v.height || "");
   const [selection, setSelection] = useState<Selection>(() => parseSelection(v.selection, initial));
+  const [fileLink, setFileLink] = useState(v.file || "");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   const chosen = services.find((service) => service.id === selectedId);
   const isArea = chosen?.pricing_model === "area";
@@ -107,6 +110,26 @@ export function OrderForm({
         : [...current, code];
       return { ...previous, [group.code]: next };
     });
+  }
+
+  async function uploadFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const body = new FormData();
+      body.set("file", file);
+      const response = await fetch("/api/upload", { method: "POST", body });
+      const data = (await response.json()) as { url?: string; name?: string; error?: string };
+      if (!response.ok || !data.url) throw new Error(data.error || "Gagal mengunggah file.");
+      setFileLink(data.url);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Gagal mengunggah file.");
+    } finally {
+      setUploading(false);
+      event.target.value = "";
+    }
   }
 
   function serviceCard(service: Service) {
@@ -440,23 +463,39 @@ export function OrderForm({
             <fieldset>
               <legend className="mb-1 text-xl font-semibold tracking-tight">File siap cetak</legend>
               <p className="mb-5 text-sm text-mute">
-                Upload file ke Google Drive/WeTransfer, setel akses “siapa saja yang punya link”, lalu tempel
-                linknya di sini. Format aman: PDF, JPG, PNG, atau file desain (AI/PSD/CDR).
+                Upload langsung di sini (maksimal 4 MB), atau tempel link Google Drive/WeTransfer.
+                Format aman: PDF, JPG, PNG, AI, PSD, CDR, atau ZIP.
               </p>
-              <label className="block">
-                <span className="label">Link file</span>
-                <input
-                  name="file"
-                  type="url"
-                  defaultValue={v.file}
-                  placeholder="https://drive.google.com/..."
-                  className="field"
-                  required
-                />
-                <span className="mt-1.5 block text-xs text-mute">
-                  Belum punya file? Chat kami dulu lewat WhatsApp di bawah—jangan kirim pesanan sebelum file siap.
-                </span>
-              </label>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <label className="block">
+                  <span className="label">Upload dari perangkat</span>
+                  <input
+                    type="file"
+                    onChange={uploadFile}
+                    disabled={uploading}
+                    accept=".pdf,.jpg,.jpeg,.png,.webp,.ai,.psd,.cdr,.eps,.zip,.doc,.docx"
+                    className="field !py-2 text-xs file:mr-3 file:rounded-[var(--radius)] file:border file:border-line file:bg-sand file:px-3 file:py-1.5 file:text-xs file:font-medium"
+                  />
+                  <span className="mt-1.5 block text-xs text-mute">
+                    {uploading ? "Mengunggah…" : fileLink.startsWith("/api/upload/") ? "File tersimpan. Link terisi otomatis di samping." : "Maksimal 4 MB."}
+                  </span>
+                  {uploadError && <span role="alert" className="mt-1 block text-xs text-danger">{uploadError}</span>}
+                </label>
+                <label className="block">
+                  <span className="label">Link file</span>
+                  <input
+                    name="file"
+                    value={fileLink}
+                    onChange={(event) => setFileLink(event.target.value)}
+                    placeholder="https://drive.google.com/... atau hasil upload"
+                    className="field"
+                    required={Boolean(chosen?.requires_file)}
+                  />
+                  <span className="mt-1.5 block text-xs text-mute">
+                    Pastikan admin bisa membuka link ini. Belum punya file? Chat kami dulu lewat WhatsApp.
+                  </span>
+                </label>
+              </div>
             </fieldset>
           )}
 

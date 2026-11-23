@@ -8,6 +8,7 @@ import { makeCode, normalizeWA, rupiah } from "@/lib/format";
 import { calculateQuote, type QuoteSelection } from "@/lib/pricing";
 import { STATUS_META, isStatus } from "@/lib/status";
 import { getPaymentSettings, paymentLines, savePaymentSettings } from "@/lib/settings";
+import { createMidtransTransaction, gatewayEnabled } from "@/lib/payment";
 import { sendWA, siteUrl } from "@/lib/wa";
 
 export type OrderState = {
@@ -81,9 +82,12 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   if (svc.requires_file && !values.file) {
     return { error: "Tempel link file siap cetak dulu (Google Drive/WeTransfer).", values };
   }
-  if (values.file && !/^https?:\/\//i.test(values.file)) {
+  if (values.file && !/^https?:\/\//i.test(values.file) && !values.file.startsWith("/api/upload/")) {
     return { error: "Link file harus diawali http:// atau https://.", values };
   }
+  const fileUrl = values.file.startsWith("/api/upload/")
+    ? `${siteUrl()}${values.file}`
+    : values.file || null;
 
   const quote = calculateQuote(svc, {
     qty: values.qty,
@@ -111,7 +115,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
         ${values.ref || null}, ${values.deadline || null},
         ${quote.qty}, ${quote.unitRate}, ${quote.price},
         ${widthCm}, ${heightCm}, ${snapshot}::jsonb, ${quote.subtotal},
-        ${values.file || null}, 'transfer', ${paymentStatus}
+        ${fileUrl}, 'transfer', ${paymentStatus}
       )
       on conflict (code) do nothing
       returning id, code`;
@@ -150,7 +154,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
               detail,
               "",
               `Brief: ${values.brief}`,
-              values.file ? `File: ${values.file}` : null,
+              fileUrl ? `File: ${fileUrl}` : null,
             ]
               .filter((line) => line !== null)
               .join("\n"),
@@ -377,4 +381,140 @@ export async function saveSettings(_prev: ActionResult, f: FormData): Promise<Ac
   revalidatePath("/");
   revalidatePath("/lacak");
   return { ok: true };
+}
+
+const OPTION_CODE = /^[a-z0-9][a-z0-9-]{0,30}$/;
+
+function revalidateCatalog() {
+  revalidatePath("/admin/layanan");
+  revalidatePath("/");
+  revalidatePath("/order");
+  revalidatePath("/lacak");
+}
+
+export async function saveOptionGroup(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+
+  const id = Number(str(f, "id")) || 0;
+  const serviceId = str(f, "service_id");
+  const code = str(f, "code").toLowerCase();
+  const label = str(f, "label");
+  const help = str(f, "help").slice(0, 240);
+  const selectType = str(f, "select_type") === "multi" ? "multi" : "single";
+  const required = f.get("required") === "on";
+  const active = f.get("active") === "on";
+  const sort = Math.min(9999, Math.max(0, Number(str(f, "sort")) || 0));
+
+  if (!OPTION_CODE.test(code)) return { error: "Kode grup pakai huruf kecil, angka, atau tanda hubung." };
+  if (label.length < 2) return { error: "Nama grup minimal 2 karakter." };
+  if (!(await sql`select 1 from services where id = ${serviceId}`)[0]) {
+    return { error: "Layanan tidak ditemukan." };
+  }
+
+  if (id) {
+    const rows = await sql`
+      update service_option_groups set code = ${code}, label = ${label}, help = ${help || null},
+        select_type = ${selectType}, required = ${required}, active = ${active}, sort = ${sort}
+      where id = ${id} returning id`;
+    if (!rows[0]) return { error: "Grup opsi tidak ditemukan." };
+  } else {
+    const exists = (await sql`select 1 from service_option_groups where service_id = ${serviceId} and code = ${code}`)[0];
+    if (exists) return { error: "Kode grup itu sudah dipakai di layanan ini." };
+    await sql`
+      insert into service_option_groups (service_id, code, label, help, select_type, required, active, sort)
+      values (${serviceId}, ${code}, ${label}, ${help || null}, ${selectType}, ${required}, ${active}, ${sort})`;
+  }
+
+  revalidateCatalog();
+  return { ok: true };
+}
+
+export async function deleteOptionGroup(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir." };
+  const id = Number(str(f, "id")) || 0;
+  await sql`delete from service_option_groups where id = ${id}`;
+  revalidateCatalog();
+  return { ok: true };
+}
+
+export async function saveOption(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+
+  const id = Number(str(f, "id")) || 0;
+  const groupId = Number(str(f, "group_id")) || 0;
+  const code = str(f, "code").toLowerCase();
+  const label = str(f, "label");
+  const description = str(f, "description").slice(0, 240);
+  const priceDelta = Math.min(100_000_000, Math.max(0, Number(digits(f, "price_delta")) || 0));
+  const basis = str(f, "delta_basis") === "order" ? "order" : "unit";
+  const isDefault = f.get("is_default") === "on";
+  const active = f.get("active") === "on";
+  const sort = Math.min(9999, Math.max(0, Number(str(f, "sort")) || 0));
+
+  if (!OPTION_CODE.test(code)) return { error: "Kode opsi pakai huruf kecil, angka, atau tanda hubung." };
+  if (label.length < 2) return { error: "Nama opsi minimal 2 karakter." };
+  if (!(await sql`select 1 from service_option_groups where id = ${groupId}`)[0]) {
+    return { error: "Grup opsi tidak ditemukan." };
+  }
+
+  if (id) {
+    const rows = await sql`
+      update service_options set code = ${code}, label = ${label}, description = ${description || null},
+        price_delta = ${priceDelta}, delta_basis = ${basis}, is_default = ${isDefault},
+        active = ${active}, sort = ${sort}
+      where id = ${id} returning id`;
+    if (!rows[0]) return { error: "Opsi tidak ditemukan." };
+  } else {
+    const exists = (await sql`select 1 from service_options where group_id = ${groupId} and code = ${code}`)[0];
+    if (exists) return { error: "Kode opsi itu sudah dipakai di grup ini." };
+    await sql`
+      insert into service_options (group_id, code, label, description, price_delta, delta_basis, is_default, active, sort)
+      values (${groupId}, ${code}, ${label}, ${description || null}, ${priceDelta}, ${basis}, ${isDefault}, ${active}, ${sort})`;
+  }
+
+  revalidateCatalog();
+  return { ok: true };
+}
+
+export async function deleteOption(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir." };
+  const id = Number(str(f, "id")) || 0;
+  await sql`delete from service_options where id = ${id}`;
+  revalidateCatalog();
+  return { ok: true };
+}
+
+export async function startPayment(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  const code = str(f, "code").toUpperCase();
+  if (!code) return { error: "Kode pesanan tidak ditemukan." };
+  if (!gatewayEnabled()) return { error: "Payment gateway belum dikonfigurasi. Gunakan transfer manual." };
+
+  const order = (await sql`
+    select id, code, name, wa, price, paid from orders where code = ${code}
+  `)[0] as { id: number; code: string; name: string; wa: string; price: number | null; paid: boolean } | undefined;
+
+  if (!order) return { error: "Pesanan tidak ditemukan." };
+  if (order.paid) return { error: "Pesanan ini sudah lunas." };
+  if (order.price == null || order.price <= 0) return { error: "Harga pesanan belum ditentukan." };
+
+  let transaction;
+  try {
+    transaction = await createMidtransTransaction({
+      code: order.code,
+      price: Number(order.price),
+      name: order.name,
+      wa: String(order.wa ?? ""),
+    });
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal memulai pembayaran." };
+  }
+
+  await sql`
+    update payments set status = 'failed'
+    where order_id = ${order.id} and provider = 'midtrans' and status = 'pending'`;
+  await sql`
+    insert into payments (order_id, provider, method, amount, status, reference, raw)
+    values (${order.id}, 'midtrans', 'snap', ${order.price}, 'pending', ${transaction.token}, ${JSON.stringify({ redirect_url: transaction.redirectUrl })}::jsonb)`;
+
+  redirect(transaction.redirectUrl);
 }
