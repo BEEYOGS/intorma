@@ -191,6 +191,19 @@ insert into services (id, name, blurb, price_from, days, sort, pricing_mode, uni
   ('copywriting', 'Copywriting', 'Naskah promosi untuk website, iklan, dan media sosial.', 200000, 3, 17, 'flat', '', 1, 10000)
 on conflict (id) do nothing;
 
+-- Akun pelanggan (portal self-service). Terpisah dari admin.
+create table if not exists customers (
+  id serial primary key,
+  name text not null,
+  wa text not null,
+  email text not null unique,
+  password_hash text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table orders add column if not exists customer_id int references customers(id) on delete set null;
+create index if not exists orders_customer_idx on orders(customer_id, created_at desc);
+
 -- File yang diunggah pelanggan disimpan sementara di database. Untuk produksi
 -- dengan file besar, gunakan storage eksternal (S3/Supabase) dan simpan URL-nya.
 create table if not exists uploads (

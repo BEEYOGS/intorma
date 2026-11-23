@@ -8,6 +8,14 @@ import { makeCode, normalizeWA, rupiah } from "@/lib/format";
 import { calculateQuote, type QuoteSelection } from "@/lib/pricing";
 import { STATUS_META, isStatus } from "@/lib/status";
 import { getPaymentSettings, paymentLines, savePaymentSettings } from "@/lib/settings";
+import {
+  claimOrders,
+  clearCustomerSession,
+  getCustomer,
+  hashPassword,
+  setCustomerSession,
+  verifyPassword,
+} from "@/lib/customer-auth";
 import { createMidtransTransaction, gatewayEnabled } from "@/lib/payment";
 import { sendWA, siteUrl } from "@/lib/wa";
 
@@ -17,6 +25,7 @@ export type OrderState = {
 } | null;
 
 export type ActionResult = { ok?: boolean; error?: string; reset?: boolean } | null;
+export type CustomerState = { error?: string } | null;
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const digits = (f: FormData, k: string) => str(f, k).replace(/\D/g, "");
@@ -63,6 +72,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     file: str(f, "file"),
   };
   const wa = normalizeWA(values.wa);
+  const customer = await getCustomer();
 
   if (values.name.length < 2) return { error: "Isi nama kamu dulu.", values };
   if (!wa) return { error: "Nomor WhatsApp belum valid. Contoh: 0812 3456 7890.", values };
@@ -106,12 +116,12 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   for (let i = 0; i < 5 && !order; i++) {
     const rows = await sql`
       insert into orders (
-        code, name, wa, service_id, brief, ref_link, deadline,
+        code, name, wa, service_id, customer_id, brief, ref_link, deadline,
         qty, unit_rate, price, width_cm, height_cm, options, subtotal,
         file_url, payment_method, payment_status
       )
       values (
-        ${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${values.brief},
+        ${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${customer?.id ?? null}, ${values.brief},
         ${values.ref || null}, ${values.deadline || null},
         ${quote.qty}, ${quote.unitRate}, ${quote.price},
         ${widthCm}, ${heightCm}, ${snapshot}::jsonb, ${quote.subtotal},
@@ -517,4 +527,76 @@ export async function startPayment(_prev: ActionResult, f: FormData): Promise<Ac
     values (${order.id}, 'midtrans', 'snap', ${order.price}, 'pending', ${transaction.token}, ${JSON.stringify({ redirect_url: transaction.redirectUrl })}::jsonb)`;
 
   redirect(transaction.redirectUrl);
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export async function registerCustomer(_prev: CustomerState, f: FormData): Promise<CustomerState> {
+  const name = str(f, "name");
+  const wa = normalizeWA(str(f, "wa"));
+  const email = str(f, "email").toLowerCase();
+  const password = String(f.get("password") ?? "");
+
+  if (name.length < 2) return { error: "Nama minimal 2 karakter." };
+  if (!wa) return { error: "Nomor WhatsApp belum valid. Contoh: 0812 3456 7890." };
+  if (!EMAIL_RE.test(email)) return { error: "Alamat email belum valid." };
+  if (password.length < 8) return { error: "Password minimal 8 karakter." };
+
+  const existing = (await sql`select 1 from customers where email = ${email}`)[0];
+  if (existing) return { error: "Email ini sudah terdaftar. Silakan masuk." };
+
+  const rows = (await sql`
+    insert into customers (name, wa, email, password_hash)
+    values (${name}, ${wa}, ${email}, ${hashPassword(password)})
+    returning id`) as Array<{ id: number }>;
+  const id = Number(rows[0]?.id ?? 0);
+  if (!id) return { error: "Gagal membuat akun. Coba lagi." };
+
+  await claimOrders(id, wa);
+  await setCustomerSession(id);
+  redirect("/portal");
+}
+
+export async function loginCustomer(_prev: CustomerState, f: FormData): Promise<CustomerState> {
+  const email = str(f, "email").toLowerCase();
+  const password = String(f.get("password") ?? "");
+  if (!EMAIL_RE.test(email)) return { error: "Alamat email belum valid." };
+
+  const rows = (await sql`
+    select id, wa, password_hash from customers where email = ${email}
+  `) as Array<{ id: number; wa: string; password_hash: string }>;
+  const customer = rows[0];
+  if (!customer || !verifyPassword(password, customer.password_hash)) {
+    return { error: "Email atau password salah." };
+  }
+
+  await claimOrders(Number(customer.id), String(customer.wa));
+  await setCustomerSession(Number(customer.id));
+  redirect("/portal");
+}
+
+export async function logoutCustomer() {
+  await clearCustomerSession();
+  redirect("/");
+}
+
+export async function saveCustomerProfile(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  const customer = await getCustomer();
+  if (!customer) return { error: "Sesi berakhir. Silakan masuk lagi." };
+
+  const name = str(f, "name");
+  const wa = normalizeWA(str(f, "wa"));
+  const email = str(f, "email").toLowerCase();
+  if (name.length < 2) return { error: "Nama minimal 2 karakter." };
+  if (!wa) return { error: "Nomor WhatsApp belum valid." };
+  if (!EMAIL_RE.test(email)) return { error: "Alamat email belum valid." };
+
+  const taken = (await sql`select 1 from customers where email = ${email} and id <> ${customer.id}`)[0];
+  if (taken) return { error: "Email ini sudah dipakai akun lain." };
+
+  await sql`
+    update customers set name = ${name}, wa = ${wa}, email = ${email} where id = ${customer.id}`;
+  await claimOrders(customer.id, wa);
+  revalidatePath("/portal");
+  return { ok: true };
 }

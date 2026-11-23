@@ -50,10 +50,12 @@ export function OrderForm({
   services,
   preselect,
   payment,
+  customer,
 }: {
   services: Service[];
   preselect?: string;
   payment: PaymentInfo;
+  customer?: { name: string; wa: string };
 }) {
   const [state, action, pending] = useActionState<OrderState, FormData>(createOrder, null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -510,11 +512,11 @@ export function OrderForm({
             <div className="grid gap-5 sm:grid-cols-2">
               <label className="block">
                 <span className="label">Nama</span>
-                <input name="name" defaultValue={v.name} autoComplete="name" className="field" required placeholder="Nama kamu" />
+                <input name="name" defaultValue={v.name || customer?.name || ""} autoComplete="name" className="field" required placeholder="Nama kamu" />
               </label>
               <label className="block">
                 <span className="label">Nomor WhatsApp</span>
-                <input name="wa" defaultValue={v.wa} inputMode="tel" autoComplete="tel" placeholder="0812 3456 7890" className="field" required />
+                <input name="wa" defaultValue={v.wa || customer?.wa || ""} inputMode="tel" autoComplete="tel" placeholder="0812 3456 7890" className="field" required />
               </label>
             </div>
           </fieldset>

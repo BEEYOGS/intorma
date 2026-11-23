@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Footer, Nav } from "@/components/Chrome";
 import { OrderForm } from "@/components/OrderForm";
+import { getCustomer } from "@/lib/customer-auth";
 import { getServicesWithOptions } from "@/lib/db";
 import { getPaymentSettings } from "@/lib/settings";
 
@@ -12,10 +13,11 @@ export default async function OrderPage({
 }: {
   searchParams: Promise<{ layanan?: string }>;
 }) {
-  const [services, payment, { layanan }] = await Promise.all([
+  const [services, payment, { layanan }, customer] = await Promise.all([
     getServicesWithOptions(),
     getPaymentSettings(),
     searchParams,
+    getCustomer(),
   ]);
 
   return (
@@ -55,7 +57,12 @@ export default async function OrderPage({
               </p>
             </div>
           ) : (
-            <OrderForm services={services} preselect={layanan} payment={payment} />
+            <OrderForm
+              services={services}
+              preselect={layanan}
+              payment={payment}
+              customer={customer ? { name: customer.name, wa: customer.wa } : undefined}
+            />
           )}
         </div>
       </main>

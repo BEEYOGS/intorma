@@ -18,6 +18,14 @@ Set `.env.local` from `.env.example`.
 
 ## Self-service order
 
+Halaman pelanggan:
+
+- `/masuk` — daftar atau masuk ke portal klien.
+- `/portal` — dashboard pesanan, status, pembayaran, profil, dan pesan ulang.
+
+Saat akun dibuat (atau saat masuk), pesanan lama dengan nomor WhatsApp yang sama otomatis
+terhubung ke akun tersebut. Form `/order` juga mengisi nama & WhatsApp dari akun yang sedang masuk.
+
 Jalankan sekali saat menyiapkan database:
 
 ```bash
