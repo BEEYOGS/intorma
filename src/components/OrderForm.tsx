@@ -82,6 +82,7 @@ export function OrderForm({
     : null;
   const total = quote?.price ?? null;
   const hasPriceError = Boolean(quote?.error);
+  const activeStep = !chosen ? 0 : hasPriceError || total == null ? 1 : 2;
   const briefMin = chosen?.category === "print" ? 10 : 15;
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -207,9 +208,16 @@ export function OrderForm({
               ["03", "Buat & bayar"],
             ].map(([n, label], index) => (
               <li key={n} className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.03] px-3 py-1.5 font-semibold text-ink/75">
-                  <span className="font-mono text-[10px] text-accent">{n}</span>
-                  {label}
+                <span
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-semibold transition-colors ${
+                    index === activeStep
+                      ? "border-accent/50 bg-accent/10 text-ink"
+                      : "border-line bg-white/[0.03] text-mute"
+                  }`}
+                >
+                  <span className={`font-mono text-[10px] ${index === activeStep ? "text-accent" : "text-mute"}`}>{n}</span>
+                  <span className="hidden xs:inline">{label}</span>
+                  <span className="xs:hidden">{label.split(" ")[0]}</span>
                 </span>
                 {index < 2 && <span aria-hidden className="text-mute/35">/</span>}
               </li>
@@ -702,10 +710,10 @@ export function OrderForm({
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel/95 px-5 py-3 backdrop-blur-xl lg:hidden">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="eyebrow">Total</p>
+            <p className="truncate text-[11px] text-mute">{chosen?.name ?? "Pilih layanan"}</p>
             <p className="truncate text-xl font-semibold tabular-nums text-accent">
               {total != null ? rupiah(total) : "Belum dihitung"}
             </p>
@@ -714,11 +722,14 @@ export function OrderForm({
             type="button"
             onClick={() => formRef.current?.requestSubmit()}
             disabled={pending || hasPriceError}
-            className="btn-primary min-h-11 shrink-0 px-5 text-sm"
+            className="btn btn-primary min-h-11 shrink-0 px-5 text-sm"
           >
             {pending ? "Membuat…" : "Buat pesanan"}
           </button>
         </div>
+        {hasPriceError && (
+          <p className="mt-1.5 truncate text-[11px] text-danger">{quote?.error}</p>
+        )}
       </div>
     </>
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { logoutCustomer } from "@/app/actions";
+import { MobileNav } from "@/components/MobileNav";
 import { getCustomer } from "@/lib/customer-auth";
 
 export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -13,7 +14,7 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/int.svg" alt="in.torma" className="h-6 w-auto" />
       </Link>
-      <nav className="flex items-center gap-1">
+      <nav className="hidden items-center gap-1 sm:flex">
         <Link href="/order" className={linkClass}>Pesan</Link>
         <Link href="/lacak" className={linkClass}>Lacak</Link>
         <a href="https://wa.me/6289617607952" target="_blank" rel="noreferrer" className={linkClass}>
@@ -37,6 +38,7 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
           </Link>
         )}
       </nav>
+      <MobileNav loggedIn={Boolean(customer)} />
     </header>
   );
 }

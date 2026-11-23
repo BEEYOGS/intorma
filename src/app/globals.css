@@ -390,3 +390,23 @@ kbd {
     grid-template-columns: 1fr;
   }
 }
+
+/* Mobile: target sentuh minimal 44px, teks 16px agar iOS tidak zoom otomatis. */
+@media (max-width: 640px) {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  .input,
+  .field,
+  textarea.input,
+  textarea.field {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .btn {
+    min-height: 42px;
+  }
+  .card {
+    border-radius: 8px;
+  }
+}

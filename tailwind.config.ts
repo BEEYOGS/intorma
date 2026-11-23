@@ -6,6 +6,9 @@ export default {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      screens: {
+        xs: "400px",
+      },
       colors: {
         base: "#0a0a0a",
         carbon: "#121212",
