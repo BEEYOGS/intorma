@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 
 export type FileItem = {
   id: number;
@@ -19,11 +19,58 @@ const formatSize = (bytes: number) => {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 };
 
+function fileMeta(file: FileItem) {
+  const ext = (file.name.split(".").pop() ?? "file").toLowerCase();
+  const imageExts = ["jpg", "jpeg", "png", "webp", "gif"];
+  const designExts = ["ai", "psd", "cdr", "eps"];
+  const kind = imageExts.includes(ext) || file.mime.startsWith("image/")
+    ? "image"
+    : ext === "pdf" || file.mime === "application/pdf"
+      ? "pdf"
+      : designExts.includes(ext)
+        ? "design"
+        : ext === "zip"
+          ? "zip"
+          : "other";
+  return { ext, kind, previewable: kind === "image" || kind === "pdf" };
+}
+
+function FileThumb({ file }: { file: FileItem }) {
+  const { ext, kind } = fileMeta(file);
+  if (kind === "image") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`/api/upload/${file.code}`}
+        alt={file.name}
+        className="size-10 shrink-0 rounded-[var(--radius)] border border-line bg-sand object-cover"
+      />
+    );
+  }
+  return (
+    <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius)] border border-line bg-sand">
+      <span className="mono text-[10px] font-semibold uppercase text-mute">
+        {ext.slice(0, 4)}
+      </span>
+    </span>
+  );
+}
+
 export function FileLibrary({ files }: { files: FileItem[] }) {
   const router = useRouter();
   const [selected, setSelected] = useState<number[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [preview, setPreview] = useState<FileItem | null>(null);
+
+  useEffect(() => {
+    if (!preview) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPreview(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [preview]);
 
   function toggle(id: number) {
     setSelected((current) =>
@@ -51,68 +98,159 @@ export function FileLibrary({ files }: { files: FileItem[] }) {
     }
   }
 
+  const previewMeta = preview ? fileMeta(preview) : null;
+
   return (
-    <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] p-4">
-        <div>
-          <p className="text-sm font-medium text-[var(--text)]">File saya</p>
-          <p className="mt-0.5 text-xs text-mute">
-            Original, tanpa kompresi. Maksimal 4 MB per file.
-          </p>
+    <>
+      <div className="card overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] p-4">
+          <div>
+            <p className="text-sm font-medium text-[var(--text)]">File saya</p>
+            <p className="mt-0.5 text-xs text-mute">
+              Original, tanpa kompresi. Klik file untuk pratinjau. Maksimal 4 MB per file.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {selected.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = `/api/files/zip?ids=${selected.join(",")}`;
+                }}
+                className="btn btn-primary !h-9 text-xs"
+              >
+                Download ZIP ({selected.length})
+              </button>
+            )}
+            <label className="btn btn-ghost !h-9 cursor-pointer text-xs">
+              {uploading ? "Mengunggah…" : "+ Upload file"}
+              <input type="file" onChange={upload} disabled={uploading} className="sr-only" />
+            </label>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {selected.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = `/api/files/zip?ids=${selected.join(",")}`;
-              }}
-              className="btn btn-primary !h-9 text-xs"
-            >
-              Download ZIP ({selected.length})
-            </button>
-          )}
-          <label className="btn btn-ghost !h-9 cursor-pointer text-xs">
-            {uploading ? "Mengunggah…" : "+ Upload file"}
-            <input type="file" onChange={upload} disabled={uploading} className="sr-only" />
-          </label>
-        </div>
+
+        {error && <p role="alert" className="px-4 pt-3 text-xs text-danger">{error}</p>}
+
+        {files.length === 0 ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-mute">Belum ada file. Upload di sini atau lewat halaman pesan.</p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-[var(--border)]">
+            {files.map((file) => {
+              const meta = fileMeta(file);
+              return (
+                <li key={file.id} className="flex items-center gap-3 p-4 transition-colors hover:bg-white/[0.02]">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(file.id)}
+                    onChange={() => toggle(file.id)}
+                    aria-label={`Pilih ${file.name}`}
+                    className="size-4 shrink-0 accent-[var(--text)]"
+                  />
+                  <button type="button" onClick={() => setPreview(file)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <FileThumb file={file} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[13px] font-medium text-[var(--text)]">
+                        {file.name}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] text-mute">
+                        <span className="mono uppercase">{meta.ext}</span> · {formatSize(file.size)} ·{" "}
+                        {new Date(file.createdAt).toLocaleDateString("id-ID")}
+                        {file.orderCode && ` · ${file.orderCode}`}
+                      </span>
+                    </span>
+                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {meta.previewable && (
+                      <button
+                        type="button"
+                        onClick={() => setPreview(file)}
+                        className="btn btn-ghost !h-9 !px-3 text-xs"
+                      >
+                        Preview
+                      </button>
+                    )}
+                    <a
+                      href={`/api/upload/${file.code}?download=1`}
+                      className="btn btn-ghost !h-9 !px-3 text-xs"
+                    >
+                      Download
+                    </a>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
-      {error && <p role="alert" className="px-4 pt-3 text-xs text-danger">{error}</p>}
-
-      {files.length === 0 ? (
-        <div className="p-8 text-center">
-          <p className="text-sm text-mute">Belum ada file. Upload di sini atau lewat halaman pesan.</p>
-        </div>
-      ) : (
-        <ul className="divide-y divide-[var(--border)]">
-          {files.map((file) => (
-            <li key={file.id} className="flex items-center gap-3 p-4">
-              <input
-                type="checkbox"
-                checked={selected.includes(file.id)}
-                onChange={() => toggle(file.id)}
-                aria-label={`Pilih ${file.name}`}
-                className="size-4 shrink-0 accent-[var(--text)]"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium text-[var(--text)]">{file.name}</p>
-                <p className="mt-0.5 truncate text-[11px] text-mute">
-                  {formatSize(file.size)} · {new Date(file.createdAt).toLocaleDateString("id-ID")}
-                  {file.orderCode && ` · ${file.orderCode}`}
-                </p>
+      {preview && previewMeta && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Pratinjau ${preview.name}`}
+          onClick={() => setPreview(null)}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--border-2)] bg-[var(--panel)] shadow-[0_30px_90px_-30px_rgba(0,0,0,0.95)]"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <FileThumb file={preview} />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-[var(--text)]">{preview.name}</p>
+                  <p className="mono text-[11px] uppercase text-mute">
+                    {previewMeta.ext} · {formatSize(preview.size)}
+                  </p>
+                </div>
               </div>
-              <a
-                href={`/api/upload/${file.code}?download=1`}
-                className="btn btn-ghost !h-9 shrink-0 !px-3 text-xs"
-              >
-                Download
-              </a>
-            </li>
-          ))}
-        </ul>
+              <div className="flex shrink-0 items-center gap-2">
+                <a
+                  href={`/api/upload/${preview.code}?download=1`}
+                  className="btn btn-ghost !h-9 !px-3 text-xs"
+                >
+                  Download
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreview(null)}
+                  aria-label="Tutup pratinjau"
+                  className="grid size-9 place-items-center rounded-[var(--radius)] border border-[var(--border)] text-mute transition-colors hover:text-[var(--text)]"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[var(--bg)] p-4">
+              {previewMeta.kind === "image" ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={`/api/upload/${preview.code}`}
+                  alt={preview.name}
+                  className="max-h-[70vh] max-w-full object-contain"
+                />
+              ) : previewMeta.kind === "pdf" ? (
+                <iframe
+                  src={`/api/upload/${preview.code}`}
+                  title={preview.name}
+                  className="h-[70vh] w-full rounded-[var(--radius)] border border-[var(--border)]"
+                />
+              ) : (
+                <div className="py-16 text-center">
+                  <p className="text-sm font-medium text-[var(--text)]">Pratinjau tidak tersedia</p>
+                  <p className="mt-1 text-xs text-mute">
+                    Format {previewMeta.ext.toUpperCase()} tidak bisa ditampilkan di browser. Silakan download.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }
