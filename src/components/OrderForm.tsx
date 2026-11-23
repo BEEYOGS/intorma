@@ -65,8 +65,11 @@ export function OrderForm({
   const [height, setHeight] = useState(v.height || "");
   const [selection, setSelection] = useState<Selection>(() => parseSelection(v.selection, initial));
   const [fileLink, setFileLink] = useState(v.file || "");
+  const [uploadedName, setUploadedName] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<"all" | "design" | "print">("all");
 
   const chosen = services.find((service) => service.id === selectedId);
   const isArea = chosen?.pricing_model === "area";
@@ -79,8 +82,18 @@ export function OrderForm({
   const hasPriceError = Boolean(quote?.error);
   const briefMin = chosen?.category === "print" ? 10 : 15;
 
-  const design = services.filter((service) => service.category !== "print");
-  const print = services.filter((service) => service.category === "print");
+  const normalizedQuery = query.trim().toLowerCase();
+  const visible = services.filter((service) => {
+    const matchFilter =
+      filter === "all" ||
+      (filter === "print" ? service.category === "print" : service.category !== "print");
+    const matchQuery =
+      !normalizedQuery ||
+      `${service.name} ${service.blurb} ${service.id}`.toLowerCase().includes(normalizedQuery);
+    return matchFilter && matchQuery;
+  });
+  const design = visible.filter((service) => service.category !== "print");
+  const print = visible.filter((service) => service.category === "print");
 
   function pick(id: string) {
     const next = services.find((service) => service.id === id);
@@ -124,6 +137,7 @@ export function OrderForm({
       const data = (await response.json()) as { url?: string; name?: string; error?: string };
       if (!response.ok || !data.url) throw new Error(data.error || "Gagal mengunggah file.");
       setFileLink(data.url);
+      setUploadedName(data.name || file.name);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Gagal mengunggah file.");
     } finally {
@@ -147,7 +161,7 @@ export function OrderForm({
         <span
           className={`flex h-full flex-col justify-between gap-4 rounded-tag-sm border p-4 transition-all peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
             on
-              ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_0_1px_rgba(60,224,196,0.12)]"
+              ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
               : "border-line bg-panel/50 text-ink hover:border-accent/30 hover:bg-white/[0.03]"
           }`}
         >
@@ -219,10 +233,56 @@ export function OrderForm({
 
           <fieldset>
             <legend className="mb-1 text-xl font-semibold tracking-tight">Pilih layanan</legend>
-            <p className="mb-5 text-sm text-mute">
+            <p className="mb-4 text-sm text-mute">
               Desain punya paket, cetak punya bahan dan finishing. Semua harga sudah tampil di sini.
             </p>
+
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <label className="relative block flex-1">
+                <span className="sr-only">Cari layanan</span>
+                <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-mute">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.2-3.2" />
+                </svg>
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Cari layanan, misalnya spanduk atau kartu nama…"
+                  className="field !pl-10"
+                />
+              </label>
+              <div className="flex shrink-0 gap-1.5" role="group" aria-label="Filter kategori">
+                {([
+                  ["all", "Semua"],
+                  ["design", "Desain"],
+                  ["print", "Cetak"],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setFilter(value)}
+                    aria-pressed={filter === value}
+                    className={`min-h-10 rounded-[var(--radius)] border px-3.5 text-[13px] font-medium transition-colors ${
+                      filter === value
+                        ? "border-line bg-sand text-ink"
+                        : "border-line bg-transparent text-mute hover:text-ink"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="mb-4 text-xs text-mute">
+              Menampilkan {visible.length} dari {services.length} layanan
+            </p>
+
             <div className="space-y-7">
+              {visible.length === 0 && (
+                <p className="rounded-[var(--radius)] border border-dashed border-line p-6 text-center text-sm text-mute">
+                  Tidak ada layanan yang cocok. Coba kata kunci lain atau pilih “Semua”.
+                </p>
+              )}
               {design.length > 0 && (
                 <div>
                   <p className="mb-2.5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-ink/70">
@@ -477,8 +537,24 @@ export function OrderForm({
                     className="field !py-2 text-xs file:mr-3 file:rounded-[var(--radius)] file:border file:border-line file:bg-sand file:px-3 file:py-1.5 file:text-xs file:font-medium"
                   />
                   <span className="mt-1.5 block text-xs text-mute">
-                    {uploading ? "Mengunggah…" : fileLink.startsWith("/api/upload/") ? "File tersimpan. Link terisi otomatis di samping." : "Maksimal 4 MB."}
+                    {uploading
+                      ? "Mengunggah file…"
+                      : fileLink.startsWith("/api/upload/") && uploadedName
+                        ? `Tersimpan: ${uploadedName}`
+                        : "Maksimal 4 MB. Format PDF, gambar, atau file desain."}
                   </span>
+                  {fileLink.startsWith("/api/upload/") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFileLink("");
+                        setUploadedName("");
+                      }}
+                      className="mt-1 text-xs font-medium text-mute underline underline-offset-4 hover:text-ink"
+                    >
+                      Hapus file
+                    </button>
+                  )}
                   {uploadError && <span role="alert" className="mt-1 block text-xs text-danger">{uploadError}</span>}
                 </label>
                 <label className="block">

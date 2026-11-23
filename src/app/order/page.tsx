@@ -23,20 +23,18 @@ export default async function OrderPage({
       <Nav />
       <main id="konten">
         <div className="border-b border-line bg-sand/40">
-          <div className="wrap py-10 sm:py-14">
-            <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div className="wrap py-7 sm:py-9">
+            <div className="flex flex-wrap items-end justify-between gap-5">
               <div>
-                <Link href="/" className="block w-fit text-[13px] font-medium text-mute transition-colors hover:text-accent">
+                <Link href="/" className="block w-fit text-xs font-medium text-mute transition-colors hover:text-ink">
                   ← Kembali ke beranda
                 </Link>
-                <p className="eyebrow mt-7">Pesan layanan</p>
-                <h1 className="display mt-4 text-[clamp(2.4rem,6vw,4.2rem)]">
-                  Ceritakan{" "}
-                  <span className="font-serif font-normal italic tracking-[-0.02em] text-accent">kebutuhanmu.</span>
+                <p className="eyebrow mt-4">Pesan layanan</p>
+                <h1 className="display mt-2 text-[clamp(1.9rem,4vw,2.8rem)]">
+                  Ceritakan kebutuhanmu.
                 </h1>
-                <p className="mt-4 max-w-xl text-sm leading-6 text-mute sm:text-base sm:leading-7">
-                  Satu formulir, sekitar dua menit. Setelah terkirim kamu mendapat kode pesanan dan salinannya
-                  lewat WhatsApp.
+                <p className="mt-2 max-w-xl text-sm leading-6 text-mute">
+                  Pilih layanan, atur spesifikasi, lalu lihat total sebelum memesan.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -48,7 +46,7 @@ export default async function OrderPage({
           </div>
         </div>
 
-        <div className="wrap pb-28 pt-10 sm:pb-28 sm:pt-14 lg:pb-20">
+        <div className="wrap pb-28 pt-7 sm:pb-28 sm:pt-9 lg:pb-20">
           {services.length === 0 ? (
             <div className="card max-w-lg p-6">
               <p className="font-semibold">Belum ada layanan aktif.</p>

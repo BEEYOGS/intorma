@@ -12,6 +12,7 @@ export default async function ProductPage() {
     isAdmin(),
     getServices(),
   ]);
+  const featuredServices = services.slice(0, 9);
 
   return (
     <div className="animate-in">
@@ -84,7 +85,7 @@ export default async function ProductPage() {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[var(--border)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden">
-            {services.map((svc, i) => (
+            {featuredServices.map((svc, i) => (
               <Link
                 key={svc.id}
                 href={`/order?layanan=${svc.id}`}
@@ -103,6 +104,14 @@ export default async function ProductPage() {
               </Link>
             ))}
           </div>
+          {services.length > featuredServices.length && (
+            <p className="mt-4 text-xs text-[var(--text-3)]">
+              Menampilkan {featuredServices.length} dari {services.length} layanan.{" "}
+              <Link href="/order" className="text-[var(--text-2)] underline underline-offset-4 hover:text-[var(--text)]">
+                Lihat semua layanan →
+              </Link>
+            </p>
+          )}
         </div>
       </section>
 
