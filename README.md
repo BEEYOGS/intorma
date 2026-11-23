@@ -58,6 +58,22 @@ Untuk produk cetak, pelanggan bisa **upload langsung** (maksimal 4 MB, disimpan 
 Notifikasi WhatsApp diantrekan lewat `wa_outbox`; jalankan `npm run openwa` dan `npm run wa:agent`
 di mesin yang sama dengan gateway.
 
+### Penyimpanan file di Google Drive (opsional)
+
+Secara default file disimpan di tabel `uploads` (maksimal 4 MB). Untuk memakai kuota Google Drive:
+
+1. Buat project di Google Cloud Console dengan akun Google kamu.
+2. Aktifkan **Google Drive API**.
+3. Buat **Service Account**, unduh kunci JSON-nya.
+4. Di Google Drive, buat folder (mis. `intorma-uploads`) lalu **Share** ke email service account
+   tersebut dengan akses **Editor**. Salin folder ID dari URL folder.
+5. Isi environment: `GOOGLE_SERVICE_ACCOUNT_JSON` (isi JSON lengkap, satu baris; newline ditulis `\n`)
+   dan `GOOGLE_DRIVE_FOLDER_ID`.
+
+Setelah itu upload otomatis masuk Drive (maksimal 20 MB per file), sedangkan preview/download/ZIP
+tetap lewat endpoint aplikasi yang sudah mengecek sesi pelanggan. Tanpa kedua env var tersebut,
+perilaku kembali ke penyimpanan database seperti sebelumnya.
+
 ### Pembayaran
 
 Dua jalur bisa dipakai berdampingan:

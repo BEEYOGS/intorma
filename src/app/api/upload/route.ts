@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCustomer } from "@/lib/customer-auth";
 import { sql } from "@/lib/db";
+import { driveEnabled, driveUpload } from "@/lib/drive";
 
 export const runtime = "nodejs";
 
@@ -26,8 +27,13 @@ export async function POST(req: Request) {
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Pilih file dulu." }, { status: 400 });
     }
-    if (file.size === 0 || file.size > MAX_BYTES) {
-      return NextResponse.json({ error: "Ukuran file maksimal 4 MB." }, { status: 400 });
+    const useDrive = driveEnabled();
+    const maxBytes = useDrive ? 20 * 1024 * 1024 : MAX_BYTES;
+    if (file.size === 0 || file.size > maxBytes) {
+      return NextResponse.json(
+        { error: `Ukuran file maksimal ${Math.round(maxBytes / 1024 / 1024)} MB.` },
+        { status: 400 },
+      );
     }
     const mime = file.type || "application/octet-stream";
     const safeName = file.name.replace(/[^\w.\- ()]/g, "_").slice(0, 160) || "file";
@@ -38,9 +44,19 @@ export async function POST(req: Request) {
     const code = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
     const bytes = new Uint8Array(await file.arrayBuffer());
     const customer = await getCustomer();
+    let driveFileId: string | null = null;
+    let storedBytes: Uint8Array = bytes;
+
+    if (useDrive) {
+      const uploaded = await driveUpload({ name: safeName, mime, data: bytes });
+      driveFileId = uploaded.id;
+      storedBytes = new Uint8Array();
+    }
+
     const rows = (await sql`
-      insert into uploads (code, file_name, mime, size, data, customer_id)
-      values (${code}, ${safeName}, ${mime}, ${bytes.length}, ${bytes}, ${customer?.id ?? null})
+      insert into uploads (code, file_name, mime, size, data, storage, drive_file_id, customer_id)
+      values (${code}, ${safeName}, ${mime}, ${bytes.length}, ${storedBytes},
+        ${useDrive ? "drive" : "db"}, ${driveFileId}, ${customer?.id ?? null})
       returning id`) as Array<{ id: number }>;
 
     return NextResponse.json({
@@ -48,6 +64,7 @@ export async function POST(req: Request) {
       url: `/api/upload/${code}`,
       name: safeName,
       size: bytes.length,
+      storage: useDrive ? "drive" : "db",
     });
   } catch (error) {
     console.error("upload failed", error);

@@ -1,10 +1,17 @@
 import { getCustomer } from "@/lib/customer-auth";
 import { sql } from "@/lib/db";
+import { driveDownload } from "@/lib/drive";
 import { createZip } from "@/lib/zip";
 
 export const runtime = "nodejs";
 
-type UploadRow = { id: number; file_name: string; data: Uint8Array };
+type UploadRow = {
+  id: number;
+  file_name: string;
+  data: Uint8Array;
+  storage: string;
+  drive_file_id: string | null;
+};
 
 export async function GET(req: Request) {
   const customer = await getCustomer();
@@ -22,17 +29,24 @@ export async function GET(req: Request) {
   if (!ids.length) return new Response("Pilih minimal satu file.", { status: 400 });
 
   const rows = (await sql`
-    select id, file_name, data from uploads
+    select id, file_name, data, storage, drive_file_id from uploads
     where customer_id = ${customer.id} and id = any(${ids}::int[])
     order by id`) as unknown as UploadRow[];
   if (!rows.length) return new Response("File tidak ditemukan.", { status: 404 });
 
-  const zip = createZip(
-    rows.map((row) => ({
-      name: row.file_name,
-      data: new Uint8Array(row.data),
-    })),
-  );
+  const entries = [];
+  for (const row of rows) {
+    try {
+      const data =
+        row.storage === "drive" && row.drive_file_id
+          ? await driveDownload(row.drive_file_id)
+          : new Uint8Array(row.data);
+      entries.push({ name: row.file_name, data });
+    } catch {
+      return new Response("Sebagian file gagal diambil dari penyimpanan.", { status: 502 });
+    }
+  }
+  const zip = createZip(entries);
 
   return new Response(new Uint8Array(zip), {
     headers: {
