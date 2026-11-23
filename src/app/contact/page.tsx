@@ -1,6 +1,9 @@
+import { TopBar } from "@/components/TopBar";
+
 export default function ContactPage() {
   return (
     <div className="animate-in">
+      <TopBar />
       <div className="wrap py-12 sm:py-16">
         <div className="max-w-xl">
           <p className="eyebrow mb-2">Kontak</p>

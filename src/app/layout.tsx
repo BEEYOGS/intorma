@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { TopBar } from "@/components/TopBar";
-import { isAdmin } from "@/lib/auth";
 import "./globals.css";
 
 const fontSans = localFont({
@@ -19,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#090c10",
+  themeColor: "#0a0a0a",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -29,7 +27,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="id" className={fontSans.variable}>
       <body className="min-h-dvh bg-[var(--bg)] text-[var(--text)]">
-        <TopBar isAdmin={await isAdmin()} />
         <main>{children}</main>
       </body>
     </html>

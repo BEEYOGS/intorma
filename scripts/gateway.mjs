@@ -259,6 +259,15 @@ try {
   await ensureOpenwa();
   const session = await ensureSession();
   const hook = await ensureWebhook(session.id, webhookUrl);
+
+  // Kirim pesan yang masuk ke wa_outbox (mis. dari deployment Vercel).
+  const agent = run("agent", process.execPath, [join(root, "scripts", "wa-agent.mjs")], {
+    cwd: root,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  prefix(agent.stdout, "[agent]");
+  prefix(agent.stderr, "[agent]");
+
   const line = "-".repeat(64);
   console.log(`\n${line}
   Situs lokal : ${localApp}
@@ -267,6 +276,7 @@ try {
   OpenWA API  : ${openwaUrl}
   Sesi WA     : ${sessionName} (${session.id}) status ${session.status}
   Webhook sesi: ${hook.id ?? "?"} ${hook.updated ? "(URL diperbarui)" : "(baru/ sudah benar)"}
+  Worker antre: berjalan (wa_outbox)
 ${line}
   ${session.status === "ready" ? "WhatsApp sudah tertaut." : "Belum tertaut: jalankan `npm run wa:session` lalu scan QR."}
   Ctrl+C untuk menghentikan tunnel + app + OpenWA.

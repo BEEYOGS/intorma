@@ -5,6 +5,7 @@
 // Output: .tools/qr-<nama>.png  → buka file itu, scan pakai WhatsApp >
 // Perangkat tertaut. Setelah scan, skrip menunggu sampai status "ready".
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -86,9 +87,56 @@ if (session.status !== "ready") {
 
 mkdirSync(join(root, ".tools"), { recursive: true });
 const qrFile = join(root, ".tools", `qr-${wanted}.png`);
+const viewerFile = join(root, ".tools", `qr-${wanted}.html`);
+
+// Halaman kecil yang memuat ulang QR tiap 2 detik, jadi QR yang dipindai selalu
+// yang terbaru. Buka file ini di browser (bukan PNG-nya) untuk menautkan.
+writeFileSync(
+  viewerFile,
+  `<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Scan WhatsApp — ${wanted}</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; gap: 18px;
+    background: #06080c; color: #e9eff7; font-family: system-ui, sans-serif; text-align: center; padding: 24px; }
+  .card { background: #fff; padding: 16px; border-radius: 16px; }
+  img { display: block; width: min(78vw, 320px); height: auto; }
+  h1 { font-size: 18px; margin: 0; }
+  p { color: #8e9cb0; font-size: 13px; line-height: 1.5; margin: 0; max-width: 36ch; }
+  .ok { color: #3ce0c4; }
+</style>
+</head>
+<body>
+  <div>
+    <h1>Scan untuk menautkan WhatsApp</h1>
+    <p style="margin:10px auto 18px">WhatsApp &rarr; Perangkat tertaut &rarr; Tautkan perangkat. Halaman ini memperbarui QR otomatis.</p>
+    <div class="card"><img id="qr" alt="QR WhatsApp" src="qr-${wanted}.png" /></div>
+    <p id="hint" style="margin-top:16px">Menunggu QR&hellip;</p>
+  </div>
+  <script>
+    const img = document.getElementById("qr");
+    const hint = document.getElementById("hint");
+    let fails = 0;
+    setInterval(() => {
+      img.src = "qr-${wanted}.png?t=" + Date.now();
+      img.onload = () => { fails = 0; hint.textContent = "QR diperbarui otomatis."; };
+      img.onerror = () => { fails++; if (fails > 3) hint.textContent = "Menunggu QR dari gateway\\u2026"; };
+    }, 2000);
+  </script>
+</body>
+</html>
+`,
+);
+
+const canAutoOpen = process.stdout.isTTY && process.platform === "win32" && env.WA_OPEN_QR !== "0";
+let openedViewer = false;
 
 let lastQr = "";
-for (let i = 0; i < 150; i++) {
+for (let i = 0; i < 1800; i++) {
   const info = await api(`/api/sessions/${session.id}`);
   const status = info.json?.status;
   if (status === "ready") {
@@ -107,7 +155,12 @@ for (let i = 0; i < 150; i++) {
       const b64 = String(dataUrl).replace(/^data:image\/\w+;base64,/, "");
       writeFileSync(qrFile, Buffer.from(b64, "base64"));
       console.log(`[wa] QR baru disimpan: ${qrFile}`);
-      console.log("[wa] buka file itu lalu scan: WhatsApp > Perangkat tertaut");
+      console.log(`[wa] buka viewer (auto-refresh): ${viewerFile}`);
+      console.log("[wa] WhatsApp > Perangkat tertaut > Tautkan perangkat");
+      if (canAutoOpen && !openedViewer) {
+        openedViewer = true;
+        spawn("cmd.exe", ["/c", "start", "", viewerFile], { detached: true, stdio: "ignore" }).unref();
+      }
     }
   }
   await sleep(2000);

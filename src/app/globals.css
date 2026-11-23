@@ -4,18 +4,19 @@
 
 :root {
   color-scheme: dark;
-  --bg: #090c10;
-  --bg-2: #0d1016;
-  --panel: #0f131a;
-  --panel-2: #141a22;
-  --border: #1e242e;
-  --border-2: #2a313d;
-  --text: #e7e9ec;
-  --text-2: #a3aab4;
-  --text-3: #6b7280;
-  --gold: #d4a574;
-  --gold-2: #e0b88a;
-  --jade: #5cb87a;
+  /* Grayscale ramp: hitam → putih. Aksen = terang, merah hanya untuk status. */
+  --bg: #0a0a0a;
+  --bg-2: #121212;
+  --panel: #171717;
+  --panel-2: #1f1f1f;
+  --border: #2e2e2e;
+  --border-2: #454545;
+  --text: #f5f5f5;
+  --text-2: #b8b8b8;
+  --text-3: #7a7a7a;
+  --gold: #e6e6e6;
+  --gold-2: #ffffff;
+  --jade: #b8b8b8;
   --red: #d45a4a;
   --radius: 6px;
 }
@@ -23,7 +24,7 @@
 html {
   -webkit-text-size-adjust: 100%;
   scrollbar-width: thin;
-  scrollbar-color: #2a313d transparent;
+  scrollbar-color: #3a3a3a transparent;
 }
 
 body {
@@ -45,8 +46,8 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(to right, rgba(30, 36, 46, 0.3) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(30, 36, 46, 0.3) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
@@ -299,6 +300,57 @@ kbd {
 
 .animate-in {
   animation: fade-in 0.3s ease-out;
+}
+
+/* Komponen bentuk yang dipakai halaman pesan, lacak, dan admin. */
+@layer components {
+  .field {
+    @apply input min-h-10 w-full;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-medium text-mute;
+  }
+
+  .tag {
+    @apply inline-flex items-center gap-1.5 rounded-[var(--radius)] border border-line bg-white/[0.02] px-2 py-1 text-[11px] font-medium text-mute;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.02] px-3 py-1.5 text-xs font-medium text-mute;
+  }
+
+  .btn-outline {
+    @apply btn-ghost;
+  }
+
+  .btn-wa {
+    @apply btn;
+    background: var(--bg-2);
+    color: var(--text);
+    border-color: var(--border-2);
+  }
+
+  .btn-wa:hover {
+    background: var(--panel-2);
+    color: #fff;
+  }
+
+  .check-tile {
+    @apply flex min-h-11 items-center gap-3 rounded-tag-sm border border-line bg-white/[0.02] px-3.5 py-2.5 text-left transition-colors;
+  }
+
+  .check-box {
+    @apply grid size-4 shrink-0 place-items-center rounded-[3px] border border-border text-[9px] font-bold text-transparent;
+  }
+
+  input:checked + .check-tile {
+    @apply border-accent/50 bg-accent/[0.07];
+  }
+
+  input:checked + .check-tile .check-box {
+    @apply border-accent bg-accent text-[var(--bg)];
+  }
 }
 
 /* Responsive */

@@ -1,4 +1,5 @@
 import { GridStat } from "@/components/GridStat";
+import { TopBar } from "@/components/TopBar";
 import { LatestJobs } from "@/components/LatestJobs";
 import { getLatestJobs, getProductStats } from "@/lib/data";
 import { isAdmin } from "@/lib/auth";
@@ -11,6 +12,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="animate-in">
+      <TopBar isAdmin />
       <div className="wrap py-8">
         <div className="flex items-center justify-between mb-8">
           <div>

@@ -1,0 +1,608 @@
+"use client";
+
+import { useActionState, useRef, useState } from "react";
+import { createOrder, type OrderState } from "@/app/actions";
+import { BankLogo, hasBankLogo } from "@/components/BankLogo";
+import { DateField } from "@/components/DateField";
+import type { Service, ServiceOptionGroup } from "@/lib/db";
+import { rupiah } from "@/lib/format";
+import { calculateQuote, formatQty, optionPriceLabel, priceLabel } from "@/lib/pricing";
+import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
+
+type PaymentInfo = {
+  enabled: boolean;
+  bankName: string;
+  bankAccount: string;
+  bankHolder: string;
+  note: string;
+};
+
+type Selection = Record<string, string[]>;
+
+function defaultSelection(service: Service | undefined): Selection {
+  const out: Selection = {};
+  for (const group of service?.option_groups ?? []) {
+    const defaults = group.options.filter((option) => option.is_default).map((option) => option.code);
+    if (defaults.length) out[group.code] = defaults;
+  }
+  return out;
+}
+
+function parseSelection(raw: string | undefined, service: Service | undefined): Selection {
+  if (!raw) return defaultSelection(service);
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const out: Selection = {};
+    for (const group of service?.option_groups ?? []) {
+      const value = parsed[group.code];
+      const list = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+      const allowed = new Set(group.options.map((option) => option.code));
+      const clean = list.filter((code): code is string => typeof code === "string" && allowed.has(code));
+      if (clean.length) out[group.code] = clean;
+    }
+    return Object.keys(out).length ? out : defaultSelection(service);
+  } catch {
+    return defaultSelection(service);
+  }
+}
+
+export function OrderForm({
+  services,
+  preselect,
+  payment,
+}: {
+  services: Service[];
+  preselect?: string;
+  payment: PaymentInfo;
+}) {
+  const [state, action, pending] = useActionState<OrderState, FormData>(createOrder, null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const v = state?.values ?? {};
+  const initial = services.find((service) => service.id === (v.service ?? preselect)) ?? services[0];
+  const [selectedId, setSelectedId] = useState(initial?.id ?? "");
+  const [qty, setQty] = useState(v.qty || String(initial?.min_qty ?? 1));
+  const [width, setWidth] = useState(v.width || "");
+  const [height, setHeight] = useState(v.height || "");
+  const [selection, setSelection] = useState<Selection>(() => parseSelection(v.selection, initial));
+
+  const chosen = services.find((service) => service.id === selectedId);
+  const isArea = chosen?.pricing_model === "area";
+  const isPerUnit = chosen?.pricing_model === "per_unit";
+  const unit = chosen?.unit_label || (isArea ? "m²" : "unit");
+  const quote = chosen
+    ? calculateQuote(chosen, { qty, widthCm: width, heightCm: height, selected: selection })
+    : null;
+  const total = quote?.price ?? null;
+  const hasPriceError = Boolean(quote?.error);
+  const briefMin = chosen?.category === "print" ? 10 : 15;
+
+  const design = services.filter((service) => service.category !== "print");
+  const print = services.filter((service) => service.category === "print");
+
+  function pick(id: string) {
+    const next = services.find((service) => service.id === id);
+    setSelectedId(id);
+    setQty(String(next?.min_qty ?? 1));
+    setWidth("");
+    setHeight("");
+    setSelection(defaultSelection(next));
+  }
+
+  function stepQty(delta: number) {
+    const current = Number(qty) || 0;
+    const min = chosen?.min_qty ?? 1;
+    const max = chosen?.max_qty ?? 10000;
+    const next = Math.min(max, Math.max(min, current + delta));
+    setQty(String(next));
+  }
+
+  function toggleOption(group: ServiceOptionGroup, code: string) {
+    setSelection((previous) => {
+      const current = previous[group.code] ?? [];
+      if (group.select_type === "single") {
+        return { ...previous, [group.code]: [code] };
+      }
+      const next = current.includes(code)
+        ? current.filter((item) => item !== code)
+        : [...current, code];
+      return { ...previous, [group.code]: next };
+    });
+  }
+
+  function serviceCard(service: Service) {
+    const on = selectedId === service.id;
+    return (
+      <label key={service.id} className="block cursor-pointer">
+        <input
+          type="radio"
+          name="layanan-pilihan"
+          value={service.id}
+          checked={on}
+          onChange={() => pick(service.id)}
+          className="peer sr-only"
+        />
+        <span
+          className={`flex h-full flex-col justify-between gap-4 rounded-tag-sm border p-4 transition-all peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
+            on
+              ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_0_1px_rgba(60,224,196,0.12)]"
+              : "border-line bg-panel/50 text-ink hover:border-accent/30 hover:bg-white/[0.03]"
+          }`}
+        >
+          <span>
+            <span className="flex items-start justify-between gap-3">
+              <span className="block font-semibold leading-snug">{service.name}</span>
+              <span
+                aria-hidden
+                className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border text-[10px] font-bold transition-colors ${
+                  on ? "border-accent bg-accent text-[#04110f]" : "border-line text-transparent"
+                }`}
+              >
+                ✓
+              </span>
+            </span>
+            <span className="mt-1 block text-[13px] leading-5 text-mute">{service.blurb}</span>
+          </span>
+          <span className="flex items-center justify-between gap-3 border-t border-line pt-3 text-[13px]">
+            <span className={`font-semibold ${on ? "text-accent" : "text-ink"}`}>{priceLabel(service)}</span>
+            <span className="text-mute">± {service.days} hari</span>
+          </span>
+        </span>
+      </label>
+    );
+  }
+
+  return (
+    <>
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-14">
+        <form ref={formRef} action={action} className="space-y-10">
+          <input type="hidden" name="service" value={selectedId} />
+          <input type="hidden" name="qty" value={isPerUnit ? qty : ""} />
+          <input type="hidden" name="width" value={isArea ? width : ""} />
+          <input type="hidden" name="height" value={isArea ? height : ""} />
+          <input type="hidden" name="selection" value={JSON.stringify(selection)} />
+
+          <ol className="flex flex-wrap items-center gap-2 border-b border-line pb-5 text-[12px]">
+            {[
+              ["01", "Pilih layanan"],
+              ["02", "Atur spesifikasi"],
+              ["03", "Buat & bayar"],
+            ].map(([n, label], index) => (
+              <li key={n} className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.03] px-3 py-1.5 font-semibold text-ink/75">
+                  <span className="font-mono text-[10px] text-accent">{n}</span>
+                  {label}
+                </span>
+                {index < 2 && <span aria-hidden className="text-mute/35">/</span>}
+              </li>
+            ))}
+          </ol>
+
+          <div className="flex items-start gap-3 rounded-tag-sm border border-accent/20 bg-accent/[0.05] px-4 py-3.5">
+            <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-[#04110f]">
+              i
+            </span>
+            <p className="text-sm leading-6 text-ink/75">
+              <span className="font-semibold text-ink">Harga dihitung otomatis.</span> Pilih bahan, ukuran,
+              finishing, dan jumlah—totalnya langsung terlihat sebelum kamu membuat pesanan.
+            </p>
+          </div>
+
+          {state?.error && (
+            <div role="alert" className="flex gap-3 rounded-tag-sm border border-danger/35 bg-danger/[0.08] px-4 py-3.5 text-sm text-danger">
+              <span aria-hidden className="mt-0.5 font-bold">!</span>
+              <p>{state.error}</p>
+            </div>
+          )}
+
+          <fieldset>
+            <legend className="mb-1 text-xl font-semibold tracking-tight">Pilih layanan</legend>
+            <p className="mb-5 text-sm text-mute">
+              Desain punya paket, cetak punya bahan dan finishing. Semua harga sudah tampil di sini.
+            </p>
+            <div className="space-y-7">
+              {design.length > 0 && (
+                <div>
+                  <p className="mb-2.5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-ink/70">
+                    Desain &amp; branding <span aria-hidden className="h-px flex-1 bg-line" />
+                  </p>
+                  <div className="grid gap-2.5 sm:grid-cols-2">{design.map(serviceCard)}</div>
+                </div>
+              )}
+              {print.length > 0 && (
+                <div>
+                  <p className="mb-2.5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-ink/70">
+                    Cetak <span aria-hidden className="h-px flex-1 bg-line" />
+                  </p>
+                  <div className="grid gap-2.5 sm:grid-cols-2">{print.map(serviceCard)}</div>
+                </div>
+              )}
+            </div>
+          </fieldset>
+
+          {chosen && (
+            <fieldset>
+              <legend className="mb-1 text-xl font-semibold tracking-tight">Atur spesifikasi</legend>
+              <p className="mb-5 text-sm text-mute">
+                {isArea
+                  ? "Masukkan ukuran jadi dalam cm. Harga dihitung per m², minimal 1 m²."
+                  : isPerUnit
+                    ? `Isi jumlah ${unit}. Harga otomatis menyesuaikan.`
+                    : "Pilih paket dan tambahan yang kamu butuhkan."}
+              </p>
+
+              <div className="card space-y-6 p-5">
+                {isArea && (
+                  <div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <label className="block">
+                        <span className="label">Lebar (cm)</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min="10"
+                          max="2000"
+                          step="any"
+                          value={width}
+                          onChange={(event) => setWidth(event.target.value)}
+                          placeholder="300"
+                          className="field min-h-12 text-lg font-semibold tabular-nums"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="label">Tinggi (cm)</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min="10"
+                          max="2000"
+                          step="any"
+                          value={height}
+                          onChange={(event) => setHeight(event.target.value)}
+                          placeholder="100"
+                          className="field min-h-12 text-lg font-semibold tabular-nums"
+                        />
+                      </label>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-mute">Cepat:</span>
+                      {[
+                        ["1 × 1 m", 100, 100],
+                        ["2 × 1 m", 200, 100],
+                        ["3 × 1 m", 300, 100],
+                        ["4 × 2 m", 400, 200],
+                      ].map(([label, w, h]) => (
+                        <button
+                          key={String(label)}
+                          type="button"
+                          onClick={() => {
+                            setWidth(String(w));
+                            setHeight(String(h));
+                          }}
+                          className="rounded-full border border-line px-2.5 py-1 text-[11px] font-semibold text-ink/65 transition-colors hover:border-accent/40 hover:text-accent"
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-mute">
+                      {quote?.area != null
+                        ? `Luas ${formatQty(quote.area)} m² · ditagihkan minimal ${formatQty(chosen.min_area_m2)} m².`
+                        : `Minimal ${formatQty(chosen.min_area_m2)} m².`}
+                    </p>
+                  </div>
+                )}
+
+                {isPerUnit && (
+                  <label className="block">
+                    <span className="label">Jumlah ({unit})</span>
+                    <div className="flex items-stretch gap-2">
+                      <button
+                        type="button"
+                        onClick={() => stepQty(-1)}
+                        aria-label={`Kurangi ${unit}`}
+                        className="grid size-12 shrink-0 place-items-center rounded-tag-sm border border-line text-lg text-ink/70 transition-colors hover:border-accent/40 hover:text-accent"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        step="any"
+                        min={chosen.min_qty}
+                        max={chosen.max_qty}
+                        value={qty}
+                        onChange={(event) => setQty(event.target.value)}
+                        className="field min-h-12 flex-1 text-center text-lg font-semibold tabular-nums"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => stepQty(1)}
+                        aria-label={`Tambah ${unit}`}
+                        className="grid size-12 shrink-0 place-items-center rounded-tag-sm border border-line text-lg text-ink/70 transition-colors hover:border-accent/40 hover:text-accent"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <span className="mt-2 block text-xs text-mute">
+                      Minimal {formatQty(chosen.min_qty)} {unit} · maksimal {formatQty(chosen.max_qty)} {unit}
+                    </span>
+                  </label>
+                )}
+
+                {chosen.option_groups.map((group) => (
+                  <div key={group.code} className="border-t border-line pt-5 first:border-0 first:pt-0">
+                    <p className="font-semibold">{group.label}</p>
+                    {group.help && <p className="mt-0.5 text-xs leading-5 text-mute">{group.help}</p>}
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {group.options.map((option) => {
+                        const active = (selection[group.code] ?? []).includes(option.code);
+                        const single = group.select_type === "single";
+                        return (
+                          <label key={option.code} className="cursor-pointer">
+                            <input
+                              type={single ? "radio" : "checkbox"}
+                              checked={active}
+                              onChange={() => toggleOption(group, option.code)}
+                              className="peer sr-only"
+                            />
+                            <span
+                              className={`flex h-full items-start justify-between gap-3 rounded-tag-sm border p-3.5 text-[13px] transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
+                                active
+                                  ? "border-accent/55 bg-accent/[0.08]"
+                                  : "border-line bg-white/[0.02] hover:border-accent/30"
+                              }`}
+                            >
+                              <span className="flex items-start gap-2.5">
+                                <span
+                                  aria-hidden
+                                  className={`mt-0.5 grid size-4 shrink-0 place-items-center border text-[9px] font-bold ${
+                                    single ? "rounded-full" : "rounded-[3px]"
+                                  } ${active ? "border-accent bg-accent text-[#04110f]" : "border-line text-transparent"}`}
+                                >
+                                  ✓
+                                </span>
+                                <span>
+                                  <span className="block font-medium leading-5">{option.label}</span>
+                                  {option.description && (
+                                    <span className="mt-0.5 block text-xs leading-5 text-mute">{option.description}</span>
+                                  )}
+                                </span>
+                              </span>
+                              <span className={`shrink-0 text-xs font-semibold ${active ? "text-accent" : "text-mute"}`}>
+                                {optionPriceLabel(chosen, option)}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                <div className="border-t border-line pt-5">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-mute">
+                        {isArea
+                          ? "Harga per m² + opsi"
+                          : isPerUnit
+                            ? `Harga per ${unit} + opsi`
+                            : "Harga paket + opsi"}
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-ink/70">{priceLabel(chosen)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="eyebrow">Total</p>
+                      <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-accent">
+                        {total != null ? rupiah(total) : "—"}
+                      </p>
+                      {chosen.price_note && (
+                        <p className="mt-1 max-w-xs text-[11px] leading-4 text-mute">{chosen.price_note}</p>
+                      )}
+                    </div>
+                  </div>
+                  {quote?.error && <p className="mt-3 text-sm text-danger">{quote.error}</p>}
+                </div>
+              </div>
+            </fieldset>
+          )}
+
+          <div className="card p-5 lg:hidden">
+            <p className="eyebrow">Ringkasan</p>
+            <p className="mt-2 font-semibold">{chosen?.name ?? "Pilih layanan"}</p>
+            {quote?.lines.map((line, index) => (
+              <p key={index} className="mt-1 flex justify-between gap-3 text-sm text-mute">
+                <span>{line.label}</span>
+                <span className="tabular-nums">{rupiah(line.amount)}</span>
+              </p>
+            ))}
+            <p className="mt-3 text-3xl font-semibold tabular-nums tracking-tight text-accent">
+              {total != null ? rupiah(total) : "Belum dihitung"}
+            </p>
+          </div>
+
+          <fieldset>
+            <legend className="mb-1 text-xl font-semibold tracking-tight">Data kamu</legend>
+            <p className="mb-5 text-sm text-mute">Dipakai untuk mengirim kode pesanan dan kabar progres lewat WhatsApp.</p>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="block">
+                <span className="label">Nama</span>
+                <input name="name" defaultValue={v.name} autoComplete="name" className="field" required placeholder="Nama kamu" />
+              </label>
+              <label className="block">
+                <span className="label">Nomor WhatsApp</span>
+                <input name="wa" defaultValue={v.wa} inputMode="tel" autoComplete="tel" placeholder="0812 3456 7890" className="field" required />
+              </label>
+            </div>
+          </fieldset>
+
+          {chosen?.requires_file && (
+            <fieldset>
+              <legend className="mb-1 text-xl font-semibold tracking-tight">File siap cetak</legend>
+              <p className="mb-5 text-sm text-mute">
+                Upload file ke Google Drive/WeTransfer, setel akses “siapa saja yang punya link”, lalu tempel
+                linknya di sini. Format aman: PDF, JPG, PNG, atau file desain (AI/PSD/CDR).
+              </p>
+              <label className="block">
+                <span className="label">Link file</span>
+                <input
+                  name="file"
+                  type="url"
+                  defaultValue={v.file}
+                  placeholder="https://drive.google.com/..."
+                  className="field"
+                  required
+                />
+                <span className="mt-1.5 block text-xs text-mute">
+                  Belum punya file? Chat kami dulu lewat WhatsApp di bawah—jangan kirim pesanan sebelum file siap.
+                </span>
+              </label>
+            </fieldset>
+          )}
+
+          <fieldset>
+            <legend className="mb-1 text-xl font-semibold tracking-tight">
+              {chosen?.category === "print" ? "Catatan pesanan" : "Brief"}
+            </legend>
+            <p className="mb-5 text-sm text-mute">
+              {chosen?.category === "print"
+                ? "Tulis instruksi cetak: warna, lipatan, mata ayam, atau hal lain yang perlu kami tahu."
+                : "Ceritakan singkat: untuk apa desainnya, siapa yang melihat, dan gaya yang kamu suka."}
+            </p>
+            <label className="block">
+              <span className="sr-only">Brief</span>
+              <textarea
+                name="brief"
+                defaultValue={v.brief}
+                rows={5}
+                className="field resize-y"
+                required
+                minLength={briefMin}
+                placeholder={
+                  chosen?.category === "print"
+                    ? "Contoh: cetak sesuai file, warna cerah, mata ayam di setiap sudut. Ambil di toko."
+                    : "Contoh: butuh logo untuk kedai kopi kecil, kesannya hangat dan sederhana. Suka warna earthy, tidak suka yang ramai."
+                }
+              />
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-1 text-xl font-semibold tracking-tight">Detail tambahan</legend>
+            <p className="mb-5 text-sm text-mute">Opsional. Boleh dikosongkan kalau belum ada.</p>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="block">
+                <span className="label">Link referensi</span>
+                <input name="ref" type="url" defaultValue={v.ref} placeholder="https://" className="field" />
+              </label>
+              <label className="block">
+                <span className="label">Ingin selesai tanggal</span>
+                <DateField name="deadline" defaultValue={v.deadline} />
+              </label>
+            </div>
+          </fieldset>
+
+          <div className="flex flex-col gap-4 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">
+            <button type="submit" disabled={pending || hasPriceError} className="btn-primary w-full sm:w-auto">
+              {pending ? "Membuat pesanan…" : "Buat pesanan & bayar"}
+              {!pending && <span aria-hidden="true">→</span>}
+            </button>
+            <p className="text-sm leading-6 text-mute sm:max-w-[20rem] sm:text-right">
+              Setelah dibuat, kamu langsung melihat total dan instruksi pembayaran. Kode pesanan juga
+              dikirim lewat WhatsApp.
+            </p>
+          </div>
+        </form>
+
+        <aside aria-label="Ringkasan pesanan" className="hidden lg:sticky lg:top-24 lg:block">
+          <div className="card p-6">
+            <p className="eyebrow">Ringkasan</p>
+            <p className="mt-4 text-lg font-semibold leading-snug">{chosen?.name ?? "Pilih layanan"}</p>
+            <p className="mt-1 text-sm text-mute">{chosen?.blurb ?? "Belum ada layanan dipilih."}</p>
+
+            <dl className="mt-6 space-y-3 border-t border-line pt-5 text-sm">
+              {quote?.lines.map((line, index) => (
+                <div key={index} className="flex items-baseline justify-between gap-4">
+                  <dt className="text-mute">
+                    {line.label}
+                    {line.detail && <span className="mt-0.5 block text-[11px] text-mute/70">{line.detail}</span>}
+                  </dt>
+                  <dd className="shrink-0 font-semibold tabular-nums">{rupiah(line.amount)}</dd>
+                </div>
+              ))}
+              {!quote?.lines.length && (
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-mute">Pengerjaan</dt>
+                  <dd className="font-semibold">± {chosen?.days ?? 3} hari</dd>
+                </div>
+              )}
+              <div className="flex items-baseline justify-between gap-4 border-t border-line pt-3">
+                <dt className="text-mute">Pengerjaan</dt>
+                <dd className="font-semibold">± {chosen?.days ?? 3} hari</dd>
+              </div>
+              {payment.enabled && (
+                <div className="flex items-baseline justify-between gap-4">
+                  <dt className="text-mute">Pembayaran</dt>
+                  <dd className="font-semibold">{payment.bankName || "Transfer"}</dd>
+                </div>
+              )}
+            </dl>
+
+            <div className="mt-6 rounded-tag-sm border border-accent/20 bg-accent/[0.06] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-mute">Total</p>
+              <p className="mt-1.5 text-4xl font-semibold tabular-nums tracking-tight text-accent">
+                {total != null ? rupiah(total) : "—"}
+              </p>
+              {hasPriceError && <p className="mt-1 text-xs text-danger">{quote?.error}</p>}
+              {!hasPriceError && total == null && (
+                <p className="mt-1 text-xs text-mute">Lengkapi spesifikasi untuk melihat total.</p>
+              )}
+            </div>
+
+            {payment.enabled && (payment.bankAccount || payment.note) && (
+              <div className="mt-5 rounded-tag-sm border border-line bg-sand/60 px-4 py-3 text-[13px] leading-5 text-ink/70">
+                {hasBankLogo(payment.bankName) && (
+                  <span className="mb-2 inline-flex rounded-[0.5rem] border border-line bg-ink px-2.5 py-1.5 align-middle">
+                    <BankLogo bank={payment.bankName} className="h-5 w-auto" />
+                  </span>
+                )}
+                <p className="font-semibold text-ink">Transfer {payment.bankName} {payment.bankAccount}</p>
+                {payment.bankHolder && <p>a.n. {payment.bankHolder}</p>}
+                {payment.note && <p className="mt-1 text-ink/55">{payment.note}</p>}
+              </div>
+            )}
+
+            <p className="mt-6 border-t border-line pt-4 text-xs leading-5 text-mute">
+              Butuh sesuatu yang belum ada di pilihan?{" "}
+              <WhatsAppLink
+                text="Halo in.torma, saya mau tanya soal layanan."
+                className="inline-flex items-center gap-1 font-semibold text-accent underline decoration-accent/30 underline-offset-4 hover:decoration-accent"
+              >
+                Tanya lewat WhatsApp <WhatsAppIcon className="size-3.5" />
+              </WhatsAppLink>
+            </p>
+          </div>
+        </aside>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel/95 px-5 py-3 backdrop-blur-xl lg:hidden">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="eyebrow">Total</p>
+            <p className="truncate text-xl font-semibold tabular-nums text-accent">
+              {total != null ? rupiah(total) : "Belum dihitung"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => formRef.current?.requestSubmit()}
+            disabled={pending || hasPriceError}
+            className="btn-primary min-h-11 shrink-0 px-5 text-sm"
+          >
+            {pending ? "Membuat…" : "Buat pesanan"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}

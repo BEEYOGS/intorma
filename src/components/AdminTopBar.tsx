@@ -7,8 +7,9 @@ export function AdminTopBar() {
   return (
     <header className="topbar sticky top-0 z-50 bg-[var(--bg)]/80 backdrop-blur-sm border-b border-[var(--border)]">
       <div className="flex items-center gap-6">
-        <Link href="/" className="text-sm font-semibold tracking-tight text-[var(--text)]">
-          in.torma
+        <Link href="/" aria-label="in.torma, beranda">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/int.svg" alt="in.torma" className="h-6 w-auto" />
         </Link>
         <span className="text-xs text-[var(--text-3)]">admin</span>
       </div>
