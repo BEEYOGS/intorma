@@ -1,11 +1,15 @@
 import { createPrivateKey, sign } from "node:crypto";
 
 // Google Drive dipakai HANYA sebagai penyimpanan file. Database tetap Neon.
-// Kredensial: GOOGLE_SERVICE_ACCOUNT_JSON (isi JSON lengkap) + GOOGLE_DRIVE_FOLDER_ID.
+// Untuk Drive pribadi (Gmail biasa) wajib OAuth user, bukan service account:
+// service account tidak punya storage quota di "My Drive".
+// Mode didukung:
+//  1. OAuth user : GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET + GOOGLE_REFRESH_TOKEN
+//  2. Service account (Shared Drive/Workspace): GOOGLE_SERVICE_ACCOUNT_JSON
 
 type Credentials = { client_email: string; private_key: string };
 
-function credentials(): Credentials | null {
+function serviceAccount(): Credentials | null {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!raw) return null;
   try {
@@ -17,16 +21,47 @@ function credentials(): Credentials | null {
   return null;
 }
 
+function oauthConfig() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+  if (clientId && clientSecret && refreshToken) return { clientId, clientSecret, refreshToken };
+  return null;
+}
+
 export function driveEnabled(): boolean {
-  return Boolean(credentials() && process.env.GOOGLE_DRIVE_FOLDER_ID);
+  return Boolean(process.env.GOOGLE_DRIVE_FOLDER_ID && (oauthConfig() || serviceAccount()));
 }
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
 async function accessToken(): Promise<string> {
-  const creds = credentials();
-  if (!creds) throw new Error("Kredensial Google belum diisi.");
   if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) return cachedToken.value;
+
+  const oauth = oauthConfig();
+  if (oauth) {
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: oauth.clientId,
+        client_secret: oauth.clientSecret,
+        refresh_token: oauth.refreshToken,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) throw new Error(`Gagal memperbarui token Google (${response.status}).`);
+    const data = (await response.json()) as { access_token: string; expires_in: number };
+    cachedToken = {
+      value: data.access_token,
+      expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+    };
+    return data.access_token;
+  }
+
+  const creds = serviceAccount();
+  if (!creds) throw new Error("Kredensial Google belum diisi.");
 
   const now = Math.floor(Date.now() / 1000);
   const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");

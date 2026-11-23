@@ -64,11 +64,18 @@ Secara default file disimpan di tabel `uploads` (maksimal 4 MB). Untuk memakai k
 
 1. Buat project di Google Cloud Console dengan akun Google kamu.
 2. Aktifkan **Google Drive API**.
-3. Buat **Service Account**, unduh kunci JSON-nya.
-4. Di Google Drive, buat folder (mis. `intorma-uploads`) lalu **Share** ke email service account
-   tersebut dengan akses **Editor**. Salin folder ID dari URL folder.
-5. Isi environment: `GOOGLE_SERVICE_ACCOUNT_JSON` (isi JSON lengkap, satu baris; newline ditulis `\n`)
-   dan `GOOGLE_DRIVE_FOLDER_ID`.
+3. Buat **OAuth client ID** (Web application). Untuk getting refresh token, cara termudah:
+   buka Google OAuth 2.0 Playground, centang “Use your own OAuth credentials”, isi client ID/secret,
+   pilih scope `https://www.googleapis.com/auth/drive.file`, authorization & exchange, lalu salin
+   `refresh_token`.
+4. Di Google Drive, buat folder (mis. `intorma-uploads`) dengan akun Google yang sama. Salin folder
+   ID dari URL folder.
+5. Isi environment: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, dan
+   `GOOGLE_DRIVE_FOLDER_ID`.
+
+Catatan: **service account tidak bisa dipakai untuk "My Drive" pribadi** (Google mengembalikan 403
+“Service Accounts do not have storage quota”). Kode masih mendukung service account kalau nanti
+memakai Shared Drive/Workspace.
 
 Setelah itu upload otomatis masuk Drive (maksimal 20 MB per file), sedangkan preview/download/ZIP
 tetap lewat endpoint aplikasi yang sudah mengecek sesi pelanggan. Tanpa kedua env var tersebut,
