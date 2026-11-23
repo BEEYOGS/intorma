@@ -25,6 +25,9 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
             <Link href="/portal" className="px-3 py-1.5 text-sm text-[var(--text)] transition-colors rounded-[var(--radius)] hover:bg-[var(--panel)]">
               Portal
             </Link>
+            <Link href="/portal/files" className={linkClass}>
+              File
+            </Link>
             <form action={logoutCustomer} className="ml-1">
               <button className="btn btn-ghost !h-8 !px-3 text-xs">Keluar</button>
             </form>

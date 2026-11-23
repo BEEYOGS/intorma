@@ -50,6 +50,7 @@ export default async function PortalPage() {
             <p className="mt-1 text-sm text-mute">Pantau dan kelola pesananmu dari sini.</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link href="/portal/files" className="btn btn-ghost !h-9 text-xs">File saya</Link>
             <Link href="/order" className="btn btn-primary !h-9 text-xs">+ Pesan baru</Link>
             <form action={logoutCustomer}>
               <button className="btn btn-ghost !h-9 text-xs">Keluar</button>

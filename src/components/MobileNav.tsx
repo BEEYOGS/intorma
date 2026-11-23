@@ -21,6 +21,7 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
     { href: "/order", label: "Pesan" },
     { href: "/lacak", label: "Lacak pesanan" },
     { href: "/masuk", label: loggedIn ? "Portal" : "Masuk" },
+    ...(loggedIn ? [{ href: "/portal/files", label: "File saya" }] : []),
     { href: "/contact", label: "Kontak" },
   ];
 

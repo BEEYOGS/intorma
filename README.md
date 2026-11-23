@@ -22,6 +22,8 @@ Halaman pelanggan:
 
 - `/masuk` — daftar atau masuk ke portal klien.
 - `/portal` — dashboard pesanan, status, pembayaran, profil, dan pesan ulang.
+- `/portal/files` — “File Saya”: daftar file yang diunggah, download original (tanpa kompresi),
+  dan download beberapa file sekaligus sebagai ZIP tanpa kompresi (`/api/files/zip`).
 
 Saat akun dibuat (atau saat masuk), pesanan lama dengan nomor WhatsApp yang sama otomatis
 terhubung ke akun tersebut. Form `/order` juga mengisi nama & WhatsApp dari akun yang sedang masuk.

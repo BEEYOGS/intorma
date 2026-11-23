@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCustomer } from "@/lib/customer-auth";
 import { sql } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -36,11 +37,18 @@ export async function POST(req: Request) {
 
     const code = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
     const bytes = new Uint8Array(await file.arrayBuffer());
-    await sql`
-      insert into uploads (code, file_name, mime, size, data)
-      values (${code}, ${safeName}, ${mime}, ${bytes.length}, ${bytes})`;
+    const customer = await getCustomer();
+    const rows = (await sql`
+      insert into uploads (code, file_name, mime, size, data, customer_id)
+      values (${code}, ${safeName}, ${mime}, ${bytes.length}, ${bytes}, ${customer?.id ?? null})
+      returning id`) as Array<{ id: number }>;
 
-    return NextResponse.json({ url: `/api/upload/${code}`, name: safeName, size: bytes.length });
+    return NextResponse.json({
+      id: Number(rows[0]?.id ?? 0),
+      url: `/api/upload/${code}`,
+      name: safeName,
+      size: bytes.length,
+    });
   } catch (error) {
     console.error("upload failed", error);
     return NextResponse.json({ error: "Gagal mengunggah file. Coba lagi." }, { status: 500 });

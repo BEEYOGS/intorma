@@ -139,6 +139,13 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
       insert into payments (order_id, provider, method, amount, status)
       values (${order.id}, 'manual', 'transfer', ${quote.price}, 'pending')`;
   }
+  if (fileUrl?.startsWith("/api/upload/")) {
+    const uploadCode = fileUrl.slice("/api/upload/".length).split("?")[0];
+    await sql`
+      update uploads set order_id = ${order.id},
+        customer_id = coalesce(customer_id, ${customer?.id ?? null})
+      where code = ${uploadCode}`;
+  }
 
   const link = `${siteUrl()}/lacak/${order.code}`;
   const detail = [
