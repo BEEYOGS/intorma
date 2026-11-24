@@ -2,13 +2,13 @@
 //
 // Vercel tidak bisa menjangkau OpenWA yang berjalan di localhost. Aplikasi web
 // menyimpan notifikasi ke tabel wa_outbox, lalu skrip ini (di komputer yang
-// menjalankan OpenWA) mengambil dan mengirimkannya.
+// menjalankan OpenWA) mengambilnya lewat /api/wa/outbox di situs publik dan
+// mengirimkannya — tanpa butuh DATABASE_URL produksi di mesin ini.
 //
 // Pakai: npm run wa:agent
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { neon } from "@neondatabase/serverless";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -23,22 +23,26 @@ function loadEnvFile(file) {
 }
 
 const env = { ...loadEnvFile(join(root, ".env.local")), ...process.env };
-const databaseUrl = env.DATABASE_URL;
 const base = (env.OPENWA_URL || "http://127.0.0.1:2785").replace(/\/$/, "");
 const key = env.OPENWA_KEY || "";
 const sessionName = env.OPENWA_SESSION || "intorma";
+const secret = env.OPENWA_WEBHOOK_SECRET || "";
+const site = (env.OUTBOX_URL || env.SITE_WEBHOOK_URL || env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
 const pollMs = Math.max(2000, Number(env.WA_POLL_MS || 5000));
 
-if (!databaseUrl) {
-  console.error("[wa-agent] DATABASE_URL kosong di .env.local");
-  process.exit(1);
-}
 if (!key) {
   console.error("[wa-agent] OPENWA_KEY kosong di .env.local");
   process.exit(1);
 }
+if (!secret) {
+  console.error("[wa-agent] OPENWA_WEBHOOK_SECRET kosong di .env.local");
+  process.exit(1);
+}
+if (!site) {
+  console.error("[wa-agent] SITE_WEBHOOK_URL kosong. Isi URL publik, mis. https://intorma-psi.vercel.app");
+  process.exit(1);
+}
 
-const sql = neon(databaseUrl);
 const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
 const stamp = () => new Date().toLocaleTimeString("id-ID", { hour12: false });
 
@@ -114,29 +118,15 @@ async function sendMessage(row, sessionId) {
   return { ok: false, error: `HTTP ${res.status}${body ? ` — ${body.slice(0, 180)}` : ""}` };
 }
 
-async function markSent(id) {
-  await sql.query(
-    `update wa_outbox
-     set status = 'sent', sent_at = now(), attempts = attempts + 1, last_error = null
-     where id = $1`,
-    [id],
-  );
-}
-
-async function markFailed(row, error) {
-  const attempts = Number(row.attempts) + 1;
-  const final = attempts >= 8;
-  const delaySeconds = Math.min(1800, 30 * 2 ** (attempts - 1));
-  await sql.query(
-    `update wa_outbox
-     set status = $2,
-         attempts = $3,
-         last_error = $4,
-         next_attempt_at = now() + make_interval(secs => $5)
-     where id = $1`,
-    [row.id, final ? "failed" : "pending", attempts, String(error).slice(0, 500), delaySeconds],
-  );
-  return { attempts, final, delaySeconds };
+async function report(row, result) {
+  const res = await fetch(`${site}/api/wa/outbox?s=${encodeURIComponent(secret)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id: Number(row.id), ok: result.ok, error: result.error || undefined }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const json = await res.json().catch(() => null);
+  return { httpOk: res.ok, json };
 }
 
 async function tick() {
@@ -146,25 +136,14 @@ async function tick() {
     return;
   }
 
-  let rows;
-  try {
-    rows = await sql.query(
-      `select id, to_number, chat_id, content, attempts, idempotency_key
-       from wa_outbox
-       where status = 'pending' and next_attempt_at <= now()
-       order by id
-       limit 10`,
-    );
-  } catch {
-    // Kompatibel dengan database sebelum kolom chat_id ada.
-    rows = await sql.query(
-      `select id, to_number, null::text as chat_id, content, attempts, idempotency_key
-       from wa_outbox
-       where status = 'pending' and next_attempt_at <= now()
-       order by id
-       limit 10`,
-    );
+  const res = await fetch(`${site}/api/wa/outbox?s=${encodeURIComponent(secret)}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) {
+    throw new Error(`ambil antrean gagal: HTTP ${res.status}`);
   }
+  const data = await res.json().catch(() => null);
+  const rows = (data?.rows || []).filter((row) => Number.isInteger(Number(row.id)));
 
   if (!rows.length) {
     notice("terhubung. Menunggu pesan baru.");
@@ -174,21 +153,21 @@ async function tick() {
   for (const row of rows) {
     if (stopping) return;
     const result = await sendMessage(row, session.id);
+    const state = await report(row, result);
     if (result.ok) {
-      await markSent(row.id);
       console.log(`[wa-agent ${stamp()}] terkirim #${row.id} → ${row.chat_id || row.to_number}`);
     } else {
-      const state = await markFailed(row, result.error);
+      const json = state.json || {};
       console.warn(
-        `[wa-agent ${stamp()}] gagal #${row.id} (${state.attempts}/8): ${result.error}` +
-          (state.final ? " — ditandai failed" : ` — coba lagi dalam ${state.delaySeconds}s`),
+        `[wa-agent ${stamp()}] gagal #${row.id} (${json.attempts ?? "?"}/8): ${result.error}` +
+          (json.final ? " — ditandai failed" : ` — coba lagi dalam ${json.delaySeconds ?? "?"}s`),
       );
     }
   }
 }
 
 console.log(`[wa-agent] OpenWA: ${base}`);
-console.log(`[wa-agent] Sesi: ${sessionName} · antrean dicek tiap ${pollMs / 1000}s`);
+console.log(`[wa-agent] Sesi: ${sessionName} · antrean: ${site} · cek tiap ${pollMs / 1000}s`);
 
 process.on("SIGINT", () => {
   stopping = true;
