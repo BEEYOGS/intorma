@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { createOrder } from "@/app/actions";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { DateField } from "@/components/DateField";
@@ -9,6 +9,14 @@ import { WhatsAppLink } from "@/components/WhatsApp";
 import type { Service } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { calculatePrice, formatQty, priceLabel } from "@/lib/pricing";
+import type { UploadedFile } from "@/lib/drive";
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 ** 2) return `${Math.round(n / 1024)} KB`;
+  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+  return `${(n / 1024 ** 3).toFixed(2)} GB`;
+}
 
 type PaymentInfo = {
   enabled: boolean;
@@ -29,7 +37,132 @@ export function OrderForm({
 }) {
   const [state, action, pending] = useActionState(createOrder, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const filesFieldRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadReady, setUploadReady] = useState<boolean | null>(null);
+  const bypassRef = useRef(false);
   const v = state?.values ?? {};
+
+  useEffect(() => {
+    let live = true;
+    fetch("/api/upload/token", { cache: "no-store" })
+      .then((res) => live && setUploadReady(res.ok))
+      .catch(() => live && setUploadReady(false));
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  function addFiles(list: FileList | null) {
+    if (!list?.length) return;
+    setUploadError(null);
+    setFiles((prev) => [...prev, ...Array.from(list)].slice(0, 12));
+  }
+
+  function removeFile(index: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  async function uploadOne(file: File, token: string, folder: string): Promise<UploadedFile> {
+    const init = await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true",
+      {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+          "x-upload-content-type": file.type || "application/octet-stream",
+          "x-upload-content-length": String(file.size),
+        },
+        body: JSON.stringify({ name: file.name, parents: [folder] }),
+      },
+    );
+    if (!init.ok) throw new Error(`Gagal memulai unggahan (HTTP ${init.status}).`);
+    const sessionUrl = init.headers.get("location");
+    if (!sessionUrl) throw new Error("Sesi unggahan tidak dibuat.");
+
+    if (file.size === 0) {
+      const res = await fetch(sessionUrl, {
+        method: "PUT",
+        headers: { "content-range": "bytes */0" },
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { id?: string };
+        if (!json.id) throw new Error("Unggahan selesai tanpa id file.");
+        return { id: json.id, name: file.name, size: 0, mime: file.type };
+      }
+      throw new Error(`Unggahan gagal (HTTP ${res.status}).`);
+    }
+
+    const chunkSize = Math.max(4 * 1024 * 1024, Math.ceil(file.size / 30));
+    let offset = 0;
+    while (offset < file.size) {
+      const end = Math.min(offset + chunkSize, file.size);
+      const res = await fetch(sessionUrl, {
+        method: "PUT",
+        headers: { "content-range": `bytes ${offset}-${end - 1}/${file.size}` },
+        body: file.slice(offset, end),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { id?: string };
+        if (!json.id) throw new Error("Unggahan selesai tanpa id file.");
+        return { id: json.id, name: file.name, size: file.size, mime: file.type };
+      }
+      if (res.status === 308) {
+        offset = end;
+        continue;
+      }
+      throw new Error(`Unggahan gagal (HTTP ${res.status}).`);
+    }
+    throw new Error("Unggahan tidak selesai.");
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (bypassRef.current) {
+      bypassRef.current = false;
+      return;
+    }
+    event.preventDefault();
+    if (!files.length) {
+      bypassRef.current = true;
+      formRef.current?.requestSubmit();
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+    setUploadProgress(0);
+    const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+    try {
+      const res = await fetch("/api/upload/token", { cache: "no-store" });
+      if (!res.ok) throw new Error("Upload belum tersedia. Pakai kolom link referensi, atau coba lagi nanti.");
+      const { token, folder } = (await res.json()) as { token: string; folder: string };
+
+      let done = 0;
+      const uploaded: UploadedFile[] = [];
+      for (const file of files) {
+        const item = await uploadOne(file, token, folder);
+        uploaded.push(item);
+        done += file.size;
+        setUploadProgress(totalBytes ? Math.round((done / totalBytes) * 100) : 100);
+      }
+
+      if (filesFieldRef.current) {
+        filesFieldRef.current.value = uploaded
+          .map((f) => [f.id, f.name.replace(/[|;]/g, "_"), f.size, f.mime].join("|"))
+          .join(";");
+      }
+      setUploading(false);
+      bypassRef.current = true;
+      formRef.current?.requestSubmit();
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Gagal mengunggah file.");
+      setUploading(false);
+    }
+  }
   const initial = services.find((s) => s.id === (v.service ?? preselect)) ?? services[0];
   const [selected, setSelected] = useState(initial?.id ?? "");
   const [qty, setQty] = useState(v.qty || String(initial?.min_qty ?? 1));
@@ -96,7 +229,8 @@ export function OrderForm({
   return (
     <>
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-14">
-      <form ref={formRef} action={action} className="space-y-12">
+      <form ref={formRef} action={action} onSubmit={handleSubmit} className="space-y-12">
+        <input ref={filesFieldRef} type="hidden" name="files" value="" />
         <ol className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line pb-4 font-mono text-[12px] uppercase tracking-[0.1em] text-mute">
           {[
             ["01", "Pilih layanan", "text-ink"],
@@ -247,6 +381,72 @@ export function OrderForm({
         </fieldset>
 
         <fieldset>
+          <legend className="mb-1 text-xl font-semibold tracking-tight">File referensi</legend>
+          <p className="mb-5 text-sm text-mute">
+            Opsional — logo lama, foto produk, atau referensi. Maksimal 12 file, tanpa batas ukuran, langsung tersimpan ke Drive admin.
+          </p>
+          {uploadReady === false ? (
+            <div className="rounded-tag-sm border border-dashed border-line px-4 py-3.5 text-sm text-mute">
+              Upload sedang nonaktif. Sementara pakai kolom link referensi di bawah.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <label
+                className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-tag-lg border border-dashed px-6 py-9 text-center transition-colors ${
+                  files.length ? "border-silver/50 bg-silver/[0.06]" : "border-line hover:border-mute/60 hover:bg-panel/50"
+                }`}
+              >
+                <input type="file" multiple className="sr-only" onChange={(event) => addFiles(event.target.files)} disabled={uploading} />
+                <span className="font-mono text-sm font-semibold text-ink/80">
+                  + Pilih file{files.length ? ` (${files.length} dipilih)` : ""}
+                </span>
+                <span className="text-xs text-mute">Gambar, PDF, ZIP — dikirim langsung ke Google Drive admin.</span>
+              </label>
+
+              {files.length > 0 && (
+                <ul className="divide-y divide-line rounded-tag-sm border border-line bg-panel/50 px-4">
+                  {files.map((f, i) => (
+                    <li key={`${f.name}-${f.size}-${i}`} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{f.name}</span>
+                        <span className="block font-mono text-[11px] text-mute">{formatBytes(f.size)}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        disabled={uploading}
+                        className="font-mono text-xs text-mute transition-colors hover:text-silver disabled:opacity-50"
+                      >
+                        Hapus
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {uploading && (
+                <div className="rounded-tag-sm border border-silver/40 bg-silver/[0.06] px-4 py-3">
+                  <div className="flex items-center justify-between font-mono text-xs text-mute">
+                    <span>Mengunggah ke Google Drive…</span>
+                    <span className="tabular-nums">{uploadProgress}%</span>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
+                    <div className="h-full bg-silver transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                </div>
+              )}
+
+              {uploadError && (
+                <div role="alert" className="rounded-tag-sm border border-dashed border-silver/40 bg-silver/[0.06] px-4 py-3 text-sm text-silver">
+                  <span aria-hidden className="mr-2 font-mono font-bold">!</span>
+                  {uploadError}
+                </div>
+              )}
+            </div>
+          )}
+        </fieldset>
+
+        <fieldset>
           <legend className="mb-1 text-xl font-semibold tracking-tight">Detail tambahan</legend>
           <p className="mb-5 text-sm text-mute">Opsional. Boleh dikosongkan kalau belum ada.</p>
           <div className="grid gap-5 sm:grid-cols-2">
@@ -262,9 +462,9 @@ export function OrderForm({
         </fieldset>
 
         <div className="flex flex-col gap-4 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">
-          <button type="submit" disabled={pending || Boolean(priced?.error)} className="btn-primary w-full sm:w-auto">
-            {pending ? "Mengirim…" : "Kirim pesanan"}
-            {!pending && <span aria-hidden="true">→</span>}
+          <button type="submit" disabled={pending || uploading || Boolean(priced?.error)} className="btn-primary w-full sm:w-auto">
+            {uploading ? "Mengunggah…" : pending ? "Mengirim…" : "Kirim pesanan"}
+            {!pending && !uploading && <span aria-hidden="true">→</span>}
           </button>
           <p className="text-sm leading-6 text-mute sm:max-w-[18rem] sm:text-right">
             Setelah terkirim kode pesanan langsung tampil di layar dan salinannya dikirim ke WhatsApp.
@@ -354,10 +554,10 @@ export function OrderForm({
           <button
             type="button"
             onClick={() => formRef.current?.requestSubmit()}
-            disabled={pending || Boolean(priced?.error)}
+            disabled={pending || uploading || Boolean(priced?.error)}
             className="btn-primary min-h-11 shrink-0 px-5 text-sm"
           >
-            {pending ? "Mengirim…" : "Kirim pesanan"}
+            {uploading ? "Mengunggah…" : pending ? "Mengirim…" : "Kirim pesanan"}
           </button>
         </div>
       </div>

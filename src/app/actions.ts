@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
 import type { Service } from "@/lib/db";
 import { isAdmin, login, logout } from "@/lib/auth";
+import { attachOrderFiles, type UploadedFile } from "@/lib/drive";
 import { makeCode, normalizeWA, rupiah } from "@/lib/format";
 import { calculatePrice } from "@/lib/pricing";
 import { STATUS_META, isStatus } from "@/lib/status";
@@ -30,6 +31,15 @@ function withQuery(path: string, values: Record<string, string>): string {
   const url = new URL(adminReturn(path), "http://local");
   for (const [key, value] of Object.entries(values)) url.searchParams.set(key, value);
   return `${url.pathname}${url.search}`;
+}
+
+/** Hidden field files: "driveId|nama|ukuran|mime;driveId|nama|..." */
+function parseUploadedFiles(raw: string): UploadedFile[] {
+  return raw.split(";").flatMap((entry) => {
+    const [id, name, size, mime] = entry.split("|");
+    if (!id || !name || !Number(size)) return [];
+    return [{ id: id.slice(0, 120), name: name.slice(0, 200), size: Number(size), mime: (mime ?? "").slice(0, 100) }];
+  });
 }
 
 export async function createOrder(_prev: OrderState, f: FormData): Promise<OrderState> {
@@ -106,6 +116,8 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
         )
       : Promise.resolve(false),
   ]);
+
+  await attachOrderFiles(order.id, order.code, parseUploadedFiles(str(f, "files")));
 
   redirect(`/lacak/${order.code}?baru=1${waSent ? "" : "&wa=0"}`);
 }

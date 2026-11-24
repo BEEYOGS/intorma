@@ -102,3 +102,16 @@ insert into services (id, name, blurb, price_from, days, sort, pricing_mode, uni
   ('stiker-vinyl', 'Cetak Stiker Vinyl A3+', 'Stiker vinyl tahan air, A3+. Harga per lembar.', 15000, 2, 9, 'per_unit', 'lembar', 1, 5000),
   ('lain', 'Belum tahu butuh apa', 'Ceritakan saja kebutuhanmu, nanti kami arahkan.', 0, 3, 10, 'flat', '', 1, 10000)
 on conflict (id) do nothing;
+
+-- File referensi yang diunggah klien, disimpan di Google Drive pemilik studio.
+create table if not exists order_files (
+  id bigserial primary key,
+  order_id bigint not null references orders(id) on delete cascade,
+  name text not null,
+  size bigint not null default 0,
+  mime text,
+  drive_id text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists order_files_order_idx on order_files(order_id);

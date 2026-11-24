@@ -74,6 +74,26 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
     sql`select coalesce(sum(price), 0)::int as total from orders where paid`,
   ]);
 
+  // Tabel order_files muncul belakangan lewat migrasi — jangan sampai halaman
+  // admin rusak kalau migrasi belum jalan di database produksi.
+  const fileRows = await sql
+    .query(
+      `select f.order_id, f.name, f.size, f.mime, f.drive_id
+       from order_files f
+       where f.order_id in (select o.id ${from} ${where} order by o.created_at desc limit 100)
+       order by f.id`,
+      values,
+    )
+    .catch(() => []);
+
+  const filesByOrder = new Map<string, Array<{ name: string; size: number; mime: string; driveId: string }>>();
+  for (const f of fileRows) {
+    const key = String(f.order_id);
+    const list = filesByOrder.get(key) ?? [];
+    list.push({ name: String(f.name), size: Number(f.size), mime: String(f.mime ?? ""), driveId: String(f.drive_id) });
+    filesByOrder.set(key, list);
+  }
+
   const count = (st: string) => Number(counts.find((c) => c.status === st)?.n ?? 0);
   const total = counts.reduce((sum, c) => sum + Number(c.n), 0);
   const unpaidCount = Number(unpaid[0]?.n ?? 0);
@@ -198,6 +218,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           {orders.map((o) => {
             const st = (isStatus(o.status) ? o.status : "menunggu") as Status;
             const price = o.price == null ? null : Number(o.price);
+            const files = filesByOrder.get(String(o.id)) ?? [];
             return (
               <li key={o.id} className="border-b border-line">
                 <details className="group" open={o.code === openCode}>
@@ -245,6 +266,27 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                         <p className="eyebrow">Brief</p>
                         <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink/75">{o.brief}</p>
                       </div>
+
+                      {files.length > 0 && (
+                        <div className="border-t border-line pt-4">
+                          <p className="eyebrow">File klien ({files.length})</p>
+                          <ul className="mt-2 space-y-1.5">
+                            {files.map((f) => (
+                              <li key={f.driveId} className="flex items-center justify-between gap-3 text-sm">
+                                <a
+                                  href={`https://drive.google.com/file/d/${f.driveId}/view`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="min-w-0 truncate font-medium underline decoration-ink/40 underline-offset-4 hover:decoration-ink"
+                                >
+                                  {f.name}
+                                </a>
+                                <span className="shrink-0 font-mono text-[11px] text-mute">{formatBytes(f.size)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
 
                       <dl className="grid grid-cols-2 gap-4 border-t border-line pt-4 text-sm">
                         <div>
@@ -328,6 +370,13 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       )}
     </AdminShell>
   );
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 ** 2) return `${Math.round(n / 1024)} KB`;
+  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+  return `${(n / 1024 ** 3).toFixed(2)} GB`;
 }
 
 function Stat({ label, value, hint, href, accent }: { label: string; value: number; hint: string; href?: string; accent: string }) {
