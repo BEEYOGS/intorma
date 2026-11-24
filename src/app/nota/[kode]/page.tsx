@@ -79,9 +79,12 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
             Creative without idea
           </p>
           <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 text-[11px] font-light text-[#111]">
-            <span className="whitespace-nowrap">@0896 1760 7952</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/wa.svg" alt="WhatsApp" className="size-3.5 shrink-0" />
+            <span className="whitespace-nowrap">0896 1760 7952</span>
             <span aria-hidden="true">|</span>
-            <span aria-hidden="true">@</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ig.svg" alt="Instagram" className="size-3.5 shrink-0" />
             <span className="whitespace-nowrap">@aku.vza</span>
           </p>
         </header>
@@ -192,7 +195,14 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
 
         <footer className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-[#c9c9c9] pt-3 text-[10px] uppercase tracking-[0.14em] text-[#555]">
           <span>Creative without idea</span>
-          <span>@0896 1760 7952 | @ @aku.vza</span>
+          <span className="inline-flex items-center gap-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/wa.svg" alt="WhatsApp" className="size-3" /> 0896 1760 7952
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ig.svg" alt="Instagram" className="size-3" /> @aku.vza
+          </span>
         </footer>
       </article>
     </div>
