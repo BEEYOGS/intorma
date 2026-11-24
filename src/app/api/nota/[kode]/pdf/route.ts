@@ -1,4 +1,8 @@
-import PDFDocument from "pdfkit";
+import PDFDocument, { registerStdFonts } from "pdfkit";
+import Courier from "pdfkit/standard-fonts/Courier";
+import Helvetica from "pdfkit/standard-fonts/Helvetica";
+import HelveticaBold from "pdfkit/standard-fonts/HelveticaBold";
+import TimesItalic from "pdfkit/standard-fonts/TimesItalic";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal } from "@/lib/format";
 import { notaRows, notaTotal, type NotaOrder, type NotaSnapshot } from "@/lib/nota";
@@ -7,6 +11,9 @@ import { STATUS_META, asStatus } from "@/lib/status";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
+
+// Vercel tidak menyertakan direktori font pdfkit; daftarkan yang dipakai di sini.
+registerStdFonts(Courier, Helvetica, HelveticaBold, TimesItalic);
 
 const M = 42;
 
