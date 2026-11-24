@@ -73,7 +73,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
           <img
             src="/int-dark.svg"
             alt="in.torma"
-            className="mx-auto h-auto w-[104mm] max-w-full object-contain"
+            className="mx-auto h-auto w-[160mm] max-w-full object-contain"
           />
           <p className="mt-3 text-[10px] font-light uppercase tracking-[0.35em] text-[#111]">
             Creative without idea
