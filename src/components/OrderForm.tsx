@@ -8,6 +8,9 @@ import type { Service, ServiceOptionGroup } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { calculateQuote, formatQty, optionPriceLabel, priceLabel } from "@/lib/pricing";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
+import { UploadProgressBar } from "@/components/UploadProgressBar";
+import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
+import { ACCEPT_ATTR, DB_UPLOAD_MAX_BYTES, formatBytes } from "@/lib/upload-rules";
 
 type PaymentInfo = {
   enabled: boolean;
@@ -51,11 +54,15 @@ export function OrderForm({
   preselect,
   payment,
   customer,
+  driveReady = false,
+  uploadToken = "",
 }: {
   services: Service[];
   preselect?: string;
   payment: PaymentInfo;
   customer?: { name: string; wa: string };
+  driveReady?: boolean;
+  uploadToken?: string;
 }) {
   const [state, action, pending] = useActionState<OrderState, FormData>(createOrder, null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -70,6 +77,7 @@ export function OrderForm({
   const [uploadedName, setUploadedName] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "design" | "print">("all");
 
@@ -131,18 +139,24 @@ export function OrderForm({
   async function uploadFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    const formName = formRef.current
+      ? String(new FormData(formRef.current).get("name") ?? "").trim()
+      : "";
     setUploading(true);
     setUploadError("");
+    setUploadProgress(null);
     try {
-      const body = new FormData();
-      body.set("file", file);
-      const response = await fetch("/api/upload", { method: "POST", body });
-      const data = (await response.json()) as { url?: string; name?: string; error?: string };
-      if (!response.ok || !data.url) throw new Error(data.error || "Gagal mengunggah file.");
+      const data = await uploadFileToStorage(file, {
+        customerName: formName || customer?.name || "",
+        uploadToken,
+        onProgress: setUploadProgress,
+      });
       setFileLink(data.url);
       setUploadedName(data.name || file.name);
+      setUploadProgress(null);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Gagal mengunggah file.");
+      setUploadProgress(null);
     } finally {
       setUploading(false);
       event.target.value = "";
@@ -533,8 +547,10 @@ export function OrderForm({
             <fieldset>
               <legend className="mb-1 text-xl font-semibold tracking-tight">File siap cetak</legend>
               <p className="mb-5 text-sm text-mute">
-                Upload langsung di sini (maksimal 4 MB), atau tempel link Google Drive/WeTransfer.
-                Format aman: PDF, JPG, PNG, AI, PSD, CDR, atau ZIP.
+                {driveReady
+                  ? "Upload langsung di sini—file besar (multi-GB) dikirim langsung ke Google Drive, jadi tidak kena batas 4 MB. Bisa juga tempel link Google Drive/WeTransfer."
+                  : `Upload langsung di sini (maksimal ${formatBytes(DB_UPLOAD_MAX_BYTES)}), atau tempel link Google Drive/WeTransfer.`}{" "}
+                Format aman: PDF, JPG, PNG, AI, PSD, CDR, TIFF, atau ZIP.
               </p>
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="block">
@@ -543,22 +559,38 @@ export function OrderForm({
                     type="file"
                     onChange={uploadFile}
                     disabled={uploading}
-                    accept=".pdf,.jpg,.jpeg,.png,.webp,.ai,.psd,.cdr,.eps,.zip,.doc,.docx"
+                    accept={ACCEPT_ATTR}
                     className="field !py-2 text-xs file:mr-3 file:rounded-[var(--radius)] file:border file:border-line file:bg-sand file:px-3 file:py-1.5 file:text-xs file:font-medium"
                   />
                   <span className="mt-1.5 block text-xs text-mute">
                     {uploading
-                      ? "Mengunggah file…"
+                      ? driveReady
+                        ? "Mengunggah langsung ke Google Drive…"
+                        : "Mengunggah file…"
                       : fileLink.startsWith("/api/upload/") && uploadedName
                         ? `Tersimpan: ${uploadedName}`
-                        : "Maksimal 4 MB. Format PDF, gambar, atau file desain."}
+                        : driveReady
+                          ? "File besar didukung. Format PDF, gambar, atau file desain."
+                          : `Maksimal ${formatBytes(DB_UPLOAD_MAX_BYTES)}. Format PDF, gambar, atau file desain.`}
                   </span>
+                  <UploadProgressBar
+                    progress={uploadProgress}
+                    label={
+                      uploadProgress && uploadProgress.percent >= 100
+                        ? "Menyimpan file…"
+                        : driveReady
+                          ? "Mengunggah ke Google Drive"
+                          : "Mengunggah file"
+                    }
+                  />
                   {fileLink.startsWith("/api/upload/") && (
                     <button
                       type="button"
                       onClick={() => {
                         setFileLink("");
                         setUploadedName("");
+                        setUploadProgress(null);
+                        setUploadError("");
                       }}
                       className="mt-1 text-xs font-medium text-mute underline underline-offset-4 hover:text-ink"
                     >

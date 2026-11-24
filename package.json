@@ -13,7 +13,8 @@
     "wa:session": "node scripts/wa-session.mjs",
     "wa:agent": "node scripts/wa-agent.mjs",
     "wa:webhook": "node scripts/wa-webhook.mjs",
-    "wa:check": "node scripts/wa-check.mjs"
+    "wa:check": "node scripts/wa-check.mjs",
+    "test:integrations": "tsx scripts/test-integrations.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
@@ -28,6 +29,7 @@
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.5",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.15",
     "typescript": "^5.8.3"
   }
 }

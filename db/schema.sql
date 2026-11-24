@@ -220,8 +220,12 @@ create table if not exists uploads (
   created_at timestamptz not null default now()
 );
 
+alter table uploads alter column size type bigint;
 alter table uploads add column if not exists storage text not null default 'db';
 alter table uploads add column if not exists drive_file_id text;
+alter table uploads add column if not exists drive_web_link text;
 alter table uploads add column if not exists customer_id int references customers(id) on delete set null;
 alter table uploads add column if not exists order_id int references orders(id) on delete set null;
 create index if not exists uploads_customer_idx on uploads(customer_id, created_at desc);
+create unique index if not exists uploads_drive_file_unique
+  on uploads(drive_file_id) where drive_file_id is not null;

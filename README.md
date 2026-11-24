@@ -53,16 +53,18 @@ Kolom lama `services.pricing_mode` sengaja tidak diubah agar aplikasi yang sudah
 model baru ada di `services.pricing_model`. Rincian pesanan disimpan sebagai snapshot di
 `orders.options`, jadi pesanan lama tetap menampilkan harga yang saat itu disepakati.
 
-Untuk produk cetak, pelanggan bisa **upload langsung** (maksimal 4 MB, disimpan di tabel
-`uploads` dan diakses lewat `/api/upload/<kode>`) atau menempel link Google Drive/WeTransfer.
-Notifikasi WhatsApp diantrekan lewat `wa_outbox`; jalankan `npm run openwa` dan `npm run wa:agent`
-di mesin yang sama dengan gateway.
+Untuk produk cetak, pelanggan bisa **upload langsung** atau menempel link Google Drive/WeTransfer.
+Tanpa Drive, file disimpan di tabel `uploads` (maksimal 4 MB, karena batas body Vercel 4,5 MB) dan
+diakses lewat `/api/upload/<kode>`. Dengan Drive aktif, file besar **tidak melewati Vercel**:
+browser membuat sesi Google Drive Resumable Upload lalu mengirim chunk 8 MB langsung ke Google,
+dengan progress bar, retry otomatis 3×, dan nama file `[KODE]_[NamaPelanggan]_[NamaAsli]`.
+Batas praktisnya mengikuti Google Drive (5 TB per file), bukan batas serverless.
 
 ### Penyimpanan file di Google Drive (opsional)
 
-Secara default file disimpan di tabel `uploads` (maksimal 4 MB). Untuk memakai kuota Google Drive:
+Untuk memakai kuota Google Drive pribadi:
 
-1. Buat project di Google Cloud Console dengan akun Google kamu.
+1. Buat project di Google Cloud Console dengan akun Google pemilik folder.
 2. Aktifkan **Google Drive API**.
 3. Buat **OAuth client ID** (Web application). Untuk getting refresh token, cara termudah:
    buka Google OAuth 2.0 Playground, centang “Use your own OAuth credentials”, isi client ID/secret,
@@ -74,12 +76,39 @@ Secara default file disimpan di tabel `uploads` (maksimal 4 MB). Untuk memakai k
    `GOOGLE_DRIVE_FOLDER_ID`.
 
 Catatan: **service account tidak bisa dipakai untuk "My Drive" pribadi** (Google mengembalikan 403
-“Service Accounts do not have storage quota”). Kode masih mendukung service account kalau nanti
-memakai Shared Drive/Workspace.
+“Service Accounts do not have storage quota”). Service account hanya didukung untuk Shared Drive/
+Workspace dengan `GOOGLE_DRIVE_AUTH=service_account`.
 
-Setelah itu upload otomatis masuk Drive (maksimal 20 MB per file), sedangkan preview/download/ZIP
-tetap lewat endpoint aplikasi yang sudah mengecek sesi pelanggan. Tanpa kedua env var tersebut,
-perilaku kembali ke penyimpanan database seperti sebelumnya.
+Dengan Drive aktif:
+- `POST /api/drive/init-upload` membuat sesi resumable (hanya metadata kecil).
+- Browser `PUT` chunk langsung ke Google, jadi file 1 GB+ tidak terkena limit 4,5 MB Vercel.
+- `POST /api/drive/finalize-upload` memverifikasi file benar-benar ada di folder yang dikonfigurasi,
+  lalu mencatat `drive_file_id` dan ukuran di tabel `uploads`.
+- Preview/download memakai `/api/upload/<kode>` yang meneruskan stream + Range dari Drive.
+- ZIP tetap tanpa kompresi dan mengambil file dari Drive/DB.
+
+### WhatsApp
+
+Notifikasi langsung dikirim dengan `await` ke gateway. Kalau gateway tidak bisa dijangkau dari
+Vercel, pesan otomatis masuk `wa_outbox` dan dikirim oleh `npm run wa:agent` di mesin yang sama
+dengan gateway. Variabel yang dipakai:
+
+```
+OPENWA_BASE_URL=https://gateway-publik-contoh.example.com
+OPENWA_API_KEY=...
+OPENWA_SESSION=intorma
+ADMIN_WHATSAPP_NUMBER=0895329940950
+```
+
+Alias lama `OPENWA_URL`, `OPENWA_KEY`, dan `ADMIN_WA` masih dibaca kalau variabel baru kosong.
+
+Diagnostik & tes:
+
+- `GET /api/wa/test-gateway` — status konfigurasi, gateway, sesi, dan latency (butuh login admin
+  atau header `x-admin-secret`).
+- `POST /api/wa/test-gateway` — kirim pesan tes nyata; body opsional `{ "phone": "...", "message": "..." }`.
+- `npm run test:integrations` — tes OAuth Drive (resumable upload + hapus file uji) dan tes kirim WA
+  ke nomor admin. Kalau kredensial belum diisi, bagian tersebut dilaporkan `SKIP`.
 
 ### Pembayaran
 

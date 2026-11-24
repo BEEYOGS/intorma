@@ -4,6 +4,8 @@ import { FileLibrary, type FileItem } from "@/components/FileLibrary";
 import { TopBar } from "@/components/TopBar";
 import { getCustomer } from "@/lib/customer-auth";
 import { sql } from "@/lib/db";
+import { driveEnabled } from "@/lib/drive";
+import { createUploadToken } from "@/lib/upload-token";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "File saya" };
@@ -60,7 +62,12 @@ export default async function FilesPage() {
         </div>
 
         <div className="mt-7">
-          <FileLibrary files={files} />
+          <FileLibrary
+            files={files}
+            driveReady={driveEnabled()}
+            uploadToken={createUploadToken()}
+            customerName={customer.name}
+          />
         </div>
       </div>
     </div>

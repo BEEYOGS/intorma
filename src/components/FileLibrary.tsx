@@ -2,6 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent } from "react";
+import { UploadProgressBar } from "@/components/UploadProgressBar";
+import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
+import { ACCEPT_ATTR, DB_UPLOAD_MAX_BYTES, formatBytes } from "@/lib/upload-rules";
 
 export type FileItem = {
   id: number;
@@ -56,11 +59,22 @@ function FileThumb({ file }: { file: FileItem }) {
   );
 }
 
-export function FileLibrary({ files }: { files: FileItem[] }) {
+export function FileLibrary({
+  files,
+  driveReady = false,
+  uploadToken = "",
+  customerName = "",
+}: {
+  files: FileItem[];
+  driveReady?: boolean;
+  uploadToken?: string;
+  customerName?: string;
+}) {
   const router = useRouter();
   const [selected, setSelected] = useState<number[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [preview, setPreview] = useState<FileItem | null>(null);
 
   useEffect(() => {
@@ -83,15 +97,18 @@ export function FileLibrary({ files }: { files: FileItem[] }) {
     if (!file) return;
     setUploading(true);
     setError("");
+    setProgress(null);
     try {
-      const body = new FormData();
-      body.set("file", file);
-      const response = await fetch("/api/upload", { method: "POST", body });
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(data.error || "Gagal mengunggah file.");
+      await uploadFileToStorage(file, {
+        customerName,
+        uploadToken,
+        onProgress: setProgress,
+      });
+      setProgress(null);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal mengunggah file.");
+      setProgress(null);
     } finally {
       setUploading(false);
       event.target.value = "";
@@ -107,7 +124,10 @@ export function FileLibrary({ files }: { files: FileItem[] }) {
           <div>
             <p className="text-sm font-medium text-[var(--text)]">File saya</p>
             <p className="mt-0.5 text-xs text-mute">
-              Original, tanpa kompresi. Klik file untuk pratinjau. Maksimal 4 MB per file.
+              Original, tanpa kompresi. Klik file untuk pratinjau.{" "}
+              {driveReady
+                ? "File besar dikirim langsung ke Google Drive."
+                : `Maksimal ${formatBytes(DB_UPLOAD_MAX_BYTES)} per file.`}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -124,12 +144,32 @@ export function FileLibrary({ files }: { files: FileItem[] }) {
             )}
             <label className="btn btn-ghost !h-9 cursor-pointer text-xs">
               {uploading ? "Mengunggah…" : "+ Upload file"}
-              <input type="file" onChange={upload} disabled={uploading} className="sr-only" />
+              <input
+                type="file"
+                onChange={upload}
+                disabled={uploading}
+                accept={ACCEPT_ATTR}
+                className="sr-only"
+              />
             </label>
           </div>
         </div>
 
         {error && <p role="alert" className="px-4 pt-3 text-xs text-danger">{error}</p>}
+        {progress && (
+          <div className="px-4 pb-3">
+            <UploadProgressBar
+              progress={progress}
+              label={
+                progress.percent >= 100
+                  ? "Menyimpan file…"
+                  : driveReady
+                    ? "Mengunggah ke Google Drive"
+                    : "Mengunggah file"
+              }
+            />
+          </div>
+        )}
 
         {files.length === 0 ? (
           <div className="p-8 text-center">

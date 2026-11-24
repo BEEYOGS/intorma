@@ -34,6 +34,8 @@ declare
   detail_text text;
   summary_text text;
   file_text text;
+  upload_code text;
+  drive_text text;
   cust_text text;
   admin_text text;
 begin
@@ -100,6 +102,15 @@ begin
   file_text := nullif(btrim(coalesce(new.file_url, '')), '');
   detail_text := coalesce(summary_text, qty_text);
 
+  -- File yang diunggah lewat aplikasi punya baris di uploads. Ambil link Drive
+  -- aslinya supaya admin bisa membuka file langsung di folder produksi.
+  if file_text like '%/api/upload/%' then
+    upload_code := substring(file_text from '/api/upload/([^?]+)');
+    if upload_code is not null then
+      select u.drive_web_link into drive_text from uploads u where u.code = upload_code;
+    end if;
+  end if;
+
   if new.price is not null and new.price > 0 then
     cust_text := 'Halo ' || new.name || ', pesananmu ' || new.code || ' sudah kami terima.';
     if detail_text is not null then
@@ -132,6 +143,9 @@ begin
     admin_text := admin_text || chr(10) || 'Total: ' || total_text;
     if file_text is not null then
       admin_text := admin_text || chr(10) || 'File: ' || file_text;
+    end if;
+    if drive_text is not null then
+      admin_text := admin_text || chr(10) || 'Drive: ' || drive_text;
     end if;
     admin_text := admin_text || chr(10) || chr(10) || new.brief;
     insert into wa_outbox (to_number, content, idempotency_key)

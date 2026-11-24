@@ -3,7 +3,9 @@ import { Footer, Nav } from "@/components/Chrome";
 import { OrderForm } from "@/components/OrderForm";
 import { getCustomer } from "@/lib/customer-auth";
 import { getServicesWithOptions } from "@/lib/db";
+import { driveEnabled } from "@/lib/drive";
 import { getPaymentSettings } from "@/lib/settings";
+import { createUploadToken } from "@/lib/upload-token";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Pesan desain & cetak" };
@@ -62,6 +64,8 @@ export default async function OrderPage({
               preselect={layanan}
               payment={payment}
               customer={customer ? { name: customer.name, wa: customer.wa } : undefined}
+              driveReady={driveEnabled()}
+              uploadToken={createUploadToken()}
             />
           )}
         </div>

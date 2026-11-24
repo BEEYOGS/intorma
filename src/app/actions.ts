@@ -17,7 +17,7 @@ import {
   verifyPassword,
 } from "@/lib/customer-auth";
 import { createMidtransTransaction, gatewayEnabled } from "@/lib/payment";
-import { sendWA, siteUrl } from "@/lib/wa";
+import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
 
 export type OrderState = {
   error?: string;
@@ -139,12 +139,23 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
       insert into payments (order_id, provider, method, amount, status)
       values (${order.id}, 'manual', 'transfer', ${quote.price}, 'pending')`;
   }
+  let driveLink: string | null = null;
   if (fileUrl?.startsWith("/api/upload/")) {
     const uploadCode = fileUrl.slice("/api/upload/".length).split("?")[0];
-    await sql`
+    const uploaded = (await sql`
       update uploads set order_id = ${order.id},
         customer_id = coalesce(customer_id, ${customer?.id ?? null})
-      where code = ${uploadCode}`;
+      where code = ${uploadCode}
+      returning drive_file_id, drive_web_link`) as Array<{
+      drive_file_id: string | null;
+      drive_web_link: string | null;
+    }>;
+    const row = uploaded[0];
+    driveLink =
+      row?.drive_web_link ||
+      (row?.drive_file_id
+        ? `https://drive.google.com/file/d/${row.drive_file_id}/view`
+        : null);
   }
 
   const link = `${siteUrl()}/lacak/${order.code}`;
@@ -156,14 +167,15 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   // Kalau trigger database aktif, trigger sudah mengantrekan pesan pelanggan
   // dan admin. Jangan kirim lagi dari sini supaya tidak dobel.
   if (!(await waTriggerActive())) {
+    const adminWa = adminWhatsApp();
     await Promise.all([
       sendWA(
         wa,
         `Halo ${values.name}, pesananmu ${order.code} sudah kami terima.\n\n${detail}\n\nPantau & bayar: ${link}`,
       ),
-      process.env.ADMIN_WA
+      adminWa
         ? sendWA(
-            process.env.ADMIN_WA,
+            adminWa,
             [
               `Pesanan baru ${order.code}`,
               `${values.name} (${wa})`,
@@ -172,6 +184,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
               "",
               `Brief: ${values.brief}`,
               fileUrl ? `File: ${fileUrl}` : null,
+              driveLink ? `Drive: ${driveLink}` : null,
             ]
               .filter((line) => line !== null)
               .join("\n"),

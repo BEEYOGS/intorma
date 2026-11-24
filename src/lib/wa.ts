@@ -2,38 +2,249 @@ import { normalizeWA } from "./format";
 import { sql } from "./db";
 
 const MAX_LENGTH = 4000;
-const baseUrl = () => process.env.OPENWA_URL?.replace(/\/$/, "") ?? "";
-const apiKey = () => process.env.OPENWA_KEY ?? "";
-const sessionName = () => process.env.OPENWA_SESSION?.trim() || "intorma";
 
-async function resolveSession(base: string, key: string): Promise<string | null> {
-  const configured = sessionName();
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(configured)) return configured;
+export function gatewayBase(): string {
+  return (process.env.OPENWA_BASE_URL || process.env.OPENWA_URL || "").trim().replace(/\/+$/, "");
+}
+
+export function gatewayKey(): string {
+  return (process.env.OPENWA_API_KEY || process.env.OPENWA_KEY || "").trim();
+}
+
+export function sessionName(): string {
+  return process.env.OPENWA_SESSION?.trim() || "intorma";
+}
+
+export function adminWhatsApp(): string {
+  return (process.env.ADMIN_WHATSAPP_NUMBER || process.env.ADMIN_WA || "").trim();
+}
+
+export function gatewayConfigured(): boolean {
+  return Boolean(gatewayBase() && gatewayKey());
+}
+
+type SessionRow = { id?: string; name?: string; status?: string };
+
+type SessionLookup = {
+  reachable: boolean;
+  httpStatus: number;
+  latencyMs: number;
+  session: SessionRow | null;
+  error?: string;
+};
+
+async function lookupSession(timeoutMs = 5000): Promise<SessionLookup> {
+  const base = gatewayBase();
+  const key = gatewayKey();
+  const startedAt = Date.now();
+  if (!base || !key) {
+    return {
+      reachable: false,
+      httpStatus: 0,
+      latencyMs: 0,
+      session: null,
+      error: "OPENWA_BASE_URL/OPENWA_API_KEY belum diisi.",
+    };
+  }
+
   try {
-    const res = await fetch(`${base}/api/sessions?name=${encodeURIComponent(configured)}`, {
+    const response = await fetch(`${base}/api/sessions?name=${encodeURIComponent(sessionName())}`, {
       headers: { "x-api-key": key },
       cache: "no-store",
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
-    if (!res.ok) return null;
-    const list = (await res.json()) as Array<{ id?: string; name?: string }>;
-    return list.find((s) => s.name === configured)?.id ?? null;
-  } catch {
-    return null;
+    const latencyMs = Date.now() - startedAt;
+    const text = await response.text().catch(() => "");
+    let list: SessionRow[] = [];
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      if (Array.isArray(parsed)) list = parsed as SessionRow[];
+    } catch {
+      /* bukan JSON */
+    }
+    const configured = sessionName();
+    const session =
+      list.find((row) => row.name === configured) ||
+      list.find((row) => row.id === configured) ||
+      null;
+    return {
+      reachable: true,
+      httpStatus: response.status,
+      latencyMs,
+      session,
+      error: response.ok
+        ? session
+          ? undefined
+          : `Sesi "${configured}" tidak ditemukan di gateway.`
+        : `Gateway merespons HTTP ${response.status}.`,
+    };
+  } catch (error) {
+    return {
+      reachable: false,
+      httpStatus: 0,
+      latencyMs: Date.now() - startedAt,
+      session: null,
+      error: error instanceof Error ? error.message : "Gateway tidak bisa dihubungi.",
+    };
   }
 }
 
-async function sendDirect(chatId: string, content: string, key: string, base: string): Promise<boolean> {
-  const session = await resolveSession(base, key);
-  if (!session) return false;
-  const res = await fetch(`${base}/api/sessions/${encodeURIComponent(session)}/messages/send-text`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-api-key": key },
-    body: JSON.stringify({ chatId, text: content.slice(0, MAX_LENGTH) }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(12_000),
-  });
-  return res.ok;
+export type WASendResult = {
+  ok: boolean;
+  configured: boolean;
+  gatewayReachable: boolean;
+  sessionStatus: string | null;
+  latencyMs: number;
+  status: number;
+  phone?: string;
+  error?: string;
+  gatewayResponse?: string;
+};
+
+/** Kirim langsung tanpa fallback antrean. Dipakai endpoint tes & diagnostik. */
+export async function waSendTest(to: string, content: string): Promise<WASendResult> {
+  const number = normalizeWA(to);
+  const startedAt = Date.now();
+  if (!gatewayConfigured()) {
+    return {
+      ok: false,
+      configured: false,
+      gatewayReachable: false,
+      sessionStatus: null,
+      latencyMs: 0,
+      status: 0,
+      error:
+        "Gateway WhatsApp belum dikonfigurasi. Isi OPENWA_BASE_URL dan OPENWA_API_KEY di environment.",
+    };
+  }
+  if (!number) {
+    return {
+      ok: false,
+      configured: true,
+      gatewayReachable: false,
+      sessionStatus: null,
+      latencyMs: 0,
+      status: 0,
+      error: "Nomor WhatsApp tidak valid.",
+    };
+  }
+  if (!content.trim()) {
+    return {
+      ok: false,
+      configured: true,
+      gatewayReachable: false,
+      sessionStatus: null,
+      latencyMs: 0,
+      status: 0,
+      error: "Pesan kosong.",
+    };
+  }
+
+  const lookup = await lookupSession(5000);
+  if (!lookup.reachable || !lookup.session?.id) {
+    return {
+      ok: false,
+      configured: true,
+      gatewayReachable: lookup.reachable,
+      sessionStatus: lookup.session?.status ?? null,
+      latencyMs: lookup.latencyMs,
+      status: lookup.httpStatus,
+      phone: number,
+      error: lookup.error ?? "Sesi WhatsApp tidak ditemukan.",
+    };
+  }
+  if (lookup.session.status !== "ready") {
+    return {
+      ok: false,
+      configured: true,
+      gatewayReachable: true,
+      sessionStatus: lookup.session.status ?? null,
+      latencyMs: lookup.latencyMs,
+      status: lookup.httpStatus,
+      phone: number,
+      error: `Sesi WhatsApp belum ready (status: ${lookup.session.status ?? "unknown"}).`,
+    };
+  }
+
+  const base = gatewayBase();
+  const key = gatewayKey();
+  try {
+    const response = await fetch(
+      `${base}/api/sessions/${encodeURIComponent(lookup.session.id)}/messages/send-text`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-api-key": key },
+        body: JSON.stringify({ chatId: `${number}@c.us`, text: content.slice(0, MAX_LENGTH) }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(12_000),
+      },
+    );
+    const body = await response.text().catch(() => "");
+    return {
+      ok: response.ok,
+      configured: true,
+      gatewayReachable: true,
+      sessionStatus: lookup.session.status ?? null,
+      latencyMs: Date.now() - startedAt,
+      status: response.status,
+      phone: number,
+      error: response.ok ? undefined : `Gateway menolak pesan (HTTP ${response.status}).`,
+      gatewayResponse: body.slice(0, 500),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      configured: true,
+      gatewayReachable: true,
+      sessionStatus: lookup.session.status ?? null,
+      latencyMs: Date.now() - startedAt,
+      status: 0,
+      phone: number,
+      error: error instanceof Error ? error.message : "Gagal menghubungi gateway.",
+    };
+  }
+}
+
+export type WADiagnostics = {
+  configured: boolean;
+  baseUrl: string;
+  sessionName: string;
+  gatewayReachable: boolean;
+  sessionStatus: string | null;
+  sessionId: string | null;
+  latencyMs: number;
+  httpStatus: number;
+  error?: string;
+};
+
+export async function waDiagnostics(): Promise<WADiagnostics> {
+  const base = gatewayBase();
+  if (!gatewayConfigured()) {
+    return {
+      configured: false,
+      baseUrl: base,
+      sessionName: sessionName(),
+      gatewayReachable: false,
+      sessionStatus: null,
+      sessionId: null,
+      latencyMs: 0,
+      httpStatus: 0,
+      error:
+        "Gateway WhatsApp belum dikonfigurasi. Isi OPENWA_BASE_URL dan OPENWA_API_KEY.",
+    };
+  }
+  const lookup = await lookupSession(5000);
+  return {
+    configured: true,
+    baseUrl: base,
+    sessionName: sessionName(),
+    gatewayReachable: lookup.reachable,
+    sessionStatus: lookup.session?.status ?? null,
+    sessionId: lookup.session?.id ?? null,
+    latencyMs: lookup.latencyMs,
+    httpStatus: lookup.httpStatus,
+    error: lookup.error,
+  };
 }
 
 async function enqueue(to: string, content: string): Promise<boolean> {
@@ -47,26 +258,24 @@ async function enqueue(to: string, content: string): Promise<boolean> {
   }
 }
 
+/**
+ * Kirim WA dan tunggu hasilnya. Kalau gateway tidak bisa dijangkau dari Vercel,
+ * pesan tetap masuk antrean database dan dikirim oleh `npm run wa:agent`.
+ * Semua langkah di-await supaya tidak dibunuh setelah response serverless.
+ */
 export async function sendWA(to: string, content: string): Promise<boolean> {
   const number = normalizeWA(to);
   if (!number || !content.trim()) return false;
-  const base = baseUrl();
-  const key = apiKey();
-  if (key && base) {
-    try {
-      const res = await fetch(`${base}/api/sessions?name=${encodeURIComponent(sessionName())}`, {
-        headers: { "x-api-key": key },
-        cache: "no-store",
-        signal: AbortSignal.timeout(4000),
-      });
-      const sessions = (await res.json()) as Array<{ id: string; name: string }>;
-      if (sessions.some((s) => s.name === sessionName())) {
-        const sent = await sendDirect(`${number}@c.us`, content, key, base);
-        if (sent) return true;
-      }
-    } catch {}
+
+  if (gatewayConfigured()) {
+    const result = await waSendTest(number, content);
+    if (result.ok) return true;
+    console.warn(
+      `[wa] gateway gagal (${result.status || "network"}): ${result.error ?? "unknown"}; masuk antrean database.`,
+    );
   }
   return enqueue(to, content);
 }
 
-export const siteUrl = () => process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3001";
+export const siteUrl = () =>
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://intorma-psi.vercel.app";

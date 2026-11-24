@@ -1,19 +1,32 @@
 import { createPrivateKey, sign } from "node:crypto";
 
 // Google Drive dipakai HANYA sebagai penyimpanan file. Database tetap Neon.
-// Untuk Drive pribadi (Gmail biasa) wajib OAuth user, bukan service account:
-// service account tidak punya storage quota di "My Drive".
-// Mode didukung:
-//  1. OAuth user : GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET + GOOGLE_REFRESH_TOKEN
-//  2. Service account (Shared Drive/Workspace): GOOGLE_SERVICE_ACCOUNT_JSON
+//
+// Untuk Drive pribadi (Gmail biasa) WAJIB memakai OAuth user:
+//   GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET + GOOGLE_REFRESH_TOKEN
+// Service account tidak punya storage quota di "My Drive" (Google 403), jadi
+// hanya dipakai kalau GOOGLE_DRIVE_AUTH=service_account (Shared Drive/Workspace).
+//
+// Upload file besar memakai Resumable Upload: browser mengirim chunk langsung
+// ke Google, bukan lewat body API route Vercel.
 
-type Credentials = { client_email: string; private_key: string };
+type ServiceAccount = { client_email: string; private_key: string };
 
-function serviceAccount(): Credentials | null {
+export type DriveFileMeta = {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  webViewLink: string | null;
+  webContentLink: string | null;
+  parents?: string[];
+};
+
+function serviceAccount(): ServiceAccount | null {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as Credentials;
+    const parsed = JSON.parse(raw) as ServiceAccount;
     if (parsed.client_email && parsed.private_key) return parsed;
   } catch {
     return null;
@@ -22,20 +35,51 @@ function serviceAccount(): Credentials | null {
 }
 
 function oauthConfig() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+  const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN?.trim();
   if (clientId && clientSecret && refreshToken) return { clientId, clientSecret, refreshToken };
   return null;
 }
 
+function usesServiceAccount(): boolean {
+  return process.env.GOOGLE_DRIVE_AUTH?.trim().toLowerCase() === "service_account";
+}
+
+export function driveAuthMode(): "oauth" | "service_account" | "none" {
+  if (oauthConfig()) return "oauth";
+  if (usesServiceAccount() && serviceAccount()) return "service_account";
+  return "none";
+}
+
+export function driveFolderId(): string {
+  return process.env.GOOGLE_DRIVE_FOLDER_ID?.trim() ?? "";
+}
+
 export function driveEnabled(): boolean {
-  return Boolean(process.env.GOOGLE_DRIVE_FOLDER_ID && (oauthConfig() || serviceAccount()));
+  return Boolean(driveFolderId() && driveAuthMode() !== "none");
+}
+
+async function googleError(response: Response, context: string): Promise<Error> {
+  const text = await response.text().catch(() => "");
+  let message = text.slice(0, 300);
+  try {
+    const parsed = JSON.parse(text) as {
+      error?: { message?: string } | string;
+      error_description?: string;
+    };
+    if (typeof parsed.error === "string") message = parsed.error;
+    else if (parsed.error?.message) message = parsed.error.message;
+    else if (parsed.error_description) message = parsed.error_description;
+  } catch {
+    /* bukan JSON */
+  }
+  return new Error(`${context} (HTTP ${response.status})${message ? `: ${message}` : ""}`);
 }
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
-async function accessToken(): Promise<string> {
+export async function getDriveAccessToken(): Promise<string> {
   if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) return cachedToken.value;
 
   const oauth = oauthConfig();
@@ -51,7 +95,7 @@ async function accessToken(): Promise<string> {
       }),
       signal: AbortSignal.timeout(15_000),
     });
-    if (!response.ok) throw new Error(`Gagal memperbarui token Google (${response.status}).`);
+    if (!response.ok) throw await googleError(response, "Gagal memperbarui token Google");
     const data = (await response.json()) as { access_token: string; expires_in: number };
     cachedToken = {
       value: data.access_token,
@@ -60,8 +104,13 @@ async function accessToken(): Promise<string> {
     return data.access_token;
   }
 
+  if (!usesServiceAccount()) {
+    throw new Error(
+      "Google Drive belum memakai OAuth. Isi GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, dan GOOGLE_REFRESH_TOKEN.",
+    );
+  }
   const creds = serviceAccount();
-  if (!creds) throw new Error("Kredensial Google belum diisi.");
+  if (!creds) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON belum diisi.");
 
   const now = Math.floor(Date.now() / 1000);
   const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -84,7 +133,7 @@ async function accessToken(): Promise<string> {
     }),
     signal: AbortSignal.timeout(15_000),
   });
-  if (!response.ok) throw new Error(`Gagal autentikasi Google (${response.status}).`);
+  if (!response.ok) throw await googleError(response, "Gagal autentikasi service account Google");
   const data = (await response.json()) as { access_token: string; expires_in: number };
   cachedToken = {
     value: data.access_token,
@@ -93,13 +142,16 @@ async function accessToken(): Promise<string> {
   return data.access_token;
 }
 
+/** Upload kecil (<= 4 MB) lewat multipart. Dipakai fallback dan script tes. */
 export async function driveUpload(file: {
   name: string;
   mime: string;
   data: Uint8Array;
 }): Promise<{ id: string; webViewLink: string | null }> {
-  const token = await accessToken();
-  const folder = process.env.GOOGLE_DRIVE_FOLDER_ID!;
+  const token = await getDriveAccessToken();
+  const folder = driveFolderId();
+  if (!folder) throw new Error("GOOGLE_DRIVE_FOLDER_ID belum diisi.");
+
   const boundary = `----intorma${Date.now().toString(36)}`;
   const metadata = JSON.stringify({
     name: file.name,
@@ -114,7 +166,7 @@ export async function driveUpload(file: {
   const body = Buffer.concat([head, Buffer.from(file.data), tail]);
 
   const response = await fetch(
-    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true",
     {
       method: "POST",
       headers: {
@@ -122,35 +174,115 @@ export async function driveUpload(file: {
         "content-type": `multipart/related; boundary=${boundary}`,
       },
       body,
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(120_000),
     },
   );
-  if (!response.ok) {
-    throw new Error(`Gagal upload ke Google Drive (${response.status}). ${(await response.text()).slice(0, 160)}`);
-  }
+  if (!response.ok) throw await googleError(response, "Gagal upload ke Google Drive");
   const data = (await response.json()) as { id?: string; webViewLink?: string };
   if (!data.id) throw new Error("Google Drive tidak mengembalikan ID file.");
   return { id: data.id, webViewLink: data.webViewLink ?? null };
 }
 
-export async function driveDownload(id: string): Promise<Uint8Array> {
-  const token = await accessToken();
+/**
+ * Buat sesi resumable upload. Browser akan PUT chunk langsung ke `uploadUrl`.
+ * `origin` diteruskan agar Google mengembalikan header CORS untuk origin situs.
+ */
+export async function driveInitResumable(file: {
+  name: string;
+  mime: string;
+  size: number;
+  origin?: string;
+}): Promise<{ uploadUrl: string; name: string }> {
+  const token = await getDriveAccessToken();
+  const folder = driveFolderId();
+  if (!folder) throw new Error("GOOGLE_DRIVE_FOLDER_ID belum diisi.");
+  const mime = file.mime || "application/octet-stream";
+
+  const headers: Record<string, string> = {
+    authorization: `Bearer ${token}`,
+    "content-type": "application/json; charset=UTF-8",
+    "x-upload-content-type": mime,
+    "x-upload-content-length": String(file.size),
+  };
+  if (file.origin) headers.origin = file.origin;
+
   const response = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media`,
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,mimeType,size,webViewLink,webContentLink&supportsAllDrives=true",
     {
-      headers: { authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(60_000),
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        name: file.name,
+        mimeType: mime,
+        parents: [folder],
+      }),
+      signal: AbortSignal.timeout(20_000),
     },
   );
-  if (!response.ok) throw new Error(`Gagal mengambil file dari Google Drive (${response.status}).`);
+  if (!response.ok) throw await googleError(response, "Gagal membuat sesi upload Google Drive");
+  const uploadUrl = response.headers.get("location");
+  if (!uploadUrl) throw new Error("Google Drive tidak mengembalikan URL sesi upload.");
+  return { uploadUrl, name: file.name };
+}
+
+export async function driveFileMeta(id: string): Promise<DriveFileMeta> {
+  const token = await getDriveAccessToken();
+  const response = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}` +
+      "?fields=id,name,mimeType,size,webViewLink,webContentLink,parents&supportsAllDrives=true",
+    {
+      headers: { authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
+  if (!response.ok) throw await googleError(response, "Gagal membaca metadata file Drive");
+  const data = (await response.json()) as Partial<DriveFileMeta> & { size?: string };
+  if (!data.id) throw new Error("Google Drive tidak mengembalikan ID file.");
+  return {
+    id: data.id,
+    name: data.name ?? data.id,
+    mimeType: data.mimeType ?? "application/octet-stream",
+    size: Number(data.size ?? 0),
+    webViewLink: data.webViewLink ?? null,
+    webContentLink: data.webContentLink ?? null,
+    parents: data.parents,
+  };
+}
+
+/** Response mentah dari Drive, bisa dipakai untuk streaming dan Range request. */
+export async function driveDownloadResponse(id: string, range?: string | null): Promise<Response> {
+  const token = await getDriveAccessToken();
+  const headers: Record<string, string> = { authorization: `Bearer ${token}` };
+  if (range) headers.range = range;
+  const response = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&supportsAllDrives=true`,
+    {
+      headers,
+      signal: AbortSignal.timeout(10 * 60_000),
+    },
+  );
+  if (!response.ok && response.status !== 206) {
+    throw await googleError(response, "Gagal mengambil file dari Google Drive");
+  }
+  return response;
+}
+
+export async function driveDownload(id: string): Promise<Uint8Array> {
+  const response = await driveDownloadResponse(id);
   return new Uint8Array(await response.arrayBuffer());
 }
 
 export async function driveDelete(id: string): Promise<void> {
-  const token = await accessToken();
-  await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    headers: { authorization: `Bearer ${token}` },
-    signal: AbortSignal.timeout(15_000),
-  });
+  const token = await getDriveAccessToken();
+  const response = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?supportsAllDrives=true`,
+    {
+      method: "DELETE",
+      headers: { authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
+  if (!response.ok && response.status !== 404) {
+    throw await googleError(response, "Gagal menghapus file dari Google Drive");
+  }
 }
