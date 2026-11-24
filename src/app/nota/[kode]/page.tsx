@@ -201,7 +201,8 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
           </span>
           <span className="inline-flex items-center gap-1.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ig.svg" alt="Instagram" className="size-3" /> @aku.vza
+            <img src="/ig.svg" alt="Instagram" className="size-3" />{" "}
+            <span className="normal-case">@aku.vza</span>
           </span>
         </footer>
       </article>
