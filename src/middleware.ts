@@ -5,7 +5,12 @@ export function middleware(request: NextRequest) {
   if (path.startsWith("/admin/") && path !== "/admin/login" && !request.cookies.has("int_admin")) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
-  if (request.method !== "GET" && path.startsWith("/admin/") && !request.cookies.has("int_admin")) {
+  if (
+    request.method !== "GET" &&
+    path.startsWith("/admin/") &&
+    path !== "/admin/login" &&
+    !request.cookies.has("int_admin")
+  ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return NextResponse.next();
