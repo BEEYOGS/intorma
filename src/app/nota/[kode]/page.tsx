@@ -41,7 +41,10 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
   const width = Number(snapshot?.width_cm ?? order.width_cm ?? 0);
   const height = Number(snapshot?.height_cm ?? order.height_cm ?? 0);
   const meter = (cm: number) => formatQty(Math.round((cm / 100) * 100) / 100);
-  const size = width > 0 && height > 0 ? `${meter(width)}x${meter(height)} m` : "";
+  const size =
+    width > 0 && height > 0
+      ? `${meter(Math.min(width, height))}x${meter(Math.max(width, height))} m`
+      : "";
   // Mode ukuran menyimpan luas (m²) di qty; jumlah fisiknya satu buah.
   const pieceCount = snapshot?.mode === "area" ? 1 : Number(order.qty ?? snapshot?.qty ?? 1);
   const pieces = `${formatQty(pieceCount)} pcs`;
