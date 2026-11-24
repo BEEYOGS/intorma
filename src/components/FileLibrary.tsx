@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent } from "react";
+import { Archive, Download, Eye, Upload, X } from "lucide-react";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
 import { ACCEPT_ATTR } from "@/lib/upload-rules";
@@ -132,22 +133,23 @@ export function FileLibrary({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {selected.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = `/api/files/zip?ids=${selected.join(",")}`;
-                }}
+              <a
+                href={`/api/files/zip?ids=${selected.join(",")}`}
+                download
                 className="btn btn-primary !h-9 text-xs"
               >
-                Download ZIP ({selected.length})
-              </button>
+                <Archive aria-hidden className="size-4" /> Unduh ZIP ({selected.length})
+              </a>
             )}
-            <label className="btn btn-ghost !h-9 cursor-pointer text-xs">
-              {uploading ? "Mengunggah…" : "+ Upload file"}
+            <label
+              className={`btn btn-ghost !h-9 text-xs ${driveReady ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+            >
+              <Upload aria-hidden className="size-4" />
+              {uploading ? "Mengunggah…" : driveReady ? "Upload file" : "Drive nonaktif"}
               <input
                 type="file"
                 onChange={upload}
-                disabled={uploading}
+                disabled={uploading || !driveReady}
                 accept={ACCEPT_ATTR}
                 className="sr-only"
               />
@@ -204,14 +206,15 @@ export function FileLibrary({
                         onClick={() => setPreview(file)}
                         className="btn btn-ghost !h-9 !px-3 text-xs"
                       >
-                        Preview
+                        <Eye aria-hidden className="size-3.5" /> Pratinjau
                       </button>
                     )}
                     <a
                       href={`/api/upload/${file.code}?download=1`}
+                      download
                       className="btn btn-ghost !h-9 !px-3 text-xs"
                     >
-                      Download
+                      <Download aria-hidden className="size-3.5" /> Unduh
                     </a>
                   </div>
                 </li>
@@ -246,9 +249,10 @@ export function FileLibrary({
               <div className="flex shrink-0 items-center gap-2">
                 <a
                   href={`/api/upload/${preview.code}?download=1`}
+                  download
                   className="btn btn-ghost !h-9 !px-3 text-xs"
                 >
-                  Download
+                  <Download aria-hidden className="size-3.5" /> Unduh
                 </a>
                 <button
                   type="button"
@@ -256,7 +260,7 @@ export function FileLibrary({
                   aria-label="Tutup pratinjau"
                   className="grid size-9 place-items-center rounded-[var(--radius)] border border-[var(--border)] text-mute transition-colors hover:text-[var(--text)]"
                 >
-                  ✕
+                  <X aria-hidden className="size-4" />
                 </button>
               </div>
             </div>

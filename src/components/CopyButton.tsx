@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Check, Copy } from "lucide-react";
 
 export function CopyButton({
   value,
@@ -40,9 +41,10 @@ export function CopyButton({
       type="button"
       onClick={copy}
       className={`inline-flex min-h-9 items-center gap-1.5 rounded-tag-sm border border-line bg-panel/70 px-3 text-xs font-semibold text-ink/70 transition-colors hover:border-ink hover:text-ink ${className}`}
-      aria-live="polite"
+      aria-label={label}
     >
-      {copied ? "Tersalin" : label}
+      {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}
+      <span aria-live="polite">{copied ? "Tersalin" : label}</span>
     </button>
   );
 }

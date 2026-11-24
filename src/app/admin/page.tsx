@@ -4,9 +4,10 @@ import { AdminShell } from "@/components/AdminShell";
 import { StatusBadge } from "@/components/Chrome";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderEditor } from "@/components/OrderEditor";
+import { ChevronRight, Eye, MessageCircle, Printer, Search, X } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { rupiah, tanggal } from "@/lib/format";
+import { normalizeWA, rupiah, tanggal } from "@/lib/format";
 import { STATUSES, STATUS_META, isStatus, type Status } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
@@ -108,8 +109,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       {(saved || deleted) && (
         <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-tag-sm border border-accent/25 bg-accent/[0.07] px-4 py-3 text-sm">
           <span>{deleted ? `Pesanan ${deleted} sudah dihapus.` : "Perubahan pesanan tersimpan."}</span>
-          <Link href={returnTo} className="font-semibold text-mute transition-colors hover:text-accent">
-            Tutup
+          <Link href={returnTo} className="inline-flex items-center gap-1.5 font-semibold text-mute transition-colors hover:text-accent">
+            <X aria-hidden className="size-3.5" /> Tutup pemberitahuan
           </Link>
         </div>
       )}
@@ -133,10 +134,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           className="field min-h-10 sm:max-w-sm"
           autoComplete="off"
         />
-        <button type="submit" className="btn-outline min-h-10 px-4 text-sm">Cari</button>
+        <button type="submit" className="btn-outline min-h-10 px-4 text-sm">
+          <Search aria-hidden className="size-4" /> Cari pesanan
+        </button>
         {q && (
           <Link href={clearSearch} className="btn-ghost min-h-10 px-4 text-sm">
-            Hapus pencarian
+            <X aria-hidden className="size-4" /> Reset filter
           </Link>
         )}
       </form>
@@ -215,7 +218,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                     <span className="font-mono text-[13px] font-semibold tracking-wide">{o.code}</span>
                     <span className="flex items-center gap-2 justify-self-end sm:hidden">
                       <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} status={st} compact />
-                      <span aria-hidden className="text-ink/30 transition-transform group-open:rotate-90">→</span>
+                      <ChevronRight aria-hidden className="size-4 text-ink/30 transition-transform group-open:rotate-90" />
                     </span>
 
                     <span className="col-span-2 min-w-0 sm:col-span-1">
@@ -263,15 +266,19 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       <dl className="grid grid-cols-2 gap-4 border-t border-line pt-4 text-sm">
                         <div>
                           <dt className="text-mute">WhatsApp</dt>
-                          <dd className="mt-1">
-                            <a
-                              href={`https://wa.me/${o.wa}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="font-medium underline decoration-ink/25 underline-offset-4 hover:decoration-ink"
-                            >
-                              {o.wa}
-                            </a>
+                          <dd className="mt-1 font-medium">
+                            {normalizeWA(String(o.wa ?? "")) ? (
+                              <a
+                                href={`https://wa.me/${normalizeWA(String(o.wa ?? ""))}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline decoration-ink/25 underline-offset-4 hover:decoration-ink"
+                              >
+                                {o.wa}
+                              </a>
+                            ) : (
+                              <span className="text-mute">Nomor tidak tersedia</span>
+                            )}
                           </dd>
                         </div>
                         <div>
@@ -305,14 +312,25 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       </dl>
 
                       <div className="flex flex-wrap gap-2 pt-1">
-                        <a href={`https://wa.me/${o.wa}`} target="_blank" rel="noreferrer" className="btn-outline min-h-10 px-4 text-sm">
-                          Chat klien <span aria-hidden="true">→</span>
-                        </a>
+                        {normalizeWA(String(o.wa ?? "")) ? (
+                          <a
+                            href={`https://wa.me/${normalizeWA(String(o.wa ?? ""))}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-outline min-h-10 px-4 text-sm"
+                          >
+                            <MessageCircle aria-hidden className="size-4" /> Chat klien
+                          </a>
+                        ) : (
+                          <span className="btn-ghost min-h-10 cursor-not-allowed px-4 text-sm opacity-50">
+                            Chat klien
+                          </span>
+                        )}
                         <Link href={`/lacak/${o.code}`} className="btn-ghost min-h-10 px-4 text-sm">
-                          Lihat halaman klien
+                          <Eye aria-hidden className="size-4" /> Lihat halaman klien
                         </Link>
                         <Link href={`/nota/${o.code}`} className="btn-ghost min-h-10 px-4 text-sm">
-                          Cetak nota
+                          <Printer aria-hidden className="size-4" /> Cetak nota
                         </Link>
                       </div>
                     </div>

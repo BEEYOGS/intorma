@@ -1,26 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
+import { NotaQrCard } from "@/components/NotaQrCard";
 import { PrintButton } from "@/components/PrintButton";
+import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal } from "@/lib/format";
-import { formatQty } from "@/lib/pricing";
+import { notaRows, type NotaOrder, type NotaSnapshot } from "@/lib/nota";
 import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, asStatus } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Nota pesanan" };
-
-type Snapshot = {
-  lines?: { label: string; detail?: string; amount: number }[];
-  summary?: string;
-  qty?: number | null;
-  unit?: string;
-  mode?: string;
-  width_cm?: number | null;
-  height_cm?: number | null;
-};
 
 export default async function NotaPage({ params }: { params: Promise<{ kode: string }> }) {
   const { kode } = await params;
@@ -34,32 +26,10 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
   )[0];
   if (!order) notFound();
 
-  const payment = await getPaymentSettings();
-  const snapshot = order.options && typeof order.options === "object" ? (order.options as Snapshot) : null;
-
-  // Ukuran ditaruh di nama item; kolom jumlah hanya berisi jumlah dalam pcs.
-  const width = Number(snapshot?.width_cm ?? order.width_cm ?? 0);
-  const height = Number(snapshot?.height_cm ?? order.height_cm ?? 0);
-  const meter = (cm: number) => formatQty(Math.round((cm / 100) * 100) / 100);
-  const size =
-    width > 0 && height > 0
-      ? `${meter(Math.min(width, height))}x${meter(Math.max(width, height))} m`
-      : "";
-  // Mode ukuran menyimpan luas (m²) di qty; jumlah fisiknya satu buah.
-  const pieceCount = snapshot?.mode === "area" ? 1 : Number(order.qty ?? snapshot?.qty ?? 1);
-  const pieces = `${formatQty(pieceCount)} pcs`;
-
-  const sourceLines = snapshot?.lines?.length
-    ? snapshot.lines
-    : [{ label: order.service ?? "Pesanan", amount: order.price as number | null }];
-  const rows: { name: string; qty: string; amount: string }[] = sourceLines.map((line, index) => ({
-    name: index === 0 && size ? `${line.label} ${size}` : line.label,
-    qty: pieces,
-    amount: line.amount == null ? "-" : rupiah(line.amount),
-  }));
-
-  // Baris kosong mengikuti bentuk nota asli supaya tabel tetap rapi saat dicetak.
-  while (rows.length < 6) rows.push({ name: "", qty: "", amount: "" });
+  const [payment, admin] = await Promise.all([getPaymentSettings(), isAdmin()]);
+  const snapshot =
+    order.options && typeof order.options === "object" ? (order.options as NotaSnapshot) : null;
+  const rows = notaRows(order as NotaOrder, snapshot);
 
   const total = order.price == null ? null : Number(order.price);
   const status = asStatus(String(order.status));
@@ -73,9 +43,25 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
         </Link>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-mute">Nota {order.code}</span>
-          <PrintButton />
+          {admin ? (
+            <PrintButton />
+          ) : (
+            <a
+              href={`/api/nota/${order.code}/pdf`}
+              download
+              className="btn btn-primary min-h-10 px-4 text-sm"
+            >
+              <Download aria-hidden className="size-4" /> Unduh nota PDF
+            </a>
+          )}
         </div>
       </div>
+
+      {!admin && (
+        <div className="no-print wrap mb-6">
+          <NotaQrCard code={order.code} />
+        </div>
+      )}
 
       <article className="nota-paper mx-auto" aria-label={`Nota pesanan ${order.code}`}>
         <header className="bg-[#FEFEFE] px-2 pb-4 pt-1 text-center text-[#040404]">
@@ -104,17 +90,10 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
           <p className="mt-1 font-mono text-xs tracking-[0.16em]">{order.code}</p>
         </div>
 
-        <section className="mt-7 grid gap-6 sm:grid-cols-2">
-          <div>
-            <p className="nota-caption">Dikeluarkan oleh</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/int-dark.svg" alt="in.torma" className="mt-1.5 h-5 w-auto" />
-          </div>
-          <div className="sm:text-right">
-            <p className="nota-caption">Ditujukan kepada</p>
-            <p className="mt-1 text-sm font-bold">{order.name}</p>
-            <p className="text-xs text-[#333]">Pesanan {order.service ?? "custom"}</p>
-          </div>
+        <section className="mt-7">
+          <p className="nota-caption">Ditujukan kepada</p>
+          <p className="mt-1 text-sm font-bold">{order.name}</p>
+          <p className="text-xs text-[#333]">Pesanan {order.service ?? "custom"}</p>
         </section>
 
         <section className="mt-6 grid gap-3 border-y border-[#c9c9c9] py-3 text-xs sm:grid-cols-3">

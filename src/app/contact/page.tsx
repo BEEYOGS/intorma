@@ -1,4 +1,6 @@
+import { ArrowUpRight, Mail } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
+import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 
 export default function ContactPage() {
   return (
@@ -18,9 +20,12 @@ export default function ContactPage() {
                 <p className="text-sm font-medium text-[var(--text)]">WhatsApp</p>
                 <p className="mono text-sm text-[var(--text-2)] mt-1">+62 896-1760-7952</p>
               </div>
-              <a href="https://wa.me/6289617607952" target="_blank" rel="noreferrer" className="btn btn-ghost text-xs">
-                Chat →
-              </a>
+              <WhatsAppLink
+                text="Halo in.torma, saya mau tanya soal layanan desain dan cetak."
+                className="btn btn-ghost text-xs"
+              >
+                <WhatsAppIcon aria-hidden className="size-4" /> Chat WhatsApp
+              </WhatsAppLink>
             </div>
             <div className="p-5 flex items-center justify-between">
               <div>
@@ -28,7 +33,7 @@ export default function ContactPage() {
                 <p className="mono text-sm text-[var(--text-2)] mt-1">hello@in.torma</p>
               </div>
               <a href="mailto:hello@in.torma" className="btn btn-ghost text-xs">
-                Kirim →
+                <Mail aria-hidden className="size-4" /> Kirim email
               </a>
             </div>
             <div className="p-5 flex items-center justify-between">
@@ -37,7 +42,8 @@ export default function ContactPage() {
                 <p className="mono text-sm text-[var(--text-2)] mt-1">@aku.vza</p>
               </div>
               <a href="https://instagram.com/aku.vza" target="_blank" rel="noreferrer" className="btn btn-ghost text-xs">
-                Kunjungi →
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/ig.svg" alt="" aria-hidden="true" className="size-4" /> Buka Instagram <ArrowUpRight aria-hidden className="size-3.5" />
               </a>
             </div>
           </div>

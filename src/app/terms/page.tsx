@@ -50,7 +50,7 @@ export default function TermsPage() {
           <section className="card p-5 sm:p-6">
             <h2 className="mb-2 text-base font-medium text-[var(--text)]">Kontak</h2>
             <p>
-              Untuk pertanyaan关于 syarat ini, hubungi in.torma lewat tautan WhatsApp yang tersedia di
+              Untuk pertanyaan tentang syarat ini, hubungi in.torma lewat tautan WhatsApp yang tersedia di
               halaman kontak.
             </p>
           </section>

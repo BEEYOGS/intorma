@@ -4,13 +4,13 @@ import {
   LayoutDashboard,
   LogIn,
   LogOut,
-  MessageCircle,
   PenLine,
   Search,
   UserRound,
 } from "lucide-react";
 import { logoutCustomer } from "@/app/actions";
 import { MobileNav } from "@/components/MobileNav";
+import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { getCustomer } from "@/lib/customer-auth";
 
 export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -32,9 +32,12 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
         <Link href="/lacak" className={linkClass}>
           <Search aria-hidden className={iconClass} /> Lacak
         </Link>
-        <a href="https://wa.me/6289617607952" target="_blank" rel="noreferrer" className={linkClass}>
-          <MessageCircle aria-hidden className={iconClass} /> WhatsApp
-        </a>
+        <WhatsAppLink
+          text="Halo in.torma, saya mau tanya soal layanan desain dan cetak."
+          className={linkClass}
+        >
+          <WhatsAppIcon aria-hidden className={iconClass} /> WhatsApp
+        </WhatsAppLink>
         {customer ? (
           <>
             <Link href="/portal" className={`${linkClass} !text-[var(--text)]`}>
@@ -45,7 +48,7 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
             </Link>
             <form action={logoutCustomer} className="ml-1">
               <button className="btn btn-ghost !h-8 !px-3 text-xs">
-                <LogOut aria-hidden className="size-3.5 sm:hidden" /> Keluar
+                <LogOut aria-hidden className="size-3.5" /> Keluar
               </button>
             </form>
           </>

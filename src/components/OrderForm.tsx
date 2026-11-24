@@ -10,7 +10,7 @@ import { calculateQuote, formatQty, optionPriceLabel, priceLabel } from "@/lib/p
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
 import { ServiceIcon } from "@/components/ServiceIcon";
-import { Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
 import { ACCEPT_ATTR } from "@/lib/upload-rules";
 
@@ -561,7 +561,7 @@ export function OrderForm({
               <p className="mb-5 text-sm text-mute">
                 {driveReady
                   ? "Upload langsung di sini—semua file (kecil maupun besar) tersimpan di Google Drive, jadi database tidak penuh. Bisa juga tempel link Google Drive/WeTransfer."
-                  : "Google Drive belum aktif. Hubungi admin sebelum mengunggah, atau tempel link Google Drive/WeTransfer."}{" "}
+                  : "Google Drive belum aktif, jadi unggah dinonaktifkan. Hubungi admin atau tempel link Google Drive/WeTransfer."}{" "}
                 Format aman: PDF, JPG, PNG, AI, PSD, CDR, TIFF, atau ZIP.
               </p>
               <div className="grid gap-5 sm:grid-cols-2">
@@ -570,7 +570,7 @@ export function OrderForm({
                   <input
                     type="file"
                     onChange={uploadFile}
-                    disabled={uploading}
+                    disabled={uploading || !driveReady}
                     accept={ACCEPT_ATTR}
                     className="field !py-2 text-xs file:mr-3 file:rounded-[var(--radius)] file:border file:border-line file:bg-sand file:px-3 file:py-1.5 file:text-xs file:font-medium"
                   />
@@ -666,9 +666,13 @@ export function OrderForm({
           </fieldset>
 
           <div className="flex flex-col gap-4 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">
-            <button type="submit" disabled={pending || hasPriceError} className="btn-primary w-full sm:w-auto">
-              {pending ? "Membuat pesanan…" : "Buat pesanan & bayar"}
-              {!pending && <span aria-hidden="true">→</span>}
+            <button
+              type="submit"
+              disabled={pending || hasPriceError || total == null}
+              className="btn-primary w-full sm:w-auto"
+            >
+              {pending ? "Membuat pesanan…" : "Buat pesanan & lihat pembayaran"}
+              {!pending && <ArrowRight aria-hidden className="size-4" />}
             </button>
             <p className="text-sm leading-6 text-mute sm:max-w-[20rem] sm:text-right">
               Setelah dibuat, kamu langsung melihat total dan instruksi pembayaran. Kode pesanan juga
@@ -759,10 +763,11 @@ export function OrderForm({
           <button
             type="button"
             onClick={() => formRef.current?.requestSubmit()}
-            disabled={pending || hasPriceError}
+            disabled={pending || hasPriceError || total == null}
             className="btn btn-primary min-h-11 shrink-0 px-5 text-sm"
           >
             {pending ? "Membuat…" : "Buat pesanan"}
+            {!pending && <ArrowRight aria-hidden className="size-4" />}
           </button>
         </div>
         {hasPriceError && (

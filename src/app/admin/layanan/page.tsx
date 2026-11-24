@@ -103,8 +103,8 @@ export default async function ServicesAdmin() {
       )}
 
       <p className="mt-6 max-w-xl text-xs leading-5 text-mute">
-        Nonaktifkan (centang “Tampilkan”) untuk menyembunyikan layanan sementara. Gunakan “Hapus” untuk
-        menghapus layanan beserta opsinya; nama layanan tetap tersimpan di pesanan lama.
+        Untuk menyembunyikan layanan sementara, hilangkan centangan “Tampilkan”. Gunakan “Hapus” hanya
+        untuk menghapus layanan beserta opsinya; nama layanan tetap tersimpan di pesanan lama.
       </p>
     </AdminShell>
   );

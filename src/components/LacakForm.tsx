@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { ArrowRight } from "lucide-react";
 import { lookupOrder } from "@/app/actions";
 
 export function LacakForm() {
@@ -31,7 +32,7 @@ export function LacakForm() {
         )}
         <button disabled={pending} className="btn btn-primary w-full sm:w-auto">
           {pending ? "Mencari…" : "Lihat pesanan"}
-          {!pending && <span aria-hidden="true">→</span>}
+          {!pending && <ArrowRight aria-hidden className="size-4" />}
         </button>
       </form>
       <p className="mt-6 border-t border-line pt-4 text-xs leading-5 text-mute">

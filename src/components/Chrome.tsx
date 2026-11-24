@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { TopBar } from "@/components/TopBar";
+import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { IconForStatus } from "@/components/StatusIcon";
 import { STATUS_META, type Status } from "@/lib/status";
 
@@ -15,9 +16,12 @@ export function Footer() {
         <div className="flex flex-wrap items-center gap-5">
           <Link href="/order" className="transition-colors hover:text-[var(--text)]">Pesan</Link>
           <Link href="/lacak" className="transition-colors hover:text-[var(--text)]">Lacak</Link>
-          <a href="https://wa.me/6289617607952" target="_blank" rel="noreferrer" className="transition-colors hover:text-[var(--text)]">
-            WhatsApp
-          </a>
+          <WhatsAppLink
+            text="Halo in.torma, saya mau tanya soal layanan desain dan cetak."
+            className="inline-flex items-center gap-1.5 transition-colors hover:text-[var(--text)]"
+          >
+            <WhatsAppIcon aria-hidden className="size-3.5" /> WhatsApp
+          </WhatsAppLink>
         </div>
       </div>
     </footer>

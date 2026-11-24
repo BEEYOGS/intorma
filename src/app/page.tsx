@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { ServiceIconTile } from "@/components/ServiceIcon";
 import { StatusBadge } from "@/components/Chrome";
+import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { STATUS_META, asStatus } from "@/lib/status";
 import { isAdmin } from "@/lib/auth";
 import { getLatestJobs, getProductStats } from "@/lib/data";
@@ -79,8 +81,8 @@ export default async function ProductPage() {
               <p className="eyebrow mb-2">Layanan & harga</p>
               <h2 className="display text-2xl sm:text-3xl">Pilih bentuk yang kamu butuhkan.</h2>
             </div>
-            <Link href="/order" className="btn btn-ghost text-sm hidden sm:inline-flex">
-              Semua layanan →
+            <Link href="/order" className="btn btn-ghost text-sm">
+              Semua layanan <ArrowRight aria-hidden className="size-4" />
             </Link>
           </div>
           <p className="text-[15px] text-[var(--text-2)] max-w-2xl mb-10">
@@ -96,7 +98,7 @@ export default async function ProductPage() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <ServiceIconTile service={svc} />
-                  <span className="mono text-xs text-[var(--text-3)] group-hover:text-[var(--gold)] transition-colors">↗</span>
+                  <ArrowUpRight aria-hidden className="size-4 text-[var(--text-3)] transition-colors group-hover:text-[var(--gold)]" />
                 </div>
                 <h3 className="text-[15px] font-medium text-[var(--text)] mb-1">{svc.name}</h3>
                 <p className="text-xs text-[var(--text-3)] leading-relaxed min-h-[2.5rem]">{svc.blurb}</p>
@@ -110,8 +112,8 @@ export default async function ProductPage() {
           {services.length > featuredServices.length && (
             <p className="mt-4 text-xs text-[var(--text-3)]">
               Menampilkan {featuredServices.length} dari {services.length} layanan.{" "}
-              <Link href="/order" className="text-[var(--text-2)] underline underline-offset-4 hover:text-[var(--text)]">
-                Lihat semua layanan →
+              <Link href="/order" className="inline-flex items-center gap-1 text-[var(--text-2)] underline underline-offset-4 hover:text-[var(--text)]">
+                Lihat semua layanan <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </p>
           )}
@@ -225,9 +227,9 @@ export default async function ProductPage() {
               <Link href="/order" className="btn btn-primary">
                 Mulai pesan
               </Link>
-              <a href="https://wa.me/6289617607952" className="btn btn-ghost" target="_blank" rel="noreferrer">
-                Tanya dulu
-              </a>
+              <WhatsAppLink text="Halo in.torma, saya mau tanya soal layanan desain dan cetak." className="btn btn-ghost">
+                <WhatsAppIcon aria-hidden className="size-4" /> Tanya dulu
+              </WhatsAppLink>
             </div>
           </div>
         </div>
@@ -283,7 +285,9 @@ export default async function ProductPage() {
             <div className="flex items-center gap-6 text-xs text-[var(--text-3)]">
               <Link href="/order" className="hover:text-[var(--text-2)] transition-colors">Pesan</Link>
               <Link href="/lacak" className="hover:text-[var(--text-2)] transition-colors">Lacak</Link>
-              <a href="https://wa.me/6289617607952" className="hover:text-[var(--text-2)] transition-colors" target="_blank" rel="noreferrer">WhatsApp</a>
+              <WhatsAppLink text="Halo in.torma, saya mau tanya soal layanan desain dan cetak." className="inline-flex items-center gap-1.5 hover:text-[var(--text-2)] transition-colors">
+                <WhatsAppIcon aria-hidden className="size-3.5" /> WhatsApp
+              </WhatsAppLink>
             </div>
           </div>
         </div>

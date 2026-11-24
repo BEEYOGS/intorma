@@ -32,15 +32,18 @@ export function WhatsAppLink({
   children,
   ariaLabel,
   title,
+  onClick,
 }: {
   text?: string;
   className?: string;
   children: ReactNode;
   ariaLabel?: string;
   title?: string;
+  onClick?: () => void;
 }) {
   function handleClick(event: React.MouseEvent<HTMLAnchorElement>) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    onClick?.();
     if (isMobileDevice()) return;
     event.preventDefault();
     const target = waWebLink(text);

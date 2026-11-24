@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav, StatusBadge } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
+import { NotaQrCard } from "@/components/NotaQrCard";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { PayButton } from "@/components/PayButton";
 import { StatusTree } from "@/components/StatusTree";
 import { IconForStatus } from "@/components/StatusIcon";
-import { Printer } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal } from "@/lib/format";
 import { priceBreakdown } from "@/lib/pricing";
@@ -69,11 +70,17 @@ export default async function TrackPage({
     String(order.unit_label ?? ""),
     rupiah,
   );
-  const nextStep = order.price
-    ? order.paid
-      ? "Pembayaran sudah kami terima. Pesanan masuk antrean produksi; kabar berikutnya lewat WhatsApp."
-      : "Selesaikan transfer sesuai total, lalu kirim konfirmasi lewat WhatsApp dengan kode pesanan."
-    : "Pesanan custom ini menunggu harga dari admin. Kami kabari lewat WhatsApp.";
+  const nextStep = st === "batal"
+    ? "Pesanan dibatalkan. Tidak ada pembayaran yang perlu diselesaikan."
+    : order.price == null
+      ? "Pesanan custom ini menunggu harga dari admin. Kami kabari lewat WhatsApp."
+      : order.paid
+        ? "Pembayaran sudah kami terima. Pesanan masuk antrean produksi; kabar berikutnya lewat WhatsApp."
+        : gateway
+          ? "Bayar online lewat tombol di samping. Setelah berhasil, status otomatis berubah menjadi lunas."
+          : payment.enabled && payment.bankAccount
+            ? "Selesaikan transfer sesuai total, lalu kirim konfirmasi lewat WhatsApp dengan kode pesanan."
+            : "Instruksi pembayaran dikirim lewat WhatsApp. Hubungi kami kalau belum menerimanya.";
 
   return (
     <>
@@ -97,7 +104,7 @@ export default async function TrackPage({
                       text={`status ${order.code}`}
                       className="btn-wa min-h-9 px-4 text-sm"
                     >
-                      <WhatsAppIcon className="size-4" /> Buka WhatsApp
+                      <WhatsAppIcon aria-hidden className="size-4" /> Buka WhatsApp
                     </WhatsAppLink>
                   </div>
                 </div>
@@ -106,8 +113,8 @@ export default async function TrackPage({
 
             <div className="flex flex-wrap items-end justify-between gap-5">
               <div>
-                <Link href="/lacak" className="text-[13px] font-medium text-mute transition-colors hover:text-accent">
-                  ← Lacak kode lain
+                <Link href="/lacak" className="btn-ghost min-h-9 px-3 text-xs">
+                  <ArrowLeft aria-hidden className="size-3.5" /> Lacak kode lain
                 </Link>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{order.code}</h1>
@@ -119,12 +126,6 @@ export default async function TrackPage({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <CopyButton value={order.code} label="Salin kode" />
-                <Link href={`/nota/${order.code}`} className="btn-outline min-h-9 px-3 text-sm">
-                  <Printer aria-hidden className="size-4" /> Cetak nota
-                </Link>
-                <Link href="/lacak" className="btn-ghost min-h-9 px-3 text-sm">
-                  Cari kode lain
-                </Link>
               </div>
             </div>
           </div>
@@ -175,12 +176,17 @@ export default async function TrackPage({
           </div>
 
           <aside className="grid gap-5 lg:sticky lg:top-24">
+            <NotaQrCard code={order.code} />
             {order.price ? (
               <section aria-label="Pembayaran" className="card p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <p className="eyebrow">Pembayaran</p>
-                  <span className={`tag ${order.paid ? "!border-line !text-ink" : "!border-danger/35 !text-danger"}`}>
-                    <span aria-hidden className="status-dot" style={{ background: order.paid ? "#e9eff7" : "#ff4d4f" }} />
+                  <span className="tag !border-line !text-ink">
+                    <span
+                      aria-hidden
+                      className="status-dot"
+                      style={{ background: order.paid ? "#4fae86" : "#d8a13a" }}
+                    />
                     {order.paid ? "Lunas" : "Belum dibayar"}
                   </span>
                 </div>
@@ -206,55 +212,67 @@ export default async function TrackPage({
                     {selectedOptions.map((option) => `${option.group_label}: ${option.label}`).join(" · ")}
                   </p>
                 )}
-                <p className="mt-3 rounded-tag-sm bg-sand/70 px-3 py-2 text-xs text-ink/70">
-                  Berita transfer: <span className="font-mono font-semibold">{order.code}</span>
-                </p>
-
-                {!order.paid && gateway && (
-                  <div className="mt-5 border-t border-line pt-4">
-                    <p className="eyebrow mb-2">Bayar online</p>
-                    <PayButton code={order.code} />
-                    <p className="mt-2 text-xs leading-5 text-mute">
-                      Setelah pembayaran berhasil, status pesanan otomatis berubah menjadi lunas.
-                    </p>
-                  </div>
-                )}
 
                 {order.paid ? (
                   <p className="mt-4 border-t border-line pt-4 text-sm leading-6 text-mute">
-                    Terima kasih, pembayaran sudah dikonfirmasi admin.
+                    {String(order.payment_method ?? "").startsWith("midtrans")
+                      ? "Terima kasih, pembayaran online sudah terverifikasi otomatis."
+                      : "Terima kasih, pembayaran sudah dikonfirmasi admin."}
                   </p>
-                ) : payment.enabled && payment.bankAccount ? (
-                  <>
-                    <div className="mt-5 rounded-tag-sm border border-line bg-sand/60 p-4">
-                      {hasBankLogo(payment.bankName) && (
-                        <span className="mb-3 inline-flex rounded-[0.5rem] border border-line bg-ink px-2.5 py-1.5">
-                          <BankLogo bank={payment.bankName} className="h-5 w-auto" />
-                        </span>
-                      )}
-                      <p className="text-sm font-semibold">
-                        Transfer {payment.bankName} {payment.bankAccount}
-                      </p>
-                      {payment.bankHolder && <p className="mt-0.5 text-[13px] text-mute">a.n. {payment.bankHolder}</p>}
-                      <CopyButton value={payment.bankAccount} label="Salin nomor rekening" className="mt-3" />
-                      {payment.note && (
-                        <p className="mt-3 border-t border-line pt-3 text-xs leading-5 text-mute">{payment.note}</p>
-                      )}
-                    </div>
-                    <WhatsAppLink
-                      text={`Halo in.torma, saya mau konfirmasi transfer untuk pesanan ${order.code}.`}
-                      className="btn-wa mt-4 min-h-11 w-full px-4 text-sm"
-                    >
-                      <WhatsAppIcon className="size-4" /> Konfirmasi transfer
-                    </WhatsAppLink>
-                    <p className="mt-2 text-xs leading-5 text-mute">
-                      Sertakan kode {order.code} di pesan supaya cepat dicek.
-                    </p>
-                  </>
-                ) : (
+                ) : st === "batal" ? (
                   <p className="mt-4 border-t border-line pt-4 text-sm leading-6 text-mute">
-                    Instruksi transfer dikirim lewat WhatsApp. Hubungi kami kalau belum menerimanya.
+                    Pesanan dibatalkan. Tidak perlu melakukan pembayaran.
                   </p>
+                ) : (
+                  <>
+                    {gateway && (
+                      <div className="mt-5 border-t border-line pt-4">
+                        <p className="eyebrow mb-2">Bayar online</p>
+                        <PayButton code={order.code} />
+                        <p className="mt-2 text-xs leading-5 text-mute">
+                          Setelah pembayaran berhasil, status otomatis berubah menjadi lunas.
+                        </p>
+                      </div>
+                    )}
+
+                    {payment.enabled && payment.bankAccount && (
+                      <details className="mt-4 border-t border-line pt-4">
+                        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.14em] text-mute">
+                          {gateway ? "Transfer manual (opsional)" : "Transfer bank"}
+                        </summary>
+                        <div className="mt-3 rounded-tag-sm border border-line bg-sand/60 p-4">
+                          {hasBankLogo(payment.bankName) && (
+                            <span className="mb-3 inline-flex rounded-[0.5rem] border border-line bg-ink px-2.5 py-1.5">
+                              <BankLogo bank={payment.bankName} className="h-5 w-auto" />
+                            </span>
+                          )}
+                          <p className="text-sm font-semibold">
+                            Transfer {payment.bankName} {payment.bankAccount}
+                          </p>
+                          {payment.bankHolder && <p className="mt-0.5 text-[13px] text-mute">a.n. {payment.bankHolder}</p>}
+                          <p className="mt-3 text-xs text-mute">
+                            Berita transfer: <span className="font-mono font-semibold text-ink/70">{order.code}</span>
+                          </p>
+                          <CopyButton value={payment.bankAccount} label="Salin nomor rekening" className="mt-3" />
+                          {payment.note && (
+                            <p className="mt-3 border-t border-line pt-3 text-xs leading-5 text-mute">{payment.note}</p>
+                          )}
+                        </div>
+                        <WhatsAppLink
+                          text={`Halo in.torma, saya mau konfirmasi transfer untuk pesanan ${order.code}.`}
+                          className="btn-wa mt-3 min-h-11 w-full px-4 text-sm"
+                        >
+                          <WhatsAppIcon aria-hidden className="size-4" /> Konfirmasi transfer manual
+                        </WhatsAppLink>
+                      </details>
+                    )}
+
+                    {!gateway && !payment.enabled && (
+                      <p className="mt-4 border-t border-line pt-4 text-sm leading-6 text-mute">
+                        Instruksi pembayaran dikirim lewat WhatsApp. Hubungi kami kalau belum menerimanya.
+                      </p>
+                    )}
+                  </>
                 )}
               </section>
             ) : (
@@ -268,7 +286,7 @@ export default async function TrackPage({
             )}
 
             <section aria-label="Detail pesanan" className="card p-5 sm:p-6">
-              <p className="eyebrow">Detail</p>
+              <p className="eyebrow">Spesifikasi pesanan</p>
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-mute">Layanan</dt>

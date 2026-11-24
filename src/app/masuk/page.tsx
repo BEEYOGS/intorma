@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { CustomerAuthForm } from "@/components/CustomerAuthForm";
 import { TopBar } from "@/components/TopBar";
 import { getCustomer } from "@/lib/customer-auth";
@@ -36,7 +37,7 @@ export default async function LoginPage() {
           <p className="mt-8 text-sm text-mute">
             Belum siap pesan?{" "}
             <Link href="/order" className="text-[var(--text)] underline underline-offset-4 hover:text-[var(--gold)]">
-              Langsung buat pesanan →
+              Langsung buat pesanan <ArrowRight aria-hidden className="inline size-3.5 align-[-2px]" />
             </Link>
           </p>
         </div>

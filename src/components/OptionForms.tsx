@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Trash2 } from "lucide-react";
 import {
   deleteOption,
   deleteOptionGroup,
@@ -139,7 +140,7 @@ export function DeleteActionButton({
     }} className="inline-flex">
       <input type="hidden" name="id" value={id} />
       <button type="submit" disabled={pending} className="btn btn-danger !h-8 !px-3 text-xs">
-        {pending ? "Menghapus…" : label}
+        <Trash2 aria-hidden className="size-3.5" /> {pending ? "Menghapus…" : label}
       </button>
       <Result state={state} />
     </form>

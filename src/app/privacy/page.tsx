@@ -28,7 +28,7 @@ export default function PrivacyPage() {
             <p>
               Saat kamu memesan, kami menyimpan nama, nomor WhatsApp, alamat email (jika membuat akun),
               detail pesanan, pilihan layanan, ukuran dan finishing, rincian harga, status pembayaran,
-              dan file yang kamu unggah. Saat kamu mengunjungi situs, kami juga pueden menerima data
+              dan file yang kamu unggah. Saat kamu mengunjungi situs, kami juga dapat menerima data
               teknis standar seperti alamat IP, jenis browser, dan halaman yang dibuka melalui log
               server dan penyedia hosting. Kami tidak membeli data pribadi dari pihak ketiga.
             </p>
@@ -95,7 +95,7 @@ export default function PrivacyPage() {
             <h2 className="mb-2 text-base font-medium text-[var(--text)]">Retensi &amp; keamanan</h2>
             <p>
               Data pesanan dan akun disimpan selama diperlukan untuk layanan dan kewajiban hukum. File
-              cetakdisimpan selama akun atau pesanan terkait masih aktif. Kami membatasi akses admin,
+              cetak disimpan selama akun atau pesanan terkait masih aktif. Kami membatasi akses admin,
               menggunakan koneksi terenkripsi, dan tidak menyimpan kata sandi dalam bentuk teks biasa.
             </p>
           </section>
@@ -122,7 +122,7 @@ export default function PrivacyPage() {
             <h2 className="mb-2 text-base font-medium text-[var(--text)]">Perubahan &amp; kontak</h2>
             <p>
               Kebijakan ini dapat diperbarui sewaktu-waktu. Perubahan akan diumumkan di halaman ini.
-              Untuk pertanyaan关于 kebijakan ini, hubungi lucky77ag@gmail.com atau lewat WhatsApp yang
+              Untuk pertanyaan tentang kebijakan ini, hubungi lucky77ag@gmail.com atau lewat WhatsApp yang
               tercantum di situs.
             </p>
           </section>

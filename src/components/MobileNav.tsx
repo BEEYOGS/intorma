@@ -6,8 +6,8 @@ import {
   FolderOpen,
   LogIn,
   LogOut,
+  AtSign,
   Menu,
-  MessageCircle,
   PenLine,
   Search,
   UserRound,
@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { logoutCustomer } from "@/app/actions";
+import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 
 type NavLink = { href: string; label: string; icon: LucideIcon };
 
@@ -38,7 +39,7 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
       ? { href: "/portal", label: "Portal", icon: UserRound }
       : { href: "/masuk", label: "Masuk", icon: LogIn },
     ...(loggedIn ? [{ href: "/portal/files", label: "File saya", icon: FolderOpen }] : []),
-    { href: "/contact", label: "Kontak", icon: MessageCircle },
+    { href: "/contact", label: "Kontak", icon: AtSign },
   ];
 
   const rowClass =
@@ -65,16 +66,14 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
                 {label}
               </Link>
             ))}
-            <a
-              href="https://wa.me/6289617607952"
-              target="_blank"
-              rel="noreferrer"
+            <WhatsAppLink
+              text="Halo in.torma, saya mau tanya soal layanan desain dan cetak."
               onClick={() => setOpen(false)}
               className={rowClass}
             >
-              <MessageCircle aria-hidden className="size-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.8} />
+              <WhatsAppIcon aria-hidden className="size-4 shrink-0 text-[var(--text-3)]" />
               WhatsApp
-            </a>
+            </WhatsAppLink>
             {loggedIn && (
               <form action={logoutCustomer} className="mt-1 border-t border-[var(--border)] pt-1">
                 <button className={`${rowClass} w-full text-left`}>

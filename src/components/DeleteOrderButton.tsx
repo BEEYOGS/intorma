@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { deleteOrder, type ActionResult } from "@/app/actions";
 
 export function DeleteOrderButton({
@@ -41,8 +42,7 @@ export function DeleteOrderButton({
         onClick={open}
         className="inline-flex min-h-10 items-center gap-2 rounded-tag-sm border border-danger/35 px-4 text-sm font-semibold text-danger transition-colors hover:border-danger hover:bg-danger/10"
       >
-        Hapus pesanan
-        <span aria-hidden="true">→</span>
+        <Trash2 aria-hidden className="size-4" /> Hapus pesanan
       </button>
 
       <dialog
