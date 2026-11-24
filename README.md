@@ -102,6 +102,15 @@ ADMIN_WHATSAPP_NUMBER=0895329940950
 
 Alias lama `OPENWA_URL`, `OPENWA_KEY`, dan `ADMIN_WA` masih dibaca kalau variabel baru kosong.
 
+Balasan otomatis `status INT-XXXXXX` tidak bergantung pada Vercel. `npm run wa:agent` menyalakan
+webhook lokal di `http://127.0.0.1:2786/webhook` (health: `/health`), lalu
+`npm run wa:webhook` mendaftarkannya ke sesi OpenWA. Jadi tidak perlu tunnel publik untuk WA.
+Variabel tambahan: `WA_INBOX_PORT` (default `2786`) dan opsional `WA_INBOX_SECRET`
+(default memakai `OPENWA_WEBHOOK_SECRET`).
+
+Di Windows, task `intorma-openwa` dan `intorma-wa-agent` menjalankan kedua proses otomatis saat
+login dan restart bila mati. Log ada di `logs/openwa.log` dan `logs/wa-agent.log`.
+
 Diagnostik & tes:
 
 - `GET /api/wa/test-gateway` — status konfigurasi, gateway, sesi, dan latency (butuh login admin

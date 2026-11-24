@@ -1,8 +1,10 @@
-// Daftarkan/Perbarui webhook sesi OpenWA ke situs publik (mis. Vercel),
-// supaya balasan otomatis "status INT-XXXXXX" tetap masuk meskipun Next.js
-// tidak berjalan di komputer yang sama dengan OpenWA.
+// Daftarkan/Perbarui webhook sesi OpenWA ke inbox lokal (wa-agent),
+// supaya balasan otomatis "status INT-XXXXXX" tidak bergantung pada Vercel.
 //
 // Pakai: npm run wa:webhook
+//
+// Opsi:
+//   WA_WEBHOOK_URL   timpa URL tujuan (mis. https://.../api/wa/webhook?s=...)
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,8 +25,8 @@ const env = { ...loadEnvFile(join(root, ".env.local")), ...process.env };
 const base = (env.OPENWA_URL || "http://127.0.0.1:2785").replace(/\/$/, "");
 const key = env.OPENWA_KEY || "";
 const sessionName = env.OPENWA_SESSION || "intorma";
-const secret = env.OPENWA_WEBHOOK_SECRET || "";
-const site = (env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+const secret = env.WA_INBOX_SECRET || env.OPENWA_WEBHOOK_SECRET || "";
+const inboxPort = Number(env.WA_INBOX_PORT || 2786);
 
 if (!key) {
   console.error("[wa-webhook] OPENWA_KEY kosong di .env.local");
@@ -34,12 +36,9 @@ if (!secret) {
   console.error("[wa-webhook] OPENWA_WEBHOOK_SECRET kosong di .env.local");
   process.exit(1);
 }
-if (!site) {
-  console.error("[wa-webhook] NEXT_PUBLIC_SITE_URL kosong. Isi dengan URL publik, mis. https://intorma-psi.vercel.app");
-  process.exit(1);
-}
 
-const webhookUrl = `${site}/api/wa/webhook?s=${encodeURIComponent(secret)}`;
+const webhookUrl =
+  String(env.WA_WEBHOOK_URL || `http://127.0.0.1:${inboxPort}/webhook?s=${encodeURIComponent(secret)}`).trim();
 
 async function api(path, init = {}) {
   const res = await fetch(`${base}${path}`, {
@@ -74,7 +73,10 @@ if (!hooks.ok) {
   process.exit(1);
 }
 
-const existing = (hooks.json || []).find((hook) => String(hook.url).includes("/api/wa/webhook"));
+const all = hooks.json || [];
+const existing = all.find(
+  (hook) => String(hook.url).includes("/api/wa/webhook") || String(hook.url).includes("/webhook?"),
+);
 const payload = { url: webhookUrl, events: ["message.received"] };
 
 if (existing) {
@@ -86,7 +88,7 @@ if (existing) {
     console.error(`[wa-webhook] update gagal: HTTP ${updated.status} ${updated.text.slice(0, 200)}`);
     process.exit(1);
   }
-  console.log(`[wa-webhook] diperbarui: ${webhookUrl}`);
+  console.log(`[wa-webhook] diperbarui: ${webhookUrl.replace(/\?s=.*/, "?s=***")}`);
 } else {
   const created = await api(`/api/sessions/${session.id}/webhooks`, {
     method: "POST",
@@ -96,7 +98,7 @@ if (existing) {
     console.error(`[wa-webhook] buat gagal: HTTP ${created.status} ${created.text.slice(0, 200)}`);
     process.exit(1);
   }
-  console.log(`[wa-webhook] terdaftar: ${webhookUrl}`);
+  console.log(`[wa-webhook] terdaftar: ${webhookUrl.replace(/\?s=.*/, "?s=***")}`);
 }
 
 console.log(`[wa-webhook] sesi ${sessionName} (${session.status}) · event message.received`);
