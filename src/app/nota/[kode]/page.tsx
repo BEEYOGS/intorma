@@ -99,10 +99,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
             <p className="nota-caption">Dikeluarkan oleh</p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/int-dark.svg" alt="in.torma" className="mt-1.5 h-5 w-auto" />
-            <p className="text-xs leading-5 text-[#333]">
-              Studio desain &amp; cetak
-              <br />0896 1760 7952 · @aku.vza
-            </p>
+            <p className="text-xs leading-5 text-[#333]">Studio desain &amp; cetak</p>
           </div>
           <div className="sm:text-right">
             <p className="nota-caption">Ditujukan kepada</p>
@@ -195,15 +192,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
 
         <footer className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-[#c9c9c9] pt-3 text-[10px] uppercase tracking-[0.14em] text-[#555]">
           <span>Creative without idea</span>
-          <span className="inline-flex items-center gap-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/wa.svg" alt="WhatsApp" className="size-3" /> 0896 1760 7952
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ig.svg" alt="Instagram" className="size-3" />{" "}
-            <span className="normal-case">@aku.vza</span>
-          </span>
+          <span>{order.code}</span>
         </footer>
       </article>
     </div>
