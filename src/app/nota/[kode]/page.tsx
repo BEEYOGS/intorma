@@ -68,19 +68,22 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
       </div>
 
       <article className="nota-paper mx-auto" aria-label={`Nota pesanan ${order.code}`}>
-        <header className="flex flex-wrap items-start justify-between gap-6 border-b-2 border-[#111] pb-5">
-          <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/int.svg" alt="in.torma" className="h-12 w-auto" />
-            <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.28em] text-[#444]">
-              Creative without idea
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#444]">Studio desain &amp; cetak</p>
-            <p className="mt-1 text-xs font-semibold">0896 1760 7952</p>
-            <p className="text-xs text-[#444]">@aku.vza</p>
-          </div>
+        <header className="bg-[#FEFEFE] px-2 pb-4 pt-1 text-center text-[#040404]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/int-dark.svg"
+            alt="in.torma"
+            className="mx-auto h-auto w-[104mm] max-w-full object-contain"
+          />
+          <p className="mt-3 text-[10px] font-light uppercase tracking-[0.35em] text-[#111]">
+            Creative without idea
+          </p>
+          <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 text-[11px] font-light text-[#111]">
+            <span className="whitespace-nowrap">@0896 1760 7952</span>
+            <span aria-hidden="true">|</span>
+            <span aria-hidden="true">@</span>
+            <span className="whitespace-nowrap">@aku.vza</span>
+          </p>
         </header>
 
         <div className="mt-6 text-center">
@@ -91,7 +94,8 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
         <section className="mt-7 grid gap-6 sm:grid-cols-2">
           <div>
             <p className="nota-caption">Dikeluarkan oleh</p>
-            <p className="mt-1 text-sm font-bold">in.torma</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/int-dark.svg" alt="in.torma" className="mt-1.5 h-5 w-auto" />
             <p className="text-xs leading-5 text-[#333]">
               Studio desain &amp; cetak
               <br />0896 1760 7952 · @aku.vza
@@ -179,13 +183,16 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
             <div className="mt-6 text-xl text-[#111]" style={{ fontFamily: "var(--font-signature), Georgia, serif" }}>
               Yogi Dinata
             </div>
-            <p className="mt-1 border-t border-[#111] pt-1 text-[10px] uppercase tracking-[0.16em]">in.torma</p>
+            <div className="mt-1 border-t border-[#111] pt-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/int-dark.svg" alt="in.torma" className="mx-auto h-4 w-auto sm:ml-auto sm:mr-0" />
+            </div>
           </div>
         </section>
 
         <footer className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-[#c9c9c9] pt-3 text-[10px] uppercase tracking-[0.14em] text-[#555]">
           <span>Creative without idea</span>
-          <span>0896 1760 7952 · @aku.vza</span>
+          <span>@0896 1760 7952 | @ @aku.vza</span>
         </footer>
       </article>
     </div>
