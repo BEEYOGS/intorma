@@ -132,7 +132,7 @@ async function enqueue(
     await sql`
       insert into wa_outbox (to_number, chat_id, content, idempotency_key)
       values (${recipient.number}, ${recipient.chatId ?? null}, ${content.slice(0, MAX_LENGTH)}, ${idempotencyKey})
-      on conflict (idempotency_key) do nothing`;
+      on conflict (idempotency_key) where idempotency_key is not null do nothing`;
     return true;
   } catch (error) {
     // Database lama mungkin belum punya kolom chat_id. Tetap simpan pesan
@@ -142,7 +142,7 @@ async function enqueue(
         await sql`
           insert into wa_outbox (to_number, content, idempotency_key)
           values (${recipient.number}, ${content.slice(0, MAX_LENGTH)}, ${idempotencyKey})
-          on conflict (idempotency_key) do nothing`;
+          on conflict (idempotency_key) where idempotency_key is not null do nothing`;
         return true;
       } catch (fallbackError) {
         console.error("[wa] gagal menyimpan pesan ke antrean", fallbackError);
