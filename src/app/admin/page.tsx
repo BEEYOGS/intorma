@@ -21,6 +21,7 @@ type Params = {
   open?: string;
   saved?: string;
   deleted?: string;
+  wa?: string;
 };
 
 function buildReturn(filter: string | null, unpaidOnly: boolean, q: string): string {
@@ -40,6 +41,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const q = (params.q ?? "").trim().slice(0, 80);
   const openCode = params.open?.toUpperCase() ?? null;
   const saved = params.saved === "1";
+  const waFailed = saved && params.wa === "0";
   const deleted = params.deleted?.toUpperCase() ?? null;
   const returnTo = buildReturn(filter, unpaidOnly, q);
 
@@ -104,8 +106,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       </div>
 
       {(saved || deleted) && (
-        <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-tag-sm border border-ink/35 bg-ink/[0.07] px-4 py-3 text-sm">
-          <span>{deleted ? `Pesanan ${deleted} sudah dihapus.` : "Perubahan pesanan tersimpan."}</span>
+        <div role="status" className={`mt-6 flex flex-wrap items-center justify-between gap-3 rounded-tag-sm border px-4 py-3 text-sm ${waFailed ? "border-dashed border-silver/45 bg-silver/[0.08]" : "border-ink/35 bg-ink/[0.07]"}`}>
+          <span>{deleted ? `Pesanan ${deleted} sudah dihapus.` : waFailed ? "Perubahan tersimpan, tapi notifikasi WhatsApp belum terkirim. Kabari klien manual lewat chat." : "Perubahan pesanan tersimpan."}</span>
           <Link href={returnTo} className="font-semibold text-mute transition-colors hover:text-ink">
             Tutup
           </Link>

@@ -87,7 +87,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   if (!order) return { error: "Gagal menyimpan pesanan. Coba kirim lagi.", values };
 
   const link = `${siteUrl()}/lacak/${order.code}`;
-  await Promise.all([
+  const [waSent] = await Promise.all([
     sendWA(wa, `${STATUS_META.menunggu.wa(order.code, values.name)}\n\nPantau di: ${link}`),
     process.env.ADMIN_WA
       ? sendWA(
@@ -107,7 +107,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
       : Promise.resolve(false),
   ]);
 
-  redirect(`/lacak/${order.code}?baru=1`);
+  redirect(`/lacak/${order.code}?baru=1${waSent ? "" : "&wa=0"}`);
 }
 
 export async function lookupOrder(_prev: { error?: string } | null, f: FormData) {
@@ -161,6 +161,7 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
     await sql`insert into order_events (order_id, status, note) values (${id}, ${status}, ${note || null})`;
   }
 
+  let waSent = true;
   if (f.get("notify") === "on" && (statusChanged || noteChanged || priceChanged || paidChanged)) {
     const parts: string[] = [];
     if (statusChanged) parts.push(STATUS_META[status].wa(order.code, order.name));
@@ -176,12 +177,12 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
     }
 
     parts.push(`Pantau di: ${siteUrl()}/lacak/${order.code}`);
-    await sendWA(order.wa, parts.join("\n\n"));
+    waSent = await sendWA(order.wa, parts.join("\n\n"));
   }
 
   revalidatePath("/admin");
   revalidatePath(`/lacak/${order.code}`);
-  redirect(withQuery(str(f, "returnTo"), { open: order.code, saved: "1" }));
+  redirect(withQuery(str(f, "returnTo"), { open: order.code, saved: "1", ...(waSent ? {} : { wa: "0" }) }));
 }
 
 export async function deleteOrder(_prev: ActionResult, f: FormData): Promise<ActionResult> {

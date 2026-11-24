@@ -19,9 +19,9 @@ export default async function TrackPage({
   searchParams,
 }: {
   params: Promise<{ kode: string }>;
-  searchParams: Promise<{ baru?: string }>;
+  searchParams: Promise<{ baru?: string; wa?: string }>;
 }) {
-  const [{ kode }, { baru }] = await Promise.all([params, searchParams]);
+  const [{ kode }, { baru, wa }] = await Promise.all([params, searchParams]);
   const order = (
     await sql`
       select o.id, o.code, o.name, o.status, o.price, o.note, o.paid, o.deadline, o.brief,
@@ -60,16 +60,18 @@ export default async function TrackPage({
         <div className="border-b border-line">
           <div className="wrap pb-10 pt-9 sm:pb-12 sm:pt-12">
             {baru && (
-              <div className="enter relative mb-10 overflow-hidden rounded-tag-lg border border-ink/35 bg-ink/[0.06] p-6 sm:p-7">
+              <div className={`enter relative mb-10 overflow-hidden rounded-tag-lg border p-6 sm:p-7 ${wa === "0" ? "border-dashed border-silver/45 bg-silver/[0.07]" : "border-ink/35 bg-ink/[0.06]"}`}>
                 <CropCorners />
                 <div className="flex flex-wrap items-start justify-between gap-6">
                   <div className="flex items-start gap-4">
-                    <RegMark className="mt-1 size-5 shrink-0 text-ink" />
+                    <RegMark className={`mt-1 size-5 shrink-0 ${wa === "0" ? "text-silver" : "text-ink"}`} />
                     <div>
-                      <p className="eyebrow !text-ink">Pesanan diterima</p>
+                      <p className={`eyebrow ${wa === "0" ? "!text-silver" : "!text-ink"}`}>Pesanan diterima</p>
                       <p className="mt-2 text-xl font-semibold tracking-tight">Simpan kode pesanan kamu.</p>
                       <p className="mt-1 text-sm text-ink/60">
-                        Salinannya juga dikirim ke WhatsApp. Kalau belum masuk, simpan kode di halaman ini.
+                        {wa === "0"
+                          ? "Salinan WhatsApp belum terkirim otomatis. Pakai kode ini atau tombol Buka WhatsApp untuk menghubungi admin."
+                          : "Salinannya juga dikirim ke WhatsApp. Kalau belum masuk, simpan kode di halaman ini."}
                       </p>
                     </div>
                   </div>
