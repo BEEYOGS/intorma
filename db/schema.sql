@@ -25,6 +25,8 @@ create table if not exists orders (
   name text not null,
   wa text not null,
   service_id text references services(id),
+  -- Nama layanan disimpan supaya riwayat tetap terbaca bila layanan dihapus.
+  service_label text,
   brief text not null,
   ref_link text,
   deadline date,
@@ -38,6 +40,8 @@ create table if not exists orders (
 );
 
 -- untuk database yang dibuat sebelum kolom pembayaran ada
+alter table orders add column if not exists service_label text;
+update orders o set service_label = s.name from services s where s.id = o.service_id and o.service_label is null;
 alter table orders add column if not exists paid boolean not null default false;
 alter table orders add column if not exists paid_at timestamptz;
 alter table orders add column if not exists qty numeric(10,2);

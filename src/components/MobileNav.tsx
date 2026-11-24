@@ -2,7 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import {
+  FolderOpen,
+  LogIn,
+  LogOut,
+  Menu,
+  MessageCircle,
+  PenLine,
+  Search,
+  UserRound,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { logoutCustomer } from "@/app/actions";
+
+type NavLink = { href: string; label: string; icon: LucideIcon };
 
 export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
   const [open, setOpen] = useState(false);
@@ -17,13 +31,18 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
     return () => document.removeEventListener("pointerdown", close);
   }, [open]);
 
-  const links = [
-    { href: "/order", label: "Pesan" },
-    { href: "/lacak", label: "Lacak pesanan" },
-    { href: "/masuk", label: loggedIn ? "Portal" : "Masuk" },
-    ...(loggedIn ? [{ href: "/portal/files", label: "File saya" }] : []),
-    { href: "/contact", label: "Kontak" },
+  const links: NavLink[] = [
+    { href: "/order", label: "Pesan", icon: PenLine },
+    { href: "/lacak", label: "Lacak pesanan", icon: Search },
+    loggedIn
+      ? { href: "/portal", label: "Portal", icon: UserRound }
+      : { href: "/masuk", label: "Masuk", icon: LogIn },
+    ...(loggedIn ? [{ href: "/portal/files", label: "File saya", icon: FolderOpen }] : []),
+    { href: "/contact", label: "Kontak", icon: MessageCircle },
   ];
+
+  const rowClass =
+    "flex min-h-11 items-center gap-3 rounded-[var(--radius)] px-3 text-sm text-[var(--text-2)] transition-colors hover:bg-white/[0.04] hover:text-[var(--text)]";
 
   return (
     <div ref={rootRef} className="relative sm:hidden">
@@ -34,22 +53,16 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
         onClick={() => setOpen((v) => !v)}
         className="grid size-10 place-items-center rounded-[var(--radius)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
       >
-        <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="size-5">
-          {open ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
-        </svg>
+        {open ? <X aria-hidden className="size-5" /> : <Menu aria-hidden className="size-5" />}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-56 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]">
+        <div className="absolute right-0 top-12 z-50 w-60 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]">
           <nav aria-label="Navigasi seluler" className="grid">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="min-h-11 flex items-center rounded-[var(--radius)] px-3 text-sm text-[var(--text-2)] transition-colors hover:bg-white/[0.04] hover:text-[var(--text)]"
-              >
-                {link.label}
+            {links.map(({ href, label, icon: Icon }) => (
+              <Link key={href} href={href} onClick={() => setOpen(false)} className={rowClass}>
+                <Icon aria-hidden className="size-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.8} />
+                {label}
               </Link>
             ))}
             <a
@@ -57,13 +70,15 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
               target="_blank"
               rel="noreferrer"
               onClick={() => setOpen(false)}
-              className="min-h-11 flex items-center rounded-[var(--radius)] px-3 text-sm text-[var(--text-2)] transition-colors hover:bg-white/[0.04] hover:text-[var(--text)]"
+              className={rowClass}
             >
+              <MessageCircle aria-hidden className="size-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.8} />
               WhatsApp
             </a>
             {loggedIn && (
               <form action={logoutCustomer} className="mt-1 border-t border-[var(--border)] pt-1">
-                <button className="min-h-11 w-full rounded-[var(--radius)] px-3 text-left text-sm text-mute transition-colors hover:bg-white/[0.04] hover:text-[var(--text)]">
+                <button className={`${rowClass} w-full text-left`}>
+                  <LogOut aria-hidden className="size-4 shrink-0 text-[var(--text-3)]" strokeWidth={1.8} />
                   Keluar
                 </button>
               </form>

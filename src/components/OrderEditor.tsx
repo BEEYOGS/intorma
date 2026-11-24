@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, type CSSProperties } from "react";
 import { updateOrder, type ActionResult } from "@/app/actions";
 import { rupiah } from "@/lib/format";
 import { priceBreakdown } from "@/lib/pricing";
+import { IconForStatus } from "@/components/StatusIcon";
 import { STATUSES, STATUS_META, type Status } from "@/lib/status";
 
 type Order = {
@@ -40,9 +41,18 @@ export function OrderEditor({
           {STATUSES.map((s) => (
             <label key={s} className="cursor-pointer">
               <input type="radio" name="status" value={s} defaultChecked={status === s} className="peer sr-only" />
-              <span className="inline-flex items-center gap-2 rounded-full border border-line bg-panel/60 px-3 py-2 text-[12.5px] font-semibold text-ink/70 transition-colors peer-checked:border-accent/60 peer-checked:bg-accent/15 peer-checked:text-accent peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
-                <span aria-hidden className="status-dot" style={{ background: STATUS_META[s].color }} />
-                {STATUS_META[s].label}
+              <span
+                className="inline-flex items-center gap-2 rounded-full border border-line bg-panel/60 px-3 py-2 text-[12.5px] font-semibold text-ink/70 transition-colors peer-checked:[color:var(--status-color)] peer-checked:[border-color:var(--status-border)] peer-checked:[background:var(--status-soft)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
+                style={
+                  {
+                    "--status-color": STATUS_META[s].color,
+                    "--status-border": `color-mix(in srgb, ${STATUS_META[s].color} 45%, transparent)`,
+                    "--status-soft": STATUS_META[s].soft,
+                  } as CSSProperties
+                }
+              >
+                <IconForStatus status={s} className="size-3.5" />
+                {STATUS_META[s].short}
               </span>
             </label>
           ))}

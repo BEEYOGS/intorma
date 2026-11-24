@@ -5,8 +5,11 @@ import { Footer, Nav, StatusBadge } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { PayButton } from "@/components/PayButton";
+import { StatusTree } from "@/components/StatusTree";
+import { IconForStatus } from "@/components/StatusIcon";
+import { Printer } from "lucide-react";
 import { sql } from "@/lib/db";
-import { jam, rupiah, tanggal } from "@/lib/format";
+import { rupiah, tanggal } from "@/lib/format";
 import { priceBreakdown } from "@/lib/pricing";
 import { gatewayEnabled } from "@/lib/payment";
 import { getPaymentSettings } from "@/lib/settings";
@@ -28,7 +31,7 @@ export default async function TrackPage({
       select o.id, o.code, o.name, o.status, o.price, o.note, o.paid, o.deadline, o.brief,
         o.created_at, o.qty, o.unit_rate, o.width_cm, o.height_cm, o.options, o.subtotal,
         o.file_url, o.payment_status, o.payment_method,
-        s.name as service, s.unit_label as unit_label
+        coalesce(s.name, o.service_label) as service, s.unit_label as unit_label
       from orders o left join services s on s.id = o.service_id
       where o.code = ${kode.toUpperCase()}`
   )[0];
@@ -51,14 +54,14 @@ export default async function TrackPage({
 
   const gateway = gatewayEnabled();
   const [events, payment] = await Promise.all([
-    sql`select status, note, created_at from order_events where order_id = ${order.id} order by created_at desc`,
+    sql`select status, note, created_at from order_events where order_id = ${order.id} order by created_at desc`.then(
+      (rows) => rows as unknown as Array<{ status: string; note: string | null; created_at: string }>,
+    ),
     getPaymentSettings(),
   ]);
 
   const st = (isStatus(order.status) ? order.status : "menunggu") as Status;
   const meta = STATUS_META[st];
-  const flow: Status[] = ["menunggu", "dikerjakan", "selesai"];
-  const flowIndex = flow.indexOf(st);
   const breakdown = priceBreakdown(
     order.price == null ? null : Number(order.price),
     order.qty == null ? null : Number(order.qty),
@@ -108,7 +111,7 @@ export default async function TrackPage({
                 </Link>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{order.code}</h1>
-                  <StatusBadge color={meta.color} label={meta.label} />
+                  <StatusBadge color={meta.color} label={meta.label} status={st} />
                 </div>
                 <p className="mt-2 text-sm text-mute">
                   {order.service ?? "Pesanan"} · dibuat {tanggal(order.created_at)} · atas nama {order.name}
@@ -116,6 +119,9 @@ export default async function TrackPage({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <CopyButton value={order.code} label="Salin kode" />
+                <Link href={`/nota/${order.code}`} className="btn-outline min-h-9 px-3 text-sm">
+                  <Printer aria-hidden className="size-4" /> Cetak nota
+                </Link>
                 <Link href="/lacak" className="btn-ghost min-h-9 px-3 text-sm">
                   Cari kode lain
                 </Link>
@@ -127,54 +133,33 @@ export default async function TrackPage({
         <div className="wrap grid gap-8 py-10 sm:py-14 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-12">
           <div>
             <section aria-labelledby="status-sekarang" className="card p-6 sm:p-7">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="eyebrow">Status sekarang</p>
-                <span className="tag">{flowIndex >= 0 ? `Tahap ${flowIndex + 1} / 3` : "Di luar alur"}</span>
+                <span className="tag" style={{ color: meta.color, borderColor: `color-mix(in srgb, ${meta.color} 35%, transparent)` }}>
+                  <IconForStatus status={st} className="size-3.5" /> {meta.label}
+                </span>
               </div>
               <div className="mt-4 flex items-start gap-3">
-                <span aria-hidden className="mt-2 size-3 shrink-0 rounded-full" style={{ background: meta.color }} />
+                <span
+                  aria-hidden
+                  className="mt-2 grid size-3 shrink-0 place-items-center rounded-full"
+                  style={{ background: meta.color, boxShadow: `0 0 0 4px ${meta.soft}` }}
+                />
                 <div>
-                  <h2 id="status-sekarang" className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                  <h2 id="status-sekarang" className="text-2xl font-semibold tracking-tight sm:text-3xl" style={{ color: meta.color }}>
                     {meta.label}
                   </h2>
                   {order.note && <p className="mt-3 max-w-xl text-sm leading-6 text-mute">{order.note}</p>}
                 </div>
               </div>
 
-              {st === "batal" ? (
+              {st === "batal" && (
                 <p className="mt-5 rounded-tag-sm border border-danger/30 bg-danger/[0.08] px-4 py-3 text-sm text-danger">
                   Pesanan ini dibatalkan. Kalau ini keliru, langsung chat kami lewat WhatsApp.
                 </p>
-              ) : st === "revisi" ? (
-                <p className="mt-5 rounded-tag-sm border border-line bg-white/[0.03] px-4 py-3 text-sm text-ink/80">
-                  Pesanan sedang tahap revisi. Admin akan mengabari lewat WhatsApp begitu ada kabar.
-                </p>
-              ) : (
-                <>
-                  <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-line">
-                    <div
-                      className="h-full rounded-full bg-accent transition-all"
-                      style={{ width: `${((flowIndex + 1) / flow.length) * 100}%` }}
-                    />
-                  </div>
-                  <ol aria-label="Progres pesanan" className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
-                    {flow.map((s, index) => (
-                      <li key={s} className="flex items-center gap-2">
-                        <span
-                          className={`grid size-6 place-items-center rounded-full text-[11px] font-bold ${
-                            index <= flowIndex ? "bg-accent text-[#04110f]" : "border border-line text-mute"
-                          }`}
-                        >
-                          {index < flowIndex ? "✓" : index + 1}
-                        </span>
-                        <span className={`text-xs font-semibold ${index <= flowIndex ? "text-ink/80" : "text-mute"}`}>
-                          {STATUS_META[s].label}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                </>
               )}
+
+              <StatusTree status={st} events={events} note={order.note} />
             </section>
 
             <section aria-label="Langkah berikutnya" className="mt-4 flex gap-3 rounded-tag-sm border border-accent/20 bg-accent/[0.05] px-4 py-3.5">
@@ -187,25 +172,6 @@ export default async function TrackPage({
               </div>
             </section>
 
-            <section aria-labelledby="riwayat" className="mt-9">
-              <h2 id="riwayat" className="text-lg font-semibold tracking-tight">Riwayat</h2>
-              <ol className="mt-4">
-                {events.map((event, index) => {
-                  const eventMeta = STATUS_META[(isStatus(event.status) ? event.status : "menunggu") as Status];
-                  return (
-                    <li key={index} className="relative pb-6 pl-7 last:pb-0">
-                      {index < events.length - 1 && (
-                        <span aria-hidden className="absolute left-[5px] top-4 h-full w-px bg-line" />
-                      )}
-                      <span aria-hidden className="absolute left-0 top-1.5 size-2.5 rounded-full" style={{ background: eventMeta.color }} />
-                      <p className="text-sm font-semibold">{eventMeta.label}</p>
-                      {event.note && <p className="mt-0.5 text-sm leading-6 text-mute">{event.note}</p>}
-                      <p className="mt-1 text-xs text-mute">{jam(event.created_at)}</p>
-                    </li>
-                  );
-                })}
-              </ol>
-            </section>
           </div>
 
           <aside className="grid gap-5 lg:sticky lg:top-24">

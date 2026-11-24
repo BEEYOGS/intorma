@@ -1,4 +1,3 @@
-// Status memakai satu warna: merah. Keterangan status tetap dibaca dari teksnya.
-const STATUS_COLOR = "#d45a4a";
+import { STATUS_META, asStatus } from "@/lib/status";
 
-export const jobStatusColor = (_status: string): string => STATUS_COLOR;
+export const jobStatusColor = (status: string): string => STATUS_META[asStatus(status)].color;

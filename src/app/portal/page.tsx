@@ -29,7 +29,7 @@ export default async function PortalPage() {
 
   const orders = (await sql`
     select o.id, o.code, o.status, o.price, o.paid, o.created_at, o.service_id,
-      s.name as service
+      coalesce(s.name, o.service_label) as service
     from orders o left join services s on s.id = o.service_id
     where o.customer_id = ${customer.id}
     order by o.created_at desc
@@ -94,7 +94,7 @@ export default async function PortalPage() {
                           <Link href={`/lacak/${order.code}`} className="mono text-sm font-medium text-[var(--text)] hover:underline">
                             {order.code}
                           </Link>
-                          <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} />
+                          <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} status={st} compact />
                         </div>
                         <p className="mt-1 text-[13px] text-mute">
                           {order.service ?? "Layanan"} · {tanggal(order.created_at)}

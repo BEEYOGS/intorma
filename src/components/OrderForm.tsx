@@ -9,6 +9,8 @@ import { rupiah } from "@/lib/format";
 import { calculateQuote, formatQty, optionPriceLabel, priceLabel } from "@/lib/pricing";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
+import { ServiceIcon } from "@/components/ServiceIcon";
+import { Check } from "lucide-react";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
 import { ACCEPT_ATTR, DB_UPLOAD_MAX_BYTES, formatBytes } from "@/lib/upload-rules";
 
@@ -184,14 +186,24 @@ export function OrderForm({
         >
           <span>
             <span className="flex items-start justify-between gap-3">
-              <span className="block font-semibold leading-snug">{service.name}</span>
+              <span className="flex min-w-0 items-start gap-3">
+                <span
+                  aria-hidden
+                  className={`grid size-9 shrink-0 place-items-center rounded-tag-sm border transition-colors ${
+                    on ? "border-accent/40 bg-accent/10 text-accent" : "border-line bg-white/[0.03] text-ink/70"
+                  }`}
+                >
+                  <ServiceIcon service={service} className="size-[18px]" />
+                </span>
+                <span className="block min-w-0 font-semibold leading-snug">{service.name}</span>
+              </span>
               <span
                 aria-hidden
                 className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border text-[10px] font-bold transition-colors ${
                   on ? "border-accent bg-accent text-[#04110f]" : "border-line text-transparent"
                 }`}
               >
-                ✓
+                <Check className="size-3" strokeWidth={3} />
               </span>
             </span>
             <span className="mt-1 block text-[13px] leading-5 text-mute">{service.blurb}</span>

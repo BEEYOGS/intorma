@@ -10,6 +10,14 @@ const fontSans = localFont({
   fallback: ["system-ui", "sans-serif"],
 });
 
+const fontSerifItalic = localFont({
+  src: "./fonts/instrument-serif-italic-latin.woff2",
+  weight: "400",
+  variable: "--font-signature",
+  display: "swap",
+  fallback: ["Georgia", "serif"],
+});
+
 export const metadata: Metadata = {
   title: { default: "in.torma — Studio desain & cetak", template: "%s — in.torma" },
   description: "Logo, poster, konten sosial, kemasan, sampai spanduk dan kartu nama. Brief singkat, harga jelas, progres bisa dipantau.",
@@ -25,7 +33,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className={fontSans.variable}>
+    <html lang="id" className={`${fontSans.variable} ${fontSerifItalic.variable}`}>
       <body className="min-h-dvh bg-[var(--bg)] text-[var(--text)]">
         <main>{children}</main>
       </body>

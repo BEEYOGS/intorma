@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { TopBar } from "@/components/TopBar";
+import { IconForStatus } from "@/components/StatusIcon";
+import { STATUS_META, type Status } from "@/lib/status";
 
 export function Nav() {
   return <TopBar />;
@@ -22,20 +24,51 @@ export function Footer() {
   );
 }
 
-export function StatusDot({ color, label }: { color: string; label: string }) {
+export function StatusDot({
+  color,
+  label,
+  status,
+}: {
+  color: string;
+  label: string;
+  status?: Status;
+}) {
   return (
     <span className="inline-flex items-center gap-2 whitespace-nowrap text-xs text-[var(--text-2)]">
       <span aria-hidden className="status-dot" style={{ background: color }} />
+      {status ? <IconForStatus status={status} className="size-3.5" /> : null}
       {label}
     </span>
   );
 }
 
-export function StatusBadge({ color, label }: { color: string; label: string }) {
+export function StatusBadge({
+  color,
+  label,
+  status,
+  compact = false,
+}: {
+  color: string;
+  label: string;
+  status?: Status;
+  compact?: boolean;
+}) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-2)]">
-      <span aria-hidden className="status-dot" style={{ background: color }} />
-      {label}
+    <span
+      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+      style={{
+        color,
+        borderColor: `color-mix(in srgb, ${color} 35%, transparent)`,
+        background: `color-mix(in srgb, ${color} 12%, transparent)`,
+      }}
+    >
+      {status ? (
+        <IconForStatus status={status} className="size-3.5" />
+      ) : (
+        <span aria-hidden className="status-dot !mr-0" style={{ background: color }} />
+      )}
+      <span className={compact ? "hidden sm:inline" : undefined}>{label}</span>
+      {compact && <span className="sm:hidden">{status ? STATUS_META[status].short : label}</span>}
     </span>
   );
 }

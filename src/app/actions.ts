@@ -116,12 +116,12 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   for (let i = 0; i < 5 && !order; i++) {
     const rows = await sql`
       insert into orders (
-        code, name, wa, service_id, customer_id, brief, ref_link, deadline,
+        code, name, wa, service_id, service_label, customer_id, brief, ref_link, deadline,
         qty, unit_rate, price, width_cm, height_cm, options, subtotal,
         file_url, payment_method, payment_status
       )
       values (
-        ${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${customer?.id ?? null}, ${values.brief},
+        ${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${svc.name}, ${customer?.id ?? null}, ${values.brief},
         ${values.ref || null}, ${values.deadline || null},
         ${quote.qty}, ${quote.unitRate}, ${quote.price},
         ${widthCm}, ${heightCm}, ${snapshot}::jsonb, ${quote.subtotal},
@@ -391,6 +391,32 @@ export async function saveService(_prev: ActionResult, f: FormData): Promise<Act
   revalidatePath("/admin/layanan");
   revalidatePath("/");
   revalidatePath("/order");
+  return { ok: true };
+}
+
+export async function deleteService(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+
+  const id = str(f, "id").toLowerCase();
+  const confirm = str(f, "confirm").toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{1,30}$/.test(id)) return { error: "ID layanan tidak valid." };
+  if (confirm !== id) {
+    return { error: `Ketik ${id} persis untuk mengonfirmasi penghapusan layanan.` };
+  }
+
+  const service = (await sql`select id, name from services where id = ${id}`)[0];
+  if (!service) return { error: "Layanan tidak ditemukan." };
+
+  // Order lama tetap menyimpan nama layanan, lalu lepas relasinya sebelum menghapus.
+  await sql`update orders set service_label = coalesce(service_label, ${service.name}) where service_id = ${id}`;
+  await sql`update orders set service_id = null where service_id = ${id}`;
+  await sql`delete from services where id = ${id}`;
+
+  revalidatePath("/admin/layanan");
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/order");
+  revalidatePath("/portal");
   return { ok: true };
 }
 

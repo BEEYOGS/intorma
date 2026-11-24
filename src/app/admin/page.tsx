@@ -67,7 +67,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
 
   const [orders, matched, counts, unpaid, revenue] = await Promise.all([
     sql.query(
-      `select o.*, v.name as service, v.price_from as service_price, v.unit_label as unit_label ${from} ${where}
+      `select o.*, coalesce(v.name, o.service_label) as service, v.price_from as service_price, v.unit_label as unit_label ${from} ${where}
        order by o.created_at desc limit 100`,
       values,
     ),
@@ -214,7 +214,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                   <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-1 py-5 transition-colors hover:bg-white/[0.02] sm:grid-cols-[7rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_7rem_1.25rem] sm:gap-4 sm:px-3">
                     <span className="font-mono text-[13px] font-semibold tracking-wide">{o.code}</span>
                     <span className="flex items-center gap-2 justify-self-end sm:hidden">
-                      <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} />
+                      <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} status={st} compact />
                       <span aria-hidden className="text-ink/30 transition-transform group-open:rotate-90">→</span>
                     </span>
 
@@ -227,7 +227,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
 
                     <span className="hidden text-sm text-mute sm:block">{o.service ?? "—"}</span>
                     <span className="hidden sm:block">
-                      <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} />
+                      <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} status={st} />
                     </span>
 
                     <span className="col-span-2 flex items-center justify-between gap-3 border-t border-line/70 pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
@@ -310,6 +310,9 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                         </a>
                         <Link href={`/lacak/${o.code}`} className="btn-ghost min-h-10 px-4 text-sm">
                           Lihat halaman klien
+                        </Link>
+                        <Link href={`/nota/${o.code}`} className="btn-ghost min-h-10 px-4 text-sm">
+                          Cetak nota
                         </Link>
                       </div>
                     </div>

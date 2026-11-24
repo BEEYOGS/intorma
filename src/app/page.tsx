@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { TopBar } from "@/components/TopBar";
+import { ServiceIconTile } from "@/components/ServiceIcon";
+import { StatusBadge } from "@/components/Chrome";
+import { STATUS_META, asStatus } from "@/lib/status";
 import { isAdmin } from "@/lib/auth";
 import { getLatestJobs, getProductStats } from "@/lib/data";
 import { getServices } from "@/lib/db";
@@ -85,15 +88,15 @@ export default async function ProductPage() {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[var(--border)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden">
-            {featuredServices.map((svc, i) => (
+            {featuredServices.map((svc) => (
               <Link
                 key={svc.id}
                 href={`/order?layanan=${svc.id}`}
                 className="bg-[var(--panel)] p-5 sm:p-6 hover:bg-[var(--panel-2)] transition-colors group"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <span className="mono text-xs text-[var(--text-3)]">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="mono text-xs text-[var(--text-3)] group-hover:text-[var(--gold)] transition-colors">→</span>
+                <div className="flex items-start justify-between mb-4">
+                  <ServiceIconTile service={svc} />
+                  <span className="mono text-xs text-[var(--text-3)] group-hover:text-[var(--gold)] transition-colors">↗</span>
                 </div>
                 <h3 className="text-[15px] font-medium text-[var(--text)] mb-1">{svc.name}</h3>
                 <p className="text-xs text-[var(--text-3)] leading-relaxed min-h-[2.5rem]">{svc.blurb}</p>
@@ -252,7 +255,12 @@ export default async function ProductPage() {
                       <td className="mono text-[var(--text)]">{job.code}</td>
                       <td>{job.name}</td>
                       <td>
-                        <span className="mono text-xs">{job.status}</span>
+                        <StatusBadge
+                          color={STATUS_META[asStatus(job.status)].color}
+                          label={STATUS_META[asStatus(job.status)].label}
+                          status={asStatus(job.status)}
+                          compact
+                        />
                       </td>
                       <td className="mono text-xs">{new Date(job.created_at).toLocaleDateString("id-ID")}</td>
                     </tr>
