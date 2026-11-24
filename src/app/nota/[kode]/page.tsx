@@ -5,6 +5,7 @@ import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { PrintButton } from "@/components/PrintButton";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal } from "@/lib/format";
+import { formatQty } from "@/lib/pricing";
 import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, asStatus } from "@/lib/status";
 
@@ -16,6 +17,8 @@ type Snapshot = {
   summary?: string;
   qty?: number | null;
   unit?: string;
+  width_cm?: number | null;
+  height_cm?: number | null;
 };
 
 export default async function NotaPage({ params }: { params: Promise<{ kode: string }> }) {
@@ -23,7 +26,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
   const order = (
     await sql`
       select o.id, o.code, o.name, o.status, o.price, o.options, o.brief, o.created_at,
-        o.qty, o.unit_rate, o.paid,
+        o.qty, o.unit_rate, o.width_cm, o.height_cm, o.paid,
         coalesce(s.name, o.service_label) as service, s.unit_label as unit_label
       from orders o left join services s on s.id = o.service_id
       where o.code = ${kode.toUpperCase()}`
@@ -32,21 +35,22 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
 
   const payment = await getPaymentSettings();
   const snapshot = order.options && typeof order.options === "object" ? (order.options as Snapshot) : null;
-  const unit = String(snapshot?.unit ?? order.unit_label ?? "").trim();
 
-  const rows: { name: string; qty: string; amount: string }[] = (snapshot?.lines ?? []).map((line) => ({
-    name: line.label,
-    qty: line.detail ?? (order.qty != null ? `${order.qty}${unit ? ` ${unit}` : ""}` : "1"),
-    amount: rupiah(line.amount),
+  // Ukuran ditaruh di nama item; kolom jumlah hanya berisi jumlah dalam pcs.
+  const width = Number(snapshot?.width_cm ?? order.width_cm ?? 0);
+  const height = Number(snapshot?.height_cm ?? order.height_cm ?? 0);
+  const meter = (cm: number) => formatQty(Math.round((cm / 100) * 100) / 100);
+  const size = width > 0 && height > 0 ? `${meter(width)}x${meter(height)} m` : "";
+  const pieces = `${formatQty(Number(order.qty ?? snapshot?.qty ?? 1))} pcs`;
+
+  const sourceLines = snapshot?.lines?.length
+    ? snapshot.lines
+    : [{ label: order.service ?? "Pesanan", amount: order.price as number | null }];
+  const rows: { name: string; qty: string; amount: string }[] = sourceLines.map((line, index) => ({
+    name: index === 0 && size ? `${line.label} ${size}` : line.label,
+    qty: pieces,
+    amount: line.amount == null ? "-" : rupiah(line.amount),
   }));
-
-  if (rows.length === 0) {
-    rows.push({
-      name: order.service ?? "Pesanan",
-      qty: order.qty != null ? `${order.qty}${unit ? ` ${unit}` : ""}` : "1",
-      amount: order.price == null ? "-" : rupiah(order.price),
-    });
-  }
 
   // Baris kosong mengikuti bentuk nota asli supaya tabel tetap rapi saat dicetak.
   while (rows.length < 6) rows.push({ name: "", qty: "", amount: "" });
@@ -99,7 +103,6 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
             <p className="nota-caption">Dikeluarkan oleh</p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/int-dark.svg" alt="in.torma" className="mt-1.5 h-5 w-auto" />
-            <p className="text-xs leading-5 text-[#333]">Studio desain &amp; cetak</p>
           </div>
           <div className="sm:text-right">
             <p className="nota-caption">Ditujukan kepada</p>
