@@ -208,24 +208,23 @@ create table if not exists customers (
 alter table orders add column if not exists customer_id int references customers(id) on delete set null;
 create index if not exists orders_customer_idx on orders(customer_id, created_at desc);
 
--- File yang diunggah pelanggan disimpan sementara di database. Untuk produksi
--- dengan file besar, gunakan storage eksternal (S3/Supabase) dan simpan URL-nya.
+-- Seluruh file pelanggan disimpan di Google Drive. Neon hanya metadata.
 create table if not exists uploads (
   id serial primary key,
   code text not null unique,
   file_name text not null,
   mime text not null,
-  size int not null,
-  data bytea not null,
-  storage text not null default 'db',
+  size bigint not null,
+  storage text not null default 'drive',
   drive_file_id text,
+  drive_web_link text,
   customer_id int references customers(id) on delete set null,
   order_id int references orders(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
 alter table uploads alter column size type bigint;
-alter table uploads add column if not exists storage text not null default 'db';
+alter table uploads add column if not exists storage text not null default 'drive';
 alter table uploads add column if not exists drive_file_id text;
 alter table uploads add column if not exists drive_web_link text;
 alter table uploads add column if not exists customer_id int references customers(id) on delete set null;

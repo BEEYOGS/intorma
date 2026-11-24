@@ -1,6 +1,7 @@
 // Aturan upload dipakai bersama oleh API route dan komponen klien.
-// File besar tidak pernah melewati body Vercel: browser mengunggah langsung
-// ke sesi Google Drive resumable.
+// SEMUA file, kecil maupun besar, akhirnya disimpan di Google Drive.
+// Neon hanya menyimpan metadata. File besar tidak pernah melewati body Vercel:
+// browser mengunggah langsung ke sesi Google Drive resumable.
 
 export type UploadProgress = {
   percent: number;
@@ -9,7 +10,8 @@ export type UploadProgress = {
   speed: number;
 };
 
-export const DB_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
+/** Batas file kecil yang dikirim lewat API (tetap masuk Google Drive). */
+export const SERVER_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 export const DRIVE_UPLOAD_MAX_BYTES = 5 * 1024 * 1024 * 1024 * 1024; // 5 TB (batas Google Drive)
 export const DRIVE_CHUNK_BYTES = 8 * 1024 * 1024; // kelipatan 256 KB
 

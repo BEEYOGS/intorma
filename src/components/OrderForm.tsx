@@ -12,7 +12,7 @@ import { UploadProgressBar } from "@/components/UploadProgressBar";
 import { ServiceIcon } from "@/components/ServiceIcon";
 import { Check } from "lucide-react";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
-import { ACCEPT_ATTR, DB_UPLOAD_MAX_BYTES, formatBytes } from "@/lib/upload-rules";
+import { ACCEPT_ATTR } from "@/lib/upload-rules";
 
 type PaymentInfo = {
   enabled: boolean;
@@ -560,8 +560,8 @@ export function OrderForm({
               <legend className="mb-1 text-xl font-semibold tracking-tight">File siap cetak</legend>
               <p className="mb-5 text-sm text-mute">
                 {driveReady
-                  ? "Upload langsung di sini—file besar (multi-GB) dikirim langsung ke Google Drive, jadi tidak kena batas 4 MB. Bisa juga tempel link Google Drive/WeTransfer."
-                  : `Upload langsung di sini (maksimal ${formatBytes(DB_UPLOAD_MAX_BYTES)}), atau tempel link Google Drive/WeTransfer.`}{" "}
+                  ? "Upload langsung di sini—semua file (kecil maupun besar) tersimpan di Google Drive, jadi database tidak penuh. Bisa juga tempel link Google Drive/WeTransfer."
+                  : "Google Drive belum aktif. Hubungi admin sebelum mengunggah, atau tempel link Google Drive/WeTransfer."}{" "}
                 Format aman: PDF, JPG, PNG, AI, PSD, CDR, TIFF, atau ZIP.
               </p>
               <div className="grid gap-5 sm:grid-cols-2">
@@ -576,23 +576,17 @@ export function OrderForm({
                   />
                   <span className="mt-1.5 block text-xs text-mute">
                     {uploading
-                      ? driveReady
-                        ? "Mengunggah langsung ke Google Drive…"
-                        : "Mengunggah file…"
+                      ? "Mengunggah langsung ke Google Drive…"
                       : fileLink.startsWith("/api/upload/") && uploadedName
                         ? `Tersimpan: ${uploadedName}`
-                        : driveReady
-                          ? "File besar didukung. Format PDF, gambar, atau file desain."
-                          : `Maksimal ${formatBytes(DB_UPLOAD_MAX_BYTES)}. Format PDF, gambar, atau file desain.`}
+                        : "File kecil maupun besar didukung. Format PDF, gambar, atau file desain."}
                   </span>
                   <UploadProgressBar
                     progress={uploadProgress}
                     label={
                       uploadProgress && uploadProgress.percent >= 100
                         ? "Menyimpan file…"
-                        : driveReady
-                          ? "Mengunggah ke Google Drive"
-                          : "Mengunggah file"
+                        : "Mengunggah ke Google Drive"
                     }
                   />
                   {fileLink.startsWith("/api/upload/") && (

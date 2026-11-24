@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
-import { ACCEPT_ATTR, DB_UPLOAD_MAX_BYTES, formatBytes } from "@/lib/upload-rules";
+import { ACCEPT_ATTR } from "@/lib/upload-rules";
 
 export type FileItem = {
   id: number;
@@ -126,8 +126,8 @@ export function FileLibrary({
             <p className="mt-0.5 text-xs text-mute">
               Original, tanpa kompresi. Klik file untuk pratinjau.{" "}
               {driveReady
-                ? "File besar dikirim langsung ke Google Drive."
-                : `Maksimal ${formatBytes(DB_UPLOAD_MAX_BYTES)} per file.`}
+                ? "Semua file tersimpan di Google Drive, bukan di database."
+                : "Google Drive belum aktif. Hubungi admin sebelum mengunggah."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -161,11 +161,7 @@ export function FileLibrary({
             <UploadProgressBar
               progress={progress}
               label={
-                progress.percent >= 100
-                  ? "Menyimpan file…"
-                  : driveReady
-                    ? "Mengunggah ke Google Drive"
-                    : "Mengunggah file"
+                progress.percent >= 100 ? "Menyimpan file…" : "Mengunggah ke Google Drive"
               }
             />
           </div>

@@ -1,13 +1,8 @@
 // Upload langsung dari browser ke Google Drive (resumable, chunk 8 MB).
 // File tidak pernah dikirim ke Vercel, jadi tidak terkena batas body 4,5 MB.
-// Kalau Drive belum aktif, otomatis fallback ke /api/upload (maksimal 4 MB).
+// Semua file tersimpan di Drive. Neon hanya menyimpan metadata.
 
-import {
-  DB_UPLOAD_MAX_BYTES,
-  DRIVE_CHUNK_BYTES,
-  formatBytes,
-  type UploadProgress,
-} from "./upload-rules";
+import { DRIVE_CHUNK_BYTES, type UploadProgress } from "./upload-rules";
 
 export type { UploadProgress };
 
@@ -17,7 +12,7 @@ export type UploadResult = {
   name: string;
   size: number;
   mime?: string;
-  storage: "drive" | "db";
+  storage: "drive";
 };
 
 type Options = {
@@ -60,57 +55,6 @@ function errorMessage(payload: unknown, fallback: string): string {
     if (typeof value === "string" && value.trim()) return value;
   }
   return fallback;
-}
-
-async function uploadViaServer(file: File, options: Options): Promise<UploadResult> {
-  if (file.size > DB_UPLOAD_MAX_BYTES) {
-    throw new Error(
-      `File ${formatBytes(file.size)} melebihi batas 4 MB karena Google Drive belum aktif. ` +
-        "Aktifkan Drive atau unggah lewat link.",
-    );
-  }
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    const startedAt = Date.now();
-    const body = new FormData();
-    body.set("file", file);
-
-    const abort = () => xhr.abort();
-    options.signal?.addEventListener("abort", abort, { once: true });
-
-    xhr.open("POST", "/api/upload");
-    xhr.responseType = "json";
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) report(options, event.loaded, event.total, startedAt);
-    };
-    xhr.onload = () => {
-      options.signal?.removeEventListener("abort", abort);
-      const data = (xhr.response ?? null) as UploadResult | { error?: string } | null;
-      if (xhr.status >= 200 && xhr.status < 300 && data && "url" in data && data.url) {
-        report(options, file.size, file.size, startedAt);
-        resolve({
-          id: Number(data.id ?? 0),
-          url: String(data.url),
-          name: String(data.name ?? file.name),
-          size: Number(data.size ?? file.size),
-          mime: "mime" in data ? String(data.mime ?? "") : undefined,
-          storage: "db",
-        });
-        return;
-      }
-      reject(new Error(errorMessage(data, `Gagal mengunggah file (HTTP ${xhr.status}).`)));
-    };
-    xhr.onerror = () => {
-      options.signal?.removeEventListener("abort", abort);
-      reject(new Error("Koneksi terputus saat mengunggah file."));
-    };
-    xhr.onabort = () => {
-      options.signal?.removeEventListener("abort", abort);
-      reject(new Error("Upload dibatalkan."));
-    };
-    xhr.send(body);
-  });
 }
 
 async function putChunk(
@@ -219,7 +163,9 @@ export async function uploadFileToStorage(file: File, options: Options = {}): Pr
 
   if (initResponse.status === 503) {
     const data = (await initResponse.json().catch(() => null)) as InitResponse | null;
-    if (data?.drive === false) return uploadViaServer(file, options);
+    throw new Error(
+      errorMessage(data, "Google Drive belum aktif. Hubungi admin sebelum mengunggah file."),
+    );
   }
 
   const init = (await initResponse.json().catch(() => null)) as InitResponse | null;

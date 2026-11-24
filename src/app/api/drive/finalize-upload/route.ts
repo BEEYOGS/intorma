@@ -84,10 +84,10 @@ export async function POST(req: Request) {
   try {
     const rows = (await sql`
       insert into uploads (
-        code, file_name, mime, size, data, storage, drive_file_id, drive_web_link, customer_id
+        code, file_name, mime, size, storage, drive_file_id, drive_web_link, customer_id
       )
       values (
-        ${code}, ${safeName}, ${meta.mimeType}, ${size}, ${new Uint8Array()},
+        ${code}, ${safeName}, ${meta.mimeType}, ${size},
         'drive', ${driveFileId}, ${meta.webViewLink}, ${customer?.id ?? null}
       )
       returning id`) as Array<{ id: number }>;
