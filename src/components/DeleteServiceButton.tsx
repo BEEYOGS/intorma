@@ -83,7 +83,7 @@ export function DeleteServiceButton({
             )}
 
             <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
-              <button type="button" onClick={() => dialogRef.current?.close()} className="btn-ghost min-h-10 px-4 text-sm">
+              <button type="button" onClick={() => dialogRef.current?.close()} className="btn btn-ghost min-h-10 px-4 text-sm">
                 Batal
               </button>
               <button

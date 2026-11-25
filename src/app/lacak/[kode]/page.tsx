@@ -114,7 +114,7 @@ export default async function TrackPage({
 
             <div className="flex flex-wrap items-end justify-between gap-5">
               <div>
-                <Link href="/lacak" className="btn-ghost min-h-9 px-3 text-xs">
+                <Link href="/lacak" className="btn btn-ghost min-h-9 px-3 text-xs">
                   <ArrowLeft aria-hidden className="size-3.5" /> Lacak kode lain
                 </Link>
                 <div className="mt-4 flex flex-wrap items-center gap-3">

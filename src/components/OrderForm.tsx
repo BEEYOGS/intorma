@@ -693,7 +693,7 @@ export function OrderForm({
             <button
               type="submit"
               disabled={pending || hasPriceError || total == null}
-              className="btn-primary w-full sm:w-auto"
+              className="btn btn-primary w-full sm:w-auto"
             >
               {pending ? "Membuat pesanan…" : "Buat pesanan & lihat pembayaran"}
               {!pending && <ArrowRight aria-hidden className="size-4" />}

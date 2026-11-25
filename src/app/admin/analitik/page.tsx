@@ -130,7 +130,7 @@ export default async function AnalitikPage({
           </nav>
           <a
             href={`/api/admin/export/orders?range=${range}`}
-            className="btn-outline min-h-9 px-3 text-xs"
+            className="btn btn-outline min-h-9 px-3 text-xs"
           >
             <Download aria-hidden className="size-3.5" /> Export CSV
           </a>

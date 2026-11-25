@@ -169,7 +169,7 @@ export function WhatsAppStatus(initial: WhatsAppStatusProps) {
           type="button"
           onClick={sendTest}
           disabled={sending || !status.configured}
-          className="btn-primary min-h-10 px-4 text-sm"
+          className="btn btn-primary min-h-10 px-4 text-sm"
         >
           <Send aria-hidden className="size-4" />
           {sending ? "Mengirim…" : "Kirim tes ke admin"}

@@ -87,7 +87,7 @@ export default async function SettingsAdmin() {
               </span>
             </span>
           </label>
-          <button type="submit" className="btn-outline min-h-10 px-4 text-sm">
+          <button type="submit" className="btn btn-outline min-h-10 px-4 text-sm">
             Simpan
           </button>
         </form>

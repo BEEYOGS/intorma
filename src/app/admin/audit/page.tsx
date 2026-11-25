@@ -58,7 +58,7 @@ export default async function AuditPage({
             className="field min-h-10 sm:max-w-xs"
             autoComplete="off"
           />
-          <button type="submit" className="btn-outline min-h-10 px-4 text-sm">Cari</button>
+          <button type="submit" className="btn btn-outline min-h-10 px-4 text-sm">Cari</button>
         </form>
       </div>
 
@@ -111,13 +111,13 @@ export default async function AuditPage({
       {totalPages > 1 && (
         <nav className="mt-6 flex items-center justify-center gap-2" aria-label="Halaman audit">
           {page > 1 && (
-            <a href={`/admin/audit?page=${page - 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="btn-outline min-h-9 px-3 text-xs">
+            <a href={`/admin/audit?page=${page - 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="btn btn-outline min-h-9 px-3 text-xs">
               Sebelumnya
             </a>
           )}
           <span className="text-xs text-mute">Halaman {page} dari {totalPages}</span>
           {page < totalPages && (
-            <a href={`/admin/audit?page=${page + 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="btn-outline min-h-9 px-3 text-xs">
+            <a href={`/admin/audit?page=${page + 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="btn btn-outline min-h-9 px-3 text-xs">
               Berikutnya
             </a>
           )}

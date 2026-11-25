@@ -135,11 +135,11 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           className="field min-h-10 sm:max-w-sm"
           autoComplete="off"
         />
-        <button type="submit" className="btn-outline min-h-10 px-4 text-sm">
+        <button type="submit" className="btn btn-outline min-h-10 px-4 text-sm">
           <Search aria-hidden className="size-4" /> Cari pesanan
         </button>
         {q && (
-          <Link href={clearSearch} className="btn-ghost min-h-10 px-4 text-sm">
+          <Link href={clearSearch} className="btn btn-ghost min-h-10 px-4 text-sm">
             <X aria-hidden className="size-4" /> Reset filter
           </Link>
         )}
@@ -191,11 +191,11 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
               : "Bagikan halaman /order ke calon klien untuk mulai menerima pesanan."}
           </p>
           {q ? (
-            <Link href={clearSearch} className="btn-outline mt-5 min-h-10 px-4 text-sm">
+            <Link href={clearSearch} className="btn btn-outline mt-5 min-h-10 px-4 text-sm">
               Hapus pencarian
             </Link>
           ) : (
-            <Link href="/order" className="btn-outline mt-5 min-h-10 px-4 text-sm">
+            <Link href="/order" className="btn btn-outline mt-5 min-h-10 px-4 text-sm">
               Buka halaman pesan
             </Link>
           )}
@@ -321,19 +321,19 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                             href={`https://wa.me/${normalizeWA(String(o.wa ?? ""))}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="btn-outline min-h-10 px-4 text-sm"
+                            className="btn btn-outline min-h-10 px-4 text-sm"
                           >
                             <MessageCircle aria-hidden className="size-4" /> Chat klien
                           </a>
                         ) : (
-                          <span className="btn-ghost min-h-10 cursor-not-allowed px-4 text-sm opacity-50">
+                          <span className="btn btn-ghost min-h-10 cursor-not-allowed px-4 text-sm opacity-50">
                             Chat klien
                           </span>
                         )}
-                        <Link href={`/lacak/${o.code}`} className="btn-ghost min-h-10 px-4 text-sm">
+                        <Link href={`/lacak/${o.code}`} className="btn btn-ghost min-h-10 px-4 text-sm">
                           <Eye aria-hidden className="size-4" /> Lihat halaman klien
                         </Link>
-                        <Link href={`/nota/${o.code}`} className="btn-ghost min-h-10 px-4 text-sm">
+                        <Link href={`/nota/${o.code}`} className="btn btn-ghost min-h-10 px-4 text-sm">
                           <Printer aria-hidden className="size-4" /> Cetak nota
                         </Link>
                       </div>

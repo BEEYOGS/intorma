@@ -38,7 +38,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
   return (
     <div className="min-h-dvh bg-[var(--bg)] py-8">
       <div className="no-print wrap mb-6 flex flex-wrap items-center justify-between gap-3">
-        <Link href={`/lacak/${order.code}`} className="btn-ghost min-h-10 px-3 text-sm">
+        <Link href={`/lacak/${order.code}`} className="btn btn-ghost min-h-10 px-3 text-sm">
           <ArrowLeft aria-hidden className="size-4" /> Kembali ke lacak
         </Link>
         <div className="flex flex-wrap items-center gap-2">

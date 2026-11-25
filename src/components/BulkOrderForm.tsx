@@ -42,7 +42,7 @@ export function BulkOrderForm() {
           </label>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button type="submit" disabled={pending} className="btn-primary min-h-10 px-4 text-sm">
+          <button type="submit" disabled={pending} className="btn btn-primary min-h-10 px-4 text-sm">
             {pending ? "Memproses…" : "Terapkan"}
           </button>
           {state?.ok && <span className="text-sm font-medium text-ink">Berhasil diperbarui.</span>}

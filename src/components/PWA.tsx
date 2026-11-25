@@ -112,10 +112,10 @@ export function InstallButton() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={install} className="btn-primary min-h-10 flex-1 px-4 text-sm">
+              <button type="button" onClick={install} className="btn btn-primary min-h-10 flex-1 px-4 text-sm">
                 Install sekarang <span aria-hidden="true">↓</span>
               </button>
-              <button type="button" onClick={hidePopup} className="btn-ghost min-h-10 px-4 text-sm">
+              <button type="button" onClick={hidePopup} className="btn btn-ghost min-h-10 px-4 text-sm">
                 Nanti
               </button>
             </div>
