@@ -19,6 +19,7 @@ const fontSerifItalic = localFont({
 });
 
 import { ToastHost } from "@/components/Toast";
+import { PageFade } from "@/components/PageFade";
 
 export const metadata: Metadata = {
   title: { default: "in.torma — Studio desain & cetak", template: "%s — in.torma" },
@@ -38,7 +39,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="id" className={`${fontSans.variable} ${fontSerifItalic.variable}`}>
       <body className="min-h-dvh bg-[var(--bg)] text-[var(--text)]">
-        <main>{children}</main>
+        <PageFade>
+          <main>{children}</main>
+        </PageFade>
         <ToastHost />
       </body>
     </html>

@@ -26,6 +26,7 @@ html {
   scrollbar-width: thin;
   scrollbar-color: #3a3a3a transparent;
   scroll-behavior: smooth;
+  scroll-padding-top: 84px;
 }
 
 :focus-visible {
@@ -319,6 +320,35 @@ kbd {
 
 .animate-in {
   animation: fade-in 0.3s ease-out;
+}
+
+/* Halaman: fade + naik halus saat navigasi antar halaman. */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-fade {
+  animation: page-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Sentuh lebih halus di mobile: hilangkan double-tap-to-zoom delay. */
+a,
+button,
+[role="button"],
+[role="link"],
+[role="tab"],
+[tabindex]:not([tabindex="-1"]) {
+  touch-action: manipulation;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.toast-item {
+  animation: toast-in 0.22s ease-out both;
 }
 
 /* Komponen bentuk yang dipakai halaman pesan, lacak, dan admin. */
