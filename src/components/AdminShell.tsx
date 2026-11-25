@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { BarChart3, ClipboardList, ExternalLink, History, Layers3, LogOut, Settings2 } from "lucide-react";
 import { adminLogout } from "@/app/actions";
 import { SITE_NAME } from "@/lib/site";
+import { CommandPalette } from "@/components/CommandPalette";
 
 const tabs = [
   { href: "/admin", label: "Pesanan", short: "Pesanan", key: "orders", icon: ClipboardList },
@@ -73,6 +74,8 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
       <main id="konten" className="wrap pb-28 pt-8 sm:pb-10 sm:pt-10">
         {children}
       </main>
+
+      <CommandPalette />
 
       <nav
         aria-label="Navigasi admin bawah"
