@@ -656,6 +656,47 @@ export async function logoutCustomer() {
   redirect("/");
 }
 
+export async function bulkUpdateOrders(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+
+  const raw = str(f, "codes");
+  const codes = raw
+    .split(/[\s,;]+/)
+    .map((c) => c.trim().toUpperCase())
+    .filter((c) => /^INT-[A-Z0-9]{6}$/.test(c));
+  if (codes.length === 0) return { error: "Tidak ada kode pesanan yang valid." };
+
+  const status = str(f, "status");
+  const paid = f.get("paid") === "on";
+  const hasStatus = isStatus(status);
+  if (!hasStatus && !f.has("paid")) return { error: "Pilih status atau centang pembayaran." };
+
+  const placeholders = codes.map((_, i) => `$${i + 1}`).join(",");
+  const values: Array<string | boolean> = [...codes];
+  let setClauses: string[] = [];
+  if (hasStatus) {
+    values.push(status);
+    setClauses.push(`status = $${values.length}`);
+  }
+  if (f.has("paid")) {
+    values.push(paid);
+    setClauses.push(`paid = $${values.length}`);
+    if (paid) setClauses.push(`paid_at = coalesce(paid_at, now())`);
+    else setClauses.push(`paid_at = null`);
+  }
+  setClauses.push("updated_at = now()");
+  const sqlText = `update orders set ${setClauses.join(", ")} where code in (${placeholders}) returning code`;
+  const rows = await sql.query(sqlText, values);
+
+  await audit("bulk_update", "order", codes.join(","), {
+    status: hasStatus ? status : null,
+    paid: f.has("paid") ? paid : null,
+    count: rows.length,
+  });
+
+  revalidatePath("/admin");
+  return { ok: true, reset: true };
+}
 export async function saveCustomerProfile(_prev: ActionResult, f: FormData): Promise<ActionResult> {
   const customer = await getCustomer();
   if (!customer) return { error: "Sesi berakhir. Silakan masuk lagi." };

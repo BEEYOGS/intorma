@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { StatusBadge } from "@/components/Chrome";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderEditor } from "@/components/OrderEditor";
+import { BulkOrderForm } from "@/components/BulkOrderForm";
 import { ChevronRight, Eye, MessageCircle, Printer, Search, X } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
@@ -160,6 +161,9 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           Belum dibayar ({unpaidCount})
         </FilterLink>
       </nav>
+
+...
+      <div className="mt-6"><BulkOrderForm /></div>
 
       <div className="mt-6 flex flex-wrap items-baseline justify-between gap-2 text-sm text-mute">
         <p>
