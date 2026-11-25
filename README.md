@@ -32,12 +32,19 @@ Jalankan sekali saat menyiapkan database:
 
 ```bash
 npm run db:migrate         # tabel + kolom baru (additive, aman untuk data lama)
-npm run db:self-service    # kategori, model harga, dan katalog opsi
+npm run db:catalog:all     # metadata + harga produk, lalu katalog opsi (idempoten)
 npm run db:wa-trigger      # pengaman notifikasi WhatsApp untuk order baru
 ```
 
+`db:catalog:all` menjalankan `db:catalog` (nama, deskripsi, kategori, dan harga dasar dari
+`scripts/seed-catalog.mjs`) lalu `db:self-service` (grup opsi bahan/ukuran/finishing).
+Harga dasar mengacu pada riset pasar Indonesia 2026: logo basic Rp250.000, spanduk
+Rp25.000/m², poster A3+ Rp5.000/lembar, kartu nama Rp30.000/box, stiker vinyl A3+
+Rp10.000/lembar, dan kaos sablon DTF Rp65.000/pcs. Angka bisa diubah admin per layanan.
+
 Halaman yang dipakai pelanggan:
 
+- `/katalog` — semua produk dengan ilustrasi monokrom unik per layanan (SVG, bukan foto).
 - `/order` — pilih layanan, atur bahan/ukuran/finishing/jumlah, lihat total, lalu kirim pesanan.
 - `/lacak` dan `/lacak/INT-DDMMYY001` — cek status, rincian harga, dan instruksi transfer.
 

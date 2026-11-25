@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
-import { ServiceIconTile } from "@/components/ServiceIcon";
+import { ProductIllustration } from "@/components/ProductIllustration";
 import { StatusBadge } from "@/components/Chrome";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { STATUS_META, asStatus } from "@/lib/status";
@@ -96,9 +96,17 @@ export default async function ProductPage() {
                 href={`/order?layanan=${svc.id}`}
                 className="bg-[var(--panel)] p-5 sm:p-6 hover:bg-[var(--panel-2)] transition-colors group"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <ServiceIconTile service={svc} />
-                  <ArrowUpRight aria-hidden className="size-4 text-[var(--text-3)] transition-colors group-hover:text-[var(--gold)]" />
+                <div className="relative mb-4 grid h-32 place-items-center overflow-hidden rounded-tag-sm border border-line bg-white/[0.015] px-4 text-[var(--text-2)] transition-colors group-hover:text-[var(--text)]">
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 opacity-[0.16]"
+                    style={{
+                      backgroundImage: "radial-gradient(currentColor 0.6px, transparent 0.6px)",
+                      backgroundSize: "11px 11px",
+                    }}
+                  />
+                  <ProductIllustration service={svc} className="relative h-24 w-full max-w-[220px]" />
+                  <ArrowUpRight aria-hidden className="absolute right-3 top-3 size-4 text-[var(--text-3)] transition-colors group-hover:text-[var(--gold)]" />
                 </div>
                 <h3 className="text-[15px] font-medium text-[var(--text)] mb-1">{svc.name}</h3>
                 <p className="text-xs text-[var(--text-3)] leading-relaxed min-h-[2.5rem]">{svc.blurb}</p>
@@ -112,8 +120,8 @@ export default async function ProductPage() {
           {services.length > featuredServices.length && (
             <p className="mt-4 text-xs text-[var(--text-3)]">
               Menampilkan {featuredServices.length} dari {services.length} layanan.{" "}
-              <Link href="/order" className="inline-flex items-center gap-1 text-[var(--text-2)] underline underline-offset-4 hover:text-[var(--text)]">
-                Lihat semua layanan <ArrowRight aria-hidden className="size-3.5" />
+              <Link href="/katalog" className="inline-flex items-center gap-1 text-[var(--text-2)] underline underline-offset-4 hover:text-[var(--text)]">
+                Lihat katalog lengkap <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </p>
           )}

@@ -7,6 +7,7 @@ import {
   LogIn,
   LogOut,
   AtSign,
+  LayoutGrid,
   Menu,
   PenLine,
   Search,
@@ -33,6 +34,7 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
   }, [open]);
 
   const links: NavLink[] = [
+    { href: "/katalog", label: "Katalog", icon: LayoutGrid },
     { href: "/order", label: "Pesan", icon: PenLine },
     { href: "/lacak", label: "Lacak pesanan", icon: Search },
     loggedIn

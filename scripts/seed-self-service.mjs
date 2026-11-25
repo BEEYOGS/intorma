@@ -23,7 +23,7 @@ const catalog = {
   logo: {
     category: "design",
     pricing_model: "flat",
-    min_price: 350_000,
+    min_price: 250_000,
     round_to: 0,
     min_area_m2: 1,
     requires_file: false,
@@ -58,7 +58,7 @@ const catalog = {
   poster: {
     category: "design",
     pricing_model: "flat",
-    min_price: 120_000,
+    min_price: 100_000,
     round_to: 0,
     min_area_m2: 1,
     requires_file: false,
@@ -90,7 +90,7 @@ const catalog = {
   feed: {
     category: "design",
     pricing_model: "flat",
-    min_price: 200_000,
+    min_price: 150_000,
     round_to: 0,
     min_area_m2: 1,
     requires_file: false,
@@ -255,7 +255,7 @@ const catalog = {
   "kartu-nama": {
     category: "print",
     pricing_model: "per_unit",
-    min_price: 25_000,
+    min_price: 30_000,
     round_to: 0,
     min_area_m2: 1,
     requires_file: true,
@@ -297,7 +297,7 @@ const catalog = {
   "stiker-vinyl": {
     category: "print",
     pricing_model: "per_unit",
-    min_price: 15_000,
+    min_price: 10_000,
     round_to: 0,
     min_area_m2: 1,
     requires_file: true,
@@ -332,6 +332,65 @@ const catalog = {
         required: false,
         options: [
           { code: "laminasi", label: "Laminasi doff/glossy", delta: 3_000, basis: "unit" },
+        ],
+      },
+    ],
+  },
+  "kaos-dtf": {
+    category: "print",
+    pricing_model: "per_unit",
+    min_price: 65_000,
+    round_to: 0,
+    min_area_m2: 1,
+    requires_file: true,
+    price_note: "Harga per pcs sudah termasuk kaos cotton combed 30s + sablon DTF 1 titik. Ukuran, posisi sablon, dan bahan menambah biaya.",
+    groups: [
+      {
+        code: "ukuran",
+        label: "Ukuran kaos",
+        help: "Ukuran dewasa. Hubungi kami untuk ukuran anak.",
+        select_type: "single",
+        required: true,
+        options: [
+          { code: "s", label: "S", delta: 0, basis: "unit", is_default: true },
+          { code: "m", label: "M", delta: 0, basis: "unit" },
+          { code: "l", label: "L", delta: 0, basis: "unit" },
+          { code: "xl", label: "XL", delta: 0, basis: "unit" },
+          { code: "xxl", label: "XXL", delta: 5_000, basis: "unit" },
+          { code: "xxxl", label: "XXXL", delta: 10_000, basis: "unit" },
+        ],
+      },
+      {
+        code: "posisi",
+        label: "Posisi sablon",
+        help: "Satu titik termasuk harga dasar.",
+        select_type: "single",
+        required: true,
+        options: [
+          { code: "depan", label: "Depan", delta: 0, basis: "unit", is_default: true },
+          { code: "belakang", label: "Belakang", delta: 5_000, basis: "unit" },
+          { code: "dua", label: "Depan + belakang", delta: 10_000, basis: "unit" },
+        ],
+      },
+      {
+        code: "bahan",
+        label: "Bahan kaos",
+        select_type: "single",
+        required: true,
+        options: [
+          { code: "combed30", label: "Cotton Combed 30s", delta: 0, basis: "unit", is_default: true },
+          { code: "combed24", label: "Cotton Combed 24s (lebih tebal)", delta: 5_000, basis: "unit" },
+          { code: "combed40", label: "Cotton Combed 40s (premium)", delta: 15_000, basis: "unit" },
+        ],
+      },
+      {
+        code: "tambahan",
+        label: "Tambahan",
+        select_type: "multi",
+        required: false,
+        options: [
+          { code: "lengan-panjang", label: "Lengan panjang", delta: 20_000, basis: "unit" },
+          { code: "rush", label: "Pengerjaan cepat 1 hari", delta: 15_000, basis: "unit" },
         ],
       },
     ],
@@ -380,7 +439,7 @@ const catalog = {
   "poster-a2": {
     category: "print",
     pricing_model: "per_unit",
-    min_price: 9_000,
+    min_price: 15_000,
     round_to: 0,
     min_area_m2: 1,
     requires_file: true,

@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   FolderOpen,
   LayoutDashboard,
+  LayoutGrid,
   LogIn,
   LogOut,
   PenLine,
@@ -26,6 +27,9 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
         <img src="/int.svg" alt="in.torma" className="h-6 w-auto" />
       </Link>
       <nav className="hidden items-center gap-1 sm:flex">
+        <Link href="/katalog" className={linkClass}>
+          <LayoutGrid aria-hidden className={iconClass} /> Katalog
+        </Link>
         <Link href="/order" className={linkClass}>
           <PenLine aria-hidden className={iconClass} /> Pesan
         </Link>
