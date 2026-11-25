@@ -42,10 +42,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ignored: true });
   }
   if (order.paid) return NextResponse.json({ ok: true, already: true });
+  if (order.price == null || Number(payload.gross_amount) !== Number(order.price)) {
+    console.warn(`[payment] nominal tidak cocok untuk ${order.code}: webhook=${payload.gross_amount}, order=${order.price}`);
+    await audit("payment_rejected", "order", order.code, {
+      amount: payload.gross_amount,
+      expected: order.price,
+      provider: "midtrans",
+    });
+    return NextResponse.json({ ok: true, ignored: true, reason: "amount_mismatch" });
+  }
 
   const paidAt = new Date();
   await sql`
-    update orders set paid = true, paid_at = ${paidAt}, payment_status = 'paid', updated_at = now()
+    update orders set paid = true, paid_at = ${paidAt}, payment_status = 'paid',
+      payment_method = 'midtrans', updated_at = now()
     where id = ${order.id}`;
   await sql`
     insert into order_events (order_id, status, note)

@@ -14,6 +14,7 @@ export async function GET(req: Request) {
   const pages = [
     { title: "Pesanan", url: "/admin" },
     { title: "Analitik", url: "/admin/analitik" },
+    { title: "Pelanggan", url: "/admin/pelanggan" },
     { title: "Layanan & harga", url: "/admin/layanan" },
     { title: "Log aktivitas", url: "/admin/audit" },
     { title: "Pengaturan", url: "/admin/pengaturan" },

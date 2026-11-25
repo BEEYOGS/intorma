@@ -32,8 +32,20 @@ export async function GET(req: Request) {
     limit 50
   `;
 
+  const today = new Date().toISOString().slice(0, 10);
   let sent = 0;
+  let skipped = 0;
+
   for (const r of rows) {
+    // Satu pengingat per pesanan per hari. Cron jalan tiap hari, jadi tanpa kunci
+    // ini klien akan menerima pesan yang sama sampai pesanan dibayar.
+    const key = `reminder-${r.code}-${today}`;
+    const seen = await sql`select id from wa_outbox where idempotency_key = ${key} limit 1`;
+    if (seen.length) {
+      skipped += 1;
+      continue;
+    }
+
     const link = `${siteUrl()}/lacak/${r.code}`;
     const msg = [
       `Halo ${r.name}, pengingat untuk pesanan ${r.code}.`,
@@ -44,9 +56,15 @@ export async function GET(req: Request) {
     ]
       .filter(Boolean)
       .join("\n");
+
     const ok = await sendWA(String(r.wa ?? ""), msg);
+    await sql`
+      insert into wa_outbox (to_number, content, status, attempts, last_error, idempotency_key, sent_at)
+      values (${String(r.wa ?? "")}, ${msg}, ${ok ? "sent" : "failed"}, 1,
+        ${ok ? null : "Gagal mengirim langsung via gateway"}, ${key}, ${ok ? new Date() : null})
+      on conflict (idempotency_key) where idempotency_key is not null do nothing`;
     if (ok) sent += 1;
   }
 
-  return NextResponse.json({ ok: true, candidates: rows.length, sent });
+  return NextResponse.json({ ok: true, candidates: rows.length, sent, skipped });
 }

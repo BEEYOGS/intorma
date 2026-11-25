@@ -59,6 +59,43 @@ async function waTriggerActive(): Promise<boolean> {
   return String(row?.value ?? "0") === "1";
 }
 
+/**
+ * Satu tempat untuk menyamakan orders.paid dengan baris pembayaran manual.
+ * Dipakai updateOrder, quickUpdateOrder, dan bulkUpdateOrders supaya tidak ada
+ * jalur yang mengubah `paid` tanpa menyentuh tabel `payments`.
+ */
+async function syncManualPayment(
+  id: number,
+  price: number | null,
+  paid: boolean,
+  paidAt: Date | null,
+  proofUrl?: string | null,
+): Promise<void> {
+  if (price !== null) {
+    await sql`
+      update payments set amount = ${price}
+      where order_id = ${id} and provider = 'manual' and status = 'pending'`;
+  }
+  if (proofUrl !== undefined) {
+    await sql`update payments set proof_url = ${proofUrl || null} where order_id = ${id} and provider = 'manual'`;
+  }
+  if (paid && paidAt) {
+    const updated = await sql`
+      update payments set status = 'paid', paid_at = ${paidAt}
+      where order_id = ${id} and provider = 'manual' and status in ('pending', 'paid')
+      returning id`;
+    if (!updated.length && price !== null) {
+      await sql`
+        insert into payments (order_id, provider, method, amount, status, paid_at, proof_url)
+        values (${id}, 'manual', 'transfer', ${price}, 'paid', ${paidAt}, ${proofUrl ?? null})`;
+    }
+  } else if (!paid) {
+    await sql`
+      update payments set status = 'pending', paid_at = null
+      where order_id = ${id} and provider = 'manual' and status = 'paid'`;
+  }
+}
+
 export async function createOrder(_prev: OrderState, f: FormData): Promise<OrderState> {
   const values = {
     name: str(f, "name"),
@@ -229,47 +266,32 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
   const id = Number(f.get("id"));
   const status = str(f, "status");
   const note = str(f, "note");
+  const internalNote = str(f, "internalNote");
+  const proofUrl = str(f, "proofUrl");
   const priceRaw = digits(f, "price");
   const price = priceRaw ? Number(priceRaw) : null;
   const paid = f.get("paid") === "on";
   if (!id || !isStatus(status)) return { error: "Status pesanan tidak valid." };
 
-  const prev = (await sql`select status, note, price, paid, paid_at from orders where id = ${id}`)[0];
+  const prev = (await sql`
+    select status, note, internal_note, price, paid, paid_at from orders where id = ${id}`)[0];
   if (!prev) return { error: "Pesanan tidak ditemukan." };
 
   const paidAt = paid ? (prev.paid_at ?? new Date()) : null;
   const paymentStatus = paid ? "paid" : price !== null ? "unpaid" : "waiting";
   const rows = await sql`
     update orders set status = ${status}, price = ${price}, note = ${note || null},
-      paid = ${paid}, paid_at = ${paidAt}, payment_status = ${paymentStatus}, updated_at = now()
+      internal_note = ${internalNote || null}, paid = ${paid}, paid_at = ${paidAt},
+      payment_status = ${paymentStatus}, updated_at = now()
     where id = ${id} returning code, name, wa`;
   const order = rows[0];
   if (!order) return { error: "Pesanan tidak ditemukan." };
 
-  // Sinkronkan catatan pembayaran manual dengan centang admin.
-  if (price !== null) {
-    await sql`
-      update payments set amount = ${price}
-      where order_id = ${id} and provider = 'manual' and status = 'pending'`;
-  }
-  if (paid && paidAt) {
-    const updated = await sql`
-      update payments set status = 'paid', paid_at = ${paidAt}
-      where order_id = ${id} and provider = 'manual' and status in ('pending', 'paid')
-      returning id`;
-    if (!updated.length && price !== null) {
-      await sql`
-        insert into payments (order_id, provider, method, amount, status, paid_at)
-        values (${id}, 'manual', 'transfer', ${price}, 'paid', ${paidAt})`;
-    }
-  } else if (!paid) {
-    await sql`
-      update payments set status = 'pending', paid_at = null
-      where order_id = ${id} and provider = 'manual' and status = 'paid'`;
-  }
+  await syncManualPayment(id, price, paid, paidAt, proofUrl);
 
   const statusChanged = prev.status !== status;
   const noteChanged = (prev.note ?? "") !== note;
+  const internalNoteChanged = (prev.internal_note ?? "") !== internalNote;
   const priceChanged = (prev.price ?? null) !== price;
   const paidChanged = Boolean(prev.paid) !== paid;
 
@@ -304,11 +326,73 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
     priceChanged,
     paidChanged,
     noteChanged,
+    internalNoteChanged,
+    proofUrlChanged: Boolean(proofUrl),
   });
 
   revalidatePath("/admin");
   revalidatePath(`/lacak/${order.code}`);
+  revalidatePath(`/admin/pelanggan`);
   redirect(withQuery(str(f, "returnTo"), { open: order.code, saved: "1" }));
+}
+
+/**
+ * Aksi sekali ketuk dari daftar pesanan. Sengaja tidak mengirim WA: notifikasi
+ * tetap dikendalikan lewat editor penuh supaya kuota Fonnte tidak boros.
+ */
+export async function quickUpdateOrder(input: {
+  id: number;
+  kind: "status" | "paid";
+  value: string | boolean;
+}): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+
+  const id = Number(input?.id);
+  if (!id) return { error: "Pesanan tidak valid." };
+  if (input?.kind !== "status" && input?.kind !== "paid") return { error: "Aksi tidak dikenal." };
+
+  const prev = (await sql`
+    select code, status, price, paid, paid_at from orders where id = ${id}`)[0] as
+    | { code: string; status: string; price: number | null; paid: boolean; paid_at: Date | null }
+    | undefined;
+  if (!prev) return { error: "Pesanan tidak ditemukan." };
+
+  const price = prev.price == null ? null : Number(prev.price);
+  let status = prev.status;
+  let paid = Boolean(prev.paid);
+
+  if (input.kind === "status") {
+    const next = String(input.value);
+    if (!isStatus(next)) return { error: "Status tidak valid." };
+    status = next;
+  } else {
+    paid = Boolean(input.value);
+    if (paid && price === null) return { error: "Harga belum disepakati, belum bisa ditandai lunas." };
+  }
+
+  const paidAt = paid ? (prev.paid_at ?? new Date()) : null;
+  const paymentStatus = paid ? "paid" : price !== null ? "unpaid" : "waiting";
+
+  await sql`
+    update orders set status = ${status}, paid = ${paid}, paid_at = ${paidAt},
+      payment_status = ${paymentStatus}, updated_at = now()
+    where id = ${id}`;
+  await syncManualPayment(id, price, paid, paidAt);
+
+  if (status !== prev.status) {
+    await sql`insert into order_events (order_id, status, note) values (${id}, ${status}, null)`;
+  }
+
+  await audit("quick_update", "order", prev.code, {
+    field: input.kind,
+    status,
+    paid,
+  });
+
+  revalidatePath("/admin");
+  revalidatePath(`/lacak/${prev.code}`);
+  revalidatePath("/admin/pelanggan");
+  return { ok: true };
 }
 
 export async function deleteOrder(_prev: ActionResult, f: FormData): Promise<ActionResult> {
@@ -667,34 +751,57 @@ export async function bulkUpdateOrders(_prev: ActionResult, f: FormData): Promis
   if (codes.length === 0) return { error: "Tidak ada kode pesanan yang valid." };
 
   const status = str(f, "status");
-  const paid = f.get("paid") === "on";
   const hasStatus = isStatus(status);
-  if (!hasStatus && !f.has("paid")) return { error: "Pilih status atau centang pembayaran." };
+  // `paidMode` menggantikan checkbox lama: "", "paid", atau "unpaid".
+  const paidMode = str(f, "paidMode") || (f.has("paid") ? "paid" : "");
+  const setPaid = paidMode === "paid" || paidMode === "unpaid";
+  const paid = paidMode === "paid";
+  if (!hasStatus && !setPaid) return { error: "Pilih status atau pembayaran." };
 
   const placeholders = codes.map((_, i) => `$${i + 1}`).join(",");
   const values: Array<string | boolean> = [...codes];
-  let setClauses: string[] = [];
+  const setClauses: string[] = [];
   if (hasStatus) {
     values.push(status);
     setClauses.push(`status = $${values.length}`);
   }
-  if (f.has("paid")) {
+  if (setPaid) {
     values.push(paid);
     setClauses.push(`paid = $${values.length}`);
-    if (paid) setClauses.push(`paid_at = coalesce(paid_at, now())`);
-    else setClauses.push(`paid_at = null`);
+    setClauses.push(paid ? "paid_at = coalesce(paid_at, now())" : "paid_at = null");
+    setClauses.push(
+      paid
+        ? "payment_status = 'paid'"
+        : "payment_status = case when price is null then 'waiting' else 'unpaid' end",
+    );
   }
   setClauses.push("updated_at = now()");
-  const sqlText = `update orders set ${setClauses.join(", ")} where code in (${placeholders}) returning code`;
+  const sqlText = `update orders set ${setClauses.join(", ")} where code in (${placeholders}) returning id`;
   const rows = await sql.query(sqlText, values);
+
+  // Jalur lama hanya menyentuh orders. Sekarang baris payments dan event ikut sinkron.
+  const affected = await sql.query(
+    `select id, status, price, paid, paid_at from orders where code in (${placeholders})`,
+    codes,
+  );
+  for (const o of affected) {
+    const orderPrice = o.price == null ? null : Number(o.price);
+    const orderPaid = Boolean(o.paid);
+    const paidAt = orderPaid ? (o.paid_at ? new Date(o.paid_at) : new Date()) : null;
+    await syncManualPayment(Number(o.id), orderPrice, orderPaid, paidAt);
+    if (hasStatus) {
+      await sql`insert into order_events (order_id, status, note) values (${o.id}, ${o.status}, null)`;
+    }
+  }
 
   await audit("bulk_update", "order", codes.join(","), {
     status: hasStatus ? status : null,
-    paid: f.has("paid") ? paid : null,
+    paid: setPaid ? paid : null,
     count: rows.length,
   });
 
   revalidatePath("/admin");
+  revalidatePath("/admin/pelanggan");
   return { ok: true, reset: true };
 }
 export async function toggleReminders(_prev: ActionResult, f: FormData): Promise<ActionResult> {

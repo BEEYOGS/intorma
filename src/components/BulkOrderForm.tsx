@@ -33,14 +33,18 @@ export function BulkOrderForm() {
               ))}
             </select>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 pt-6">
-            <input type="checkbox" name="paid" className="peer sr-only" />
-            <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
-              <span aria-hidden className="check-box">✓</span>
-              <span className="text-sm font-semibold">Tandai lunas</span>
-            </span>
+          <label className="block">
+            <span className="label">Pembayaran (opsional)</span>
+            <select name="paidMode" className="field">
+              <option value="">— tidak diubah —</option>
+              <option value="paid">Tandai lunas</option>
+              <option value="unpaid">Tandai belum dibayar</option>
+            </select>
           </label>
         </div>
+        <p className="text-xs leading-5 text-mute">
+          Perubahan pembayaran otomatis menyamakan catatan transfer, status bayar, dan riwayat pesanan.
+        </p>
         <div className="flex flex-wrap items-center gap-3">
           <button type="submit" disabled={pending} className="btn btn-primary min-h-10 px-4 text-sm">
             {pending ? "Memproses…" : "Terapkan"}

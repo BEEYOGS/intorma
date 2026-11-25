@@ -13,6 +13,8 @@ type Order = {
   status: string;
   price: number | null;
   note: string | null;
+  internalNote: string | null;
+  proofUrl: string | null;
   paid: boolean;
   qty: number | null;
   unitRate: number | null;
@@ -100,6 +102,38 @@ export function OrderEditor({
           className="field resize-y"
           placeholder="Contoh: revisi 1 sudah masuk, file dikirim Jumat."
         />
+        <span className="mt-1.5 block text-xs text-mute">Ikut dikirim saat “Kabari klien” dicentang.</span>
+      </label>
+
+      <label className="mt-5 block">
+        <span className="label flex flex-wrap items-center gap-2">
+          Catatan internal
+          <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-mute">
+            Admin saja
+          </span>
+        </span>
+        <textarea
+          name="internalNote"
+          rows={2}
+          defaultValue={order.internalNote ?? ""}
+          className="field resize-y"
+          placeholder="Contoh: desainer slot A, stok habis, tunggu konfirmasi supplier."
+        />
+        <span className="mt-1.5 block text-xs text-mute">Tidak pernah dikirim ke klien, termasuk lewat WhatsApp.</span>
+      </label>
+
+      <label className="mt-5 block">
+        <span className="label">Link bukti transfer (opsional)</span>
+        <input
+          name="proofUrl"
+          type="url"
+          defaultValue={order.proofUrl ?? ""}
+          className="field"
+          placeholder="https://…"
+        />
+        <span className="mt-1.5 block text-xs text-mute">
+          Isi kalau bukti transfer tersimpan di Drive atau tempat lain. Kosongkan untuk menghapus tautan lama.
+        </span>
       </label>
 
       <div className="mt-5 grid gap-3">

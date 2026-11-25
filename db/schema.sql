@@ -56,6 +56,9 @@ alter table orders add column if not exists file_url text;
 alter table orders add column if not exists payment_method text not null default 'transfer';
 alter table orders add column if not exists payment_status text not null default 'unpaid';
 
+-- Catatan internal hanya untuk admin, tidak pernah dikirim ke klien.
+alter table orders add column if not exists internal_note text;
+
 -- untuk database yang dibuat sebelum harga per item ada
 alter table services add column if not exists pricing_mode text not null default 'flat';
 alter table services add column if not exists unit_label text not null default '';

@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/Chrome";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderEditor } from "@/components/OrderEditor";
 import { BulkOrderForm } from "@/components/BulkOrderForm";
+import { QuickActions } from "@/components/QuickActions";
 import { ChevronRight, Eye, MessageCircle, Printer, Search, X } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
@@ -67,9 +68,11 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const where = conditions.length ? `where ${conditions.join(" and ")}` : "";
   const from = `from orders o left join services v on v.id = o.service_id`;
 
-  const [orders, matched, counts, unpaid, revenue] = await Promise.all([
+  const [orders, matched, counts, unpaid, revenue, aging] = await Promise.all([
     sql.query(
-      `select o.*, coalesce(v.name, o.service_label) as service, v.price_from as service_price, v.unit_label as unit_label ${from} ${where}
+      `select o.*, coalesce(v.name, o.service_label) as service, v.price_from as service_price, v.unit_label as unit_label,
+        (select p.proof_url from payments p where p.order_id = o.id and p.provider = 'manual' order by p.id desc limit 1) as proof_url
+       ${from} ${where}
        order by o.created_at desc limit 100`,
       values,
     ),
@@ -77,6 +80,14 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
     sql`select status, count(*)::int as n from orders group by status`,
     sql`select count(*)::int as n from orders where price is not null and not paid and status <> 'batal'`,
     sql`select coalesce(sum(price), 0)::int as total from orders where paid`,
+    sql`
+      select
+        coalesce(sum(price) filter (where created_at > now() - interval '3 days'), 0)::int as baru,
+        coalesce(sum(price) filter (where created_at <= now() - interval '3 days' and created_at > now() - interval '7 days'), 0)::int as menengah,
+        coalesce(sum(price) filter (where created_at <= now() - interval '7 days'), 0)::int as tua,
+        coalesce(sum(price), 0)::int as total
+      from orders
+      where price is not null and not paid and status <> 'batal'`,
   ]);
 
   const count = (st: string) => Number(counts.find((c) => c.status === st)?.n ?? 0);
@@ -84,6 +95,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const unpaidCount = Number(unpaid[0]?.n ?? 0);
   const paidTotal = Number(revenue[0]?.total ?? 0);
   const resultCount = Number(matched[0]?.n ?? 0);
+  const due = aging[0] as { baru: number; menengah: number; tua: number; total: number } | undefined;
+  const dueTotal = Number(due?.total ?? 0);
 
   const keepSearch = (path: string) =>
     q ? `${path}${path.includes("?") ? "&" : "?"}q=${encodeURIComponent(q)}` : path;
@@ -122,6 +135,33 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         <Stat label="Selesai" value={count("selesai")} hint="total pesanan selesai" />
         <Stat label="Belum dibayar" value={unpaidCount} hint="harga sudah disepakati" href={keepSearch("/admin?p=belum")} />
       </div>
+
+      {dueTotal > 0 && (
+        <Link
+          href={keepSearch("/admin?p=belum")}
+          className="mt-4 block rounded-tag-lg border border-line bg-panel/50 p-4 transition-colors hover:border-[var(--border-2)] sm:p-5"
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">
+              Piutang menunggu transfer
+            </p>
+            <p className="font-semibold tabular-nums">{rupiah(dueTotal)}</p>
+          </div>
+          <div
+            aria-hidden
+            className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-white/[0.05]"
+          >
+            <span style={{ width: `${(Number(due?.baru ?? 0) / dueTotal) * 100}%` }} className="bg-[var(--text-2)]" />
+            <span style={{ width: `${(Number(due?.menengah ?? 0) / dueTotal) * 100}%` }} className="bg-[var(--text-3)]" />
+            <span style={{ width: `${(Number(due?.tua ?? 0) / dueTotal) * 100}%` }} className="bg-danger/70" />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-mute">
+            <span><span aria-hidden className="mr-1.5 inline-block size-1.5 rounded-full bg-[var(--text-2)]" />&lt; 3 hari · {rupiah(Number(due?.baru ?? 0))}</span>
+            <span><span aria-hidden className="mr-1.5 inline-block size-1.5 rounded-full bg-[var(--text-3)]" />3–7 hari · {rupiah(Number(due?.menengah ?? 0))}</span>
+            <span><span aria-hidden className="mr-1.5 inline-block size-1.5 rounded-full bg-danger/70" />&gt; 7 hari · {rupiah(Number(due?.tua ?? 0))}</span>
+          </div>
+        </Link>
+      )}
 
       <form action="/admin" method="get" className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
         {filter && <input type="hidden" name="s" value={filter} />}
@@ -340,9 +380,18 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                     </div>
 
                     <div className="grid gap-4">
+                      <QuickActions
+                        id={Number(o.id)}
+                        code={o.code}
+                        status={o.status}
+                        paid={Boolean(o.paid)}
+                        price={price}
+                      />
+
                       <OrderEditor
                         order={{
-                          id: Number(o.id), status: o.status, price, note: o.note, paid: Boolean(o.paid),
+                          id: Number(o.id), status: o.status, price, note: o.note,
+                          internalNote: o.internal_note, proofUrl: o.proof_url, paid: Boolean(o.paid),
                           qty: o.qty == null ? null : Number(o.qty),
                           unitRate: o.unit_rate == null ? null : Number(o.unit_rate),
                           unitLabel: String(o.unit_label ?? ""),

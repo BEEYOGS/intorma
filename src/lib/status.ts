@@ -60,3 +60,12 @@ export const STATUS_META: Record<
 export const isStatus = (s: string): s is Status => (STATUSES as readonly string[]).includes(s);
 
 export const asStatus = (s: string): Status => (isStatus(s) ? s : "menunggu");
+
+/** Pilihan status lanjutan untuk aksi cepat. Editor penuh tetap boleh memilih semua status. */
+export const NEXT_STATUS: Record<Status, readonly Status[]> = {
+  menunggu: ["dikerjakan", "batal"],
+  dikerjakan: ["selesai", "revisi"],
+  revisi: ["dikerjakan", "selesai"],
+  selesai: ["dikerjakan"],
+  batal: ["menunggu"],
+};

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BarChart3, ClipboardList, ExternalLink, History, Layers3, LogOut, Settings2 } from "lucide-react";
+import { BarChart3, ClipboardList, ExternalLink, History, Layers3, LogOut, Settings2, UsersRound } from "lucide-react";
 import { adminLogout } from "@/app/actions";
 import { SITE_NAME } from "@/lib/site";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -8,6 +8,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 const tabs = [
   { href: "/admin", label: "Pesanan", short: "Pesanan", key: "orders", icon: ClipboardList },
   { href: "/admin/analitik", label: "Analitik", short: "Analitik", key: "analytics", icon: BarChart3 },
+  { href: "/admin/pelanggan", label: "Pelanggan", short: "Pelanggan", key: "customers", icon: UsersRound },
   { href: "/admin/layanan", label: "Layanan & harga", short: "Layanan", key: "services", icon: Layers3 },
   { href: "/admin/audit", label: "Log aktivitas", short: "Audit", key: "audit", icon: History },
   { href: "/admin/pengaturan", label: "Pengaturan", short: "Setelan", key: "settings", icon: Settings2 },
@@ -27,7 +28,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/int.svg" alt={SITE_NAME} className="h-6 w-auto" />
             </Link>
-            <div className="hidden items-center gap-1 sm:flex" aria-label="Navigasi admin">
+            <div className="hidden items-center gap-1 overflow-x-auto sm:flex" aria-label="Navigasi admin">
               {tabs.map((tab) => {
                 const on = active === tab.key;
                 const Icon = tab.icon;
@@ -36,14 +37,15 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
                     key={tab.key}
                     href={tab.href}
                     aria-current={on ? "page" : undefined}
-                    className={`inline-flex items-center gap-2 rounded-[var(--radius)] px-3 py-2 text-[13px] font-medium transition-colors ${
+                    className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--radius)] px-2.5 py-2 text-[13px] font-medium transition-colors lg:px-3 ${
                       on
                         ? "bg-[var(--panel-2)] text-[var(--text)]"
                         : "text-[var(--text-3)] hover:bg-[var(--panel)] hover:text-[var(--text)]"
                     }`}
                   >
                     <Icon aria-hidden className="size-4" strokeWidth={1.8} />
-                    {tab.label}
+                    <span className="hidden lg:inline">{tab.label}</span>
+                    <span className="lg:hidden">{tab.short}</span>
                   </Link>
                 );
               })}
@@ -81,7 +83,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
         aria-label="Navigasi admin bawah"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--bg)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm sm:hidden"
       >
-        <ul className="grid grid-cols-5">
+        <ul className="grid grid-cols-6">
           {tabs.map((tab) => {
             const on = active === tab.key;
             const Icon = tab.icon;

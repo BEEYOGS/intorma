@@ -176,3 +176,22 @@ Buka `/admin/layanan`, lalu buka layanan yang ingin diatur. Di bawah form harga 
 **Opsi & finishing** untuk menambah grup (bahan, ukuran, finishing, paket) dan nilainya—termasuk
 harga tambahan, basis hitung (per item/per m² atau sekali pesanan), opsi default, dan status aktif.
 Perubahan langsung dipakai halaman `/order` tanpa menjalankan SQL manual.
+
+### Alur kerja admin
+
+- **Triage cepat**: buka pesanan, lalu pakai tombol **Aksi cepat** untuk lanjut status atau
+  tandai lunas sekali ketuk. Aksi ini sengaja tidak mengirim WhatsApp supaya kuota tidak boros.
+  Untuk mengabari klien, pakai editor penuh dan centang “Kabari klien lewat WhatsApp”.
+- **Catatan internal** pada editor penuh hanya terlihat admin dan tidak pernah masuk pesan WA.
+- **Bukti transfer**: kolom link bukti pada editor penuh tersimpan di `payments.proof_url`.
+  Kosongkan untuk menghapus tautan lama.
+- **Piutang**: kartu “Piutang menunggu transfer” di `/admin` memecah nominal berdasarkan umur
+  (<3 hari, 3–7 hari, >7 hari). Klik untuk membuka filter `?p=belum`.
+- **Aksi massal**: bisa mengubah status sekaligus memilih **lunas / belum dibayar / tidak diubah**.
+  Sinkronisasi `payment_status`, `paid_at`, tabel `payments`, dan `order_events` ikut berjalan.
+- **CRM**: `/admin/pelanggan` mengelompokkan pesanan per nomor WhatsApp lengkap dengan total
+  belanja, piutang, riwayat pesanan, dan tombol chat langsung.
+- **Pengingat**: cron harian mengirim maksimal satu WA per pesanan per hari (kunci idempotensi
+  `reminder-<kode>-<tanggal>` di `wa_outbox`).
+
+Kolom `orders.internal_note` ditambahkan lewat `npm run db:migrate` (idempoten).
