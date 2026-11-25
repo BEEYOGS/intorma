@@ -18,10 +18,13 @@ const fontSerifItalic = localFont({
   fallback: ["Georgia", "serif"],
 });
 
+import { ToastHost } from "@/components/Toast";
+
 export const metadata: Metadata = {
   title: { default: "in.torma — Studio desain & cetak", template: "%s — in.torma" },
   description: "Logo, poster, konten sosial, kemasan, sampai spanduk dan kartu nama. Brief singkat, harga jelas, progres bisa dipantau.",
   applicationName: "in.torma",
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
@@ -36,6 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="id" className={`${fontSans.variable} ${fontSerifItalic.variable}`}>
       <body className="min-h-dvh bg-[var(--bg)] text-[var(--text)]">
         <main>{children}</main>
+        <ToastHost />
       </body>
     </html>
   );

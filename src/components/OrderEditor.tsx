@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, type CSSProperties } from "react";
+import { useActionState, useEffect, type CSSProperties } from "react";
+import { toast } from "@/components/Toast";
 import { updateOrder, type ActionResult } from "@/app/actions";
 import { rupiah } from "@/lib/format";
 import { priceBreakdown } from "@/lib/pricing";
@@ -28,6 +29,11 @@ export function OrderEditor({
   returnTo: string;
 }) {
   const [state, action, pending] = useActionState<ActionResult, FormData>(updateOrder, null);
+
+  useEffect(() => {
+    if (state?.ok) toast("Perubahan pesanan tersimpan.", "ok");
+    if (state?.error) toast(state.error, "error");
+  }, [state]);
   const status = (STATUSES as readonly string[]).includes(order.status) ? (order.status as Status) : "menunggu";
 
   return (
