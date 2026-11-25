@@ -109,7 +109,7 @@ export function OrderEditor({
         </label>
 
         <label className="block cursor-pointer">
-          <input type="checkbox" name="notify" defaultChecked className="peer sr-only" />
+          <input type="checkbox" name="notify" className="peer sr-only" />
           <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink">
             <span aria-hidden className="check-box">✓</span>
             <span>
