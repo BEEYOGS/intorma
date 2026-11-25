@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ClipboardList, ExternalLink, Layers3, LogOut, Settings2 } from "lucide-react";
+import { BarChart3, ClipboardList, ExternalLink, History, Layers3, LogOut, Settings2 } from "lucide-react";
 import { adminLogout } from "@/app/actions";
 import { SITE_NAME } from "@/lib/site";
 
 const tabs = [
   { href: "/admin", label: "Pesanan", short: "Pesanan", key: "orders", icon: ClipboardList },
+  { href: "/admin/analitik", label: "Analitik", short: "Analitik", key: "analytics", icon: BarChart3 },
   { href: "/admin/layanan", label: "Layanan & harga", short: "Layanan", key: "services", icon: Layers3 },
+  { href: "/admin/audit", label: "Log aktivitas", short: "Audit", key: "audit", icon: History },
   { href: "/admin/pengaturan", label: "Pengaturan", short: "Setelan", key: "settings", icon: Settings2 },
 ] as const;
 
@@ -76,7 +78,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
         aria-label="Navigasi admin bawah"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--bg)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm sm:hidden"
       >
-        <ul className="grid grid-cols-3">
+        <ul className="grid grid-cols-5">
           {tabs.map((tab) => {
             const on = active === tab.key;
             const Icon = tab.icon;

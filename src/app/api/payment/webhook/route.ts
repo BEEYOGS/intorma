@@ -4,6 +4,7 @@ import { sql } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { gatewayEnabled, isSettlement, midtransSignature } from "@/lib/payment";
 import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
+import { audit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
@@ -72,5 +73,6 @@ export async function POST(req: Request) {
 
   revalidatePath(`/lacak/${order.code}`);
   revalidatePath("/admin");
+  await audit("payment", "order", order.code, { amount: order.price, provider: "midtrans" });
   return NextResponse.json({ ok: true });
 }

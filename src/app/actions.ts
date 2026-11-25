@@ -18,6 +18,7 @@ import {
 } from "@/lib/customer-auth";
 import { createMidtransTransaction, gatewayEnabled } from "@/lib/payment";
 import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
+import { audit } from "@/lib/audit";
 
 export type OrderState = {
   error?: string;
@@ -193,6 +194,14 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     ]);
   }
 
+  const adminCreating = await isAdmin();
+  await audit("create", "order", order.code, {
+    name: values.name,
+    service: svc.name,
+    price: quote.price,
+    wa: values.wa,
+  }, adminCreating ? "admin" : "customer");
+
   redirect(`/lacak/${order.code}?baru=1`);
 }
 
@@ -286,6 +295,17 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
     await sendWA(order.wa, parts.join("\n\n"));
   }
 
+  await audit("update", "order", order.code, {
+    status,
+    price,
+    paid,
+    note: note || null,
+    statusChanged,
+    priceChanged,
+    paidChanged,
+    noteChanged,
+  });
+
   revalidatePath("/admin");
   revalidatePath(`/lacak/${order.code}`);
   redirect(withQuery(str(f, "returnTo"), { open: order.code, saved: "1" }));
@@ -307,6 +327,9 @@ export async function deleteOrder(_prev: ActionResult, f: FormData): Promise<Act
 
   // order_events punya ON DELETE CASCADE, jadi riwayat ikut terhapus.
   await sql`delete from orders where id = ${id}`;
+
+  await audit("delete", "order", code);
+
   revalidatePath("/admin");
   redirect(withQuery(str(f, "returnTo"), { deleted: code }));
 }
@@ -374,7 +397,8 @@ export async function saveService(_prev: ActionResult, f: FormData): Promise<Act
     revalidatePath("/admin/layanan");
     revalidatePath("/");
     revalidatePath("/order");
-    return { ok: true, reset: true };
+         await audit("create", "service", id, { name, price, pricingModel, active });
+     return { ok: true, reset: true };
   }
 
   const id = str(f, "id");
@@ -387,6 +411,8 @@ export async function saveService(_prev: ActionResult, f: FormData): Promise<Act
       price_note = ${priceNote}
     where id = ${id} returning id`;
   if (!rows[0]) return { error: "Layanan tidak ditemukan." };
+
+  await audit("update", "service", id, { name, price, pricingModel, active });
 
   revalidatePath("/admin/layanan");
   revalidatePath("/");
@@ -412,6 +438,8 @@ export async function deleteService(_prev: ActionResult, f: FormData): Promise<A
   await sql`update orders set service_id = null where service_id = ${id}`;
   await sql`delete from services where id = ${id}`;
 
+  await audit("delete", "service", id, { name: service.name });
+
   revalidatePath("/admin/layanan");
   revalidatePath("/admin");
   revalidatePath("/");
@@ -432,6 +460,8 @@ export async function saveSettings(_prev: ActionResult, f: FormData): Promise<Ac
   if (enabled && !bankAccount) return { error: "Isi nomor rekening, atau matikan pembayaran transfer." };
 
   await savePaymentSettings({ enabled, bankName, bankAccount, bankHolder, note });
+
+  await audit("update", "settings", "payment", { enabled, bankName, bankAccount, bankHolder });
 
   revalidatePath("/admin/pengaturan");
   revalidatePath("/");
