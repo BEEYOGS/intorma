@@ -66,7 +66,7 @@ export function StatusTree({
               {index < MAIN.length - 1 && (
                 <span
                   aria-hidden
-                  className={`absolute left-[19px] top-10 h-[calc(100%-2rem)] w-px transition-[background] duration-500 ${state === "done" ? "flow-line" : ""}`}
+                  className={`absolute bottom-1 left-[19px] top-11 w-px rounded-full transition-[background] duration-500 ${state === "done" ? "flow-line" : ""}`}
                   style={{
                     background: state === "done" ? lineGradient : "var(--border)",
                     backgroundSize: state === "done" ? "100% 200%" : undefined,
@@ -75,7 +75,7 @@ export function StatusTree({
               )}
               <span
                 aria-hidden
-                className={`absolute left-0 top-0 grid size-10 place-items-center rounded-full border transition-colors ${isActive ? "animate-pulse" : ""}`}
+                className={`absolute left-0 top-0 z-10 grid size-10 place-items-center rounded-full border transition-colors ${isActive ? "animate-pulse" : ""}`}
                 style={{
                   color: state === "idle" ? "var(--text-3)" : meta.color,
                   borderColor: state === "idle" ? "var(--border)" : `color-mix(in srgb, ${meta.color} 45%, transparent)`,
