@@ -51,15 +51,26 @@ export function StatusTree({
           const branchMeta = branch ? STATUS_META[branch] : null;
           const branchEvents = branch ? events.filter((e) => e.status === branch) : [];
           const branchActive = branch === status;
-          const grad = `linear-gradient(135deg, ${index > 0 ? STATUS_META[MAIN[index - 1].status].color : meta.color}, ${meta.color})`;
+          // Garis penghubung mengikuti tujuan proses: menunggu -> dikerjakan = kuning -> biru.
+          const next = MAIN[index + 1];
+          const lineTarget =
+            branch && branchMeta && branchActive
+              ? branchMeta.color
+              : next
+                ? STATUS_META[next.status].color
+                : meta.color;
+          const lineGradient = `linear-gradient(180deg, ${meta.color}, ${lineTarget})`;
 
           return (
             <li key={step.status} className="relative pb-5 pl-12 last:pb-0">
               {index < MAIN.length - 1 && (
                 <span
                   aria-hidden
-                  className="absolute left-[19px] top-10 h-[calc(100%-2rem)] w-px"
-                  style={{ background: state === "done" ? meta.color : "var(--border)" }}
+                  className={`absolute left-[19px] top-10 h-[calc(100%-2rem)] w-px transition-[background] duration-500 ${state === "done" ? "flow-line" : ""}`}
+                  style={{
+                    background: state === "done" ? lineGradient : "var(--border)",
+                    backgroundSize: state === "done" ? "100% 200%" : undefined,
+                  }}
                 />
               )}
               <span
@@ -79,7 +90,7 @@ export function StatusTree({
                 className={`rounded-tag-sm border px-4 py-3 transition-colors ${isActive ? "animate-in" : ""}`}
                 style={{
                   borderColor: isActive ? `color-mix(in srgb, ${meta.color} 40%, transparent)` : "var(--border)",
-                  background: isActive ? grad : "transparent",
+                  background: isActive ? meta.soft : "transparent",
                   transition: "background 0.45s ease, border-color 0.45s ease",
                 }}
               >

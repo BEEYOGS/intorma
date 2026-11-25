@@ -322,6 +322,20 @@ kbd {
   animation: fade-in 0.3s ease-out;
 }
 
+/* Garis alur: gradasi warna status mengalir halus dari atas ke bawah. */
+@keyframes flow-line {
+  from { background-position: 0% 0%; }
+  to { background-position: 0% 100%; }
+}
+
+.flow-line {
+  animation: flow-line 2.4s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-line { animation: none; }
+}
+
 /* Halaman: fade + naik halus saat navigasi antar halaman. */
 @keyframes page-in {
   from { opacity: 0; transform: translateY(6px); }
