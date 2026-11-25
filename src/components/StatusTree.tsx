@@ -52,14 +52,6 @@ export function StatusTree({
           const branchEvents = branch ? events.filter((e) => e.status === branch) : [];
           const branchActive = branch === status;
           const grad = `linear-gradient(135deg, ${index > 0 ? STATUS_META[MAIN[index - 1].status].color : meta.color}, ${meta.color})`;
-          const lineTarget =
-            branch && branchMeta && branchActive
-              ? branchMeta.color
-              : index + 1 < MAIN.length
-                ? STATUS_META[MAIN[index + 1].status].color
-                : meta.color;
-          const branchFrom = (Object.keys(BRANCH_AFTER) as Status[]).find((k) => BRANCH_AFTER[k] === branch) as Status | undefined;
-          const branchGrad = branch && branchMeta && branchFrom ? `linear-gradient(135deg, ${STATUS_META[branchFrom].color}, ${branchMeta.color})` : null;
 
           return (
             <li key={step.status} className="relative pb-5 pl-12 last:pb-0">
@@ -67,12 +59,7 @@ export function StatusTree({
                 <span
                   aria-hidden
                   className="absolute left-[19px] top-10 h-[calc(100%-2rem)] w-px"
-                  style={{
-                    background:
-                      state === "done"
-                        ? `linear-gradient(90deg, ${meta.color}, ${lineTarget})`
-                        : "var(--border)",
-                  }}
+                  style={{ background: state === "done" ? meta.color : "var(--border)" }}
                 />
               )}
               <span
@@ -126,7 +113,7 @@ export function StatusTree({
                     className={`flex flex-wrap items-center gap-2 rounded-tag-sm border px-3 py-2 transition-colors ${branchActive ? "animate-in" : ""}`}
                     style={{
                       borderColor: branchActive ? `color-mix(in srgb, ${branchMeta.color} 40%, transparent)` : "var(--border)",
-                      background: branchActive && branchGrad ? branchGrad : branchActive ? branchMeta.soft : "transparent",
+                      background: branchActive ? branchMeta.soft : "transparent",
                       color: branchActive ? branchMeta.color : "var(--text-3)",
                       transition: "background 0.45s ease, border-color 0.45s ease",
                     }}
