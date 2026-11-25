@@ -34,7 +34,7 @@ export function StatusTree({
       <div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">
         <GitBranch aria-hidden className="size-3.5" /> Alur pesanan
       </div>
-      <ol className="relative ml-1">
+      <ol className="relative ml-1 animate-in">
         {MAIN.map((step, index) => {
           const meta = STATUS_META[step.status];
           const state =
@@ -74,7 +74,8 @@ export function StatusTree({
               </span>
 
               <div
-                className="rounded-tag-sm border px-4 py-3 transition-colors"
+                key={`${step.status}-${isActive ? "in" : "out"}`}
+                className={`rounded-tag-sm border px-4 py-3 transition-colors ${isActive ? "animate-in" : ""}`}
                 style={{
                   borderColor: isActive ? `color-mix(in srgb, ${meta.color} 40%, transparent)` : "var(--border)",
                   background: isActive ? meta.soft : "transparent",
@@ -106,7 +107,8 @@ export function StatusTree({
                 <div className="relative ml-4 mt-2 border-l border-dashed border-line pl-6">
                   <span aria-hidden className="absolute -left-px top-0 h-5 w-5 rounded-bl-[12px] border-b border-l border-line" />
                   <div
-                    className="flex flex-wrap items-center gap-2 rounded-tag-sm border px-3 py-2"
+                    key={branchActive ? "branch-in" : "branch-out"}
+                    className={`flex flex-wrap items-center gap-2 rounded-tag-sm border px-3 py-2 transition-colors ${branchActive ? "animate-in" : ""}`}
                     style={{
                       borderColor: branchActive ? `color-mix(in srgb, ${branchMeta.color} 40%, transparent)` : "var(--border)",
                       background: branchActive ? branchMeta.soft : "transparent",
