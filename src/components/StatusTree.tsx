@@ -55,11 +55,15 @@ export function StatusTree({
           return (
             <li key={step.status} className="relative pb-5 pl-12 last:pb-0">
               {index < MAIN.length - 1 && (
-                <span aria-hidden className="absolute left-[19px] top-10 h-[calc(100%-2rem)] w-px bg-line" />
+                <span
+                  aria-hidden
+                  className="absolute left-[19px] top-10 h-[calc(100%-2rem)] w-px"
+                  style={{ background: state === "done" ? meta.color : "var(--border)" }}
+                />
               )}
               <span
                 aria-hidden
-                className="absolute left-0 top-0 grid size-10 place-items-center rounded-full border transition-colors"
+                className={`absolute left-0 top-0 grid size-10 place-items-center rounded-full border transition-colors ${isActive ? "animate-pulse" : ""}`}
                 style={{
                   color: state === "idle" ? "var(--text-3)" : meta.color,
                   borderColor: state === "idle" ? "var(--border)" : `color-mix(in srgb, ${meta.color} 45%, transparent)`,
