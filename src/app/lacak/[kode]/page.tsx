@@ -7,6 +7,7 @@ import { NotaQrCard } from "@/components/NotaQrCard";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { PayButton } from "@/components/PayButton";
 import { StatusTree } from "@/components/StatusTree";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { IconForStatus } from "@/components/StatusIcon";
 import { ArrowLeft } from "lucide-react";
 import { sql } from "@/lib/db";
@@ -119,6 +120,7 @@ export default async function TrackPage({
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{order.code}</h1>
                   <StatusBadge color={meta.color} label={meta.label} status={st} />
+                  <LiveRefresh />
                 </div>
                 <p className="mt-2 text-sm text-mute">
                   {order.service ?? "Pesanan"} · dibuat {tanggal(order.created_at)} · atas nama {order.name}
