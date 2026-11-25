@@ -78,6 +78,7 @@ export function OrderForm({
   const [fileLink, setFileLink] = useState(v.file || "");
   const [uploadedName, setUploadedName] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [query, setQuery] = useState("");
@@ -138,8 +139,8 @@ export function OrderForm({
     });
   }
 
-  async function uploadFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  async function uploadFile(fileOrEvent: File | ChangeEvent<HTMLInputElement>) {
+    const file = fileOrEvent instanceof File ? fileOrEvent : fileOrEvent.target.files?.[0];
     if (!file) return;
     const formName = formRef.current
       ? String(new FormData(formRef.current).get("name") ?? "").trim()
@@ -147,6 +148,7 @@ export function OrderForm({
     setUploading(true);
     setUploadError("");
     setUploadProgress(null);
+    setDragging(false);
     try {
       const data = await uploadFileToStorage(file, {
         customerName: formName || customer?.name || "",
@@ -161,7 +163,7 @@ export function OrderForm({
       setUploadProgress(null);
     } finally {
       setUploading(false);
-      event.target.value = "";
+      if (!(fileOrEvent instanceof File) && fileOrEvent.target) fileOrEvent.target.value = "";
     }
   }
 
@@ -564,16 +566,38 @@ export function OrderForm({
                   : "Google Drive belum aktif, jadi unggah dinonaktifkan. Hubungi admin atau tempel link Google Drive/WeTransfer."}{" "}
                 Format aman: PDF, JPG, PNG, AI, PSD, CDR, TIFF, atau ZIP.
               </p>
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div
+                onDragOver={(e) => {
+                  if (!driveReady || uploading) return;
+                  e.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={(e) => {
+                  if (!driveReady || uploading) return;
+                  e.preventDefault();
+                  setDragging(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) uploadFile(file);
+                }}
+                className={`relative rounded-tag-sm border-2 border-dashed p-4 transition-colors ${
+                  dragging
+                    ? "border-accent bg-accent/[0.08]"
+                    : "border-line bg-panel/30 hover:border-accent/40"
+                } ${!driveReady ? "opacity-50" : ""}`}
+              >
                 <label className="block">
                   <span className="label">Upload dari perangkat</span>
                   <input
                     type="file"
-                    onChange={uploadFile}
+                    onChange={(e) => uploadFile(e)}
                     disabled={uploading || !driveReady}
                     accept={ACCEPT_ATTR}
-                    className="field !py-2 text-xs file:mr-3 file:rounded-[var(--radius)] file:border file:border-line file:bg-sand file:px-3 file:py-1.5 file:text-xs file:font-medium"
+                    className="sr-only"
                   />
+                  <span className="mt-2 flex cursor-pointer items-center justify-center rounded-[var(--radius)] border border-line bg-sand px-4 py-3 text-xs font-medium transition-colors hover:border-accent/40">
+                    {uploading ? "Mengunggah…" : "Pilih file atau seret ke sini"}
+                  </span>
                   <span className="mt-1.5 block text-xs text-mute">
                     {uploading
                       ? "Mengunggah langsung ke Google Drive…"
@@ -581,30 +605,31 @@ export function OrderForm({
                         ? `Tersimpan: ${uploadedName}`
                         : "File kecil maupun besar didukung. Format PDF, gambar, atau file desain."}
                   </span>
-                  <UploadProgressBar
-                    progress={uploadProgress}
-                    label={
-                      uploadProgress && uploadProgress.percent >= 100
-                        ? "Menyimpan file…"
-                        : "Mengunggah ke Google Drive"
-                    }
-                  />
-                  {fileLink.startsWith("/api/upload/") && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFileLink("");
-                        setUploadedName("");
-                        setUploadProgress(null);
-                        setUploadError("");
-                      }}
-                      className="mt-1 text-xs font-medium text-mute underline underline-offset-4 hover:text-ink"
-                    >
-                      Hapus file
-                    </button>
-                  )}
-                  {uploadError && <span role="alert" className="mt-1 block text-xs text-danger">{uploadError}</span>}
                 </label>
+                <UploadProgressBar
+                  progress={uploadProgress}
+                  label={
+                    uploadProgress && uploadProgress.percent >= 100
+                      ? "Menyimpan file…"
+                      : "Mengunggah ke Google Drive"
+                  }
+                />
+                {fileLink.startsWith("/api/upload/") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFileLink("");
+                      setUploadedName("");
+                      setUploadProgress(null);
+                      setUploadError("");
+                    }}
+                    className="mt-1 text-xs font-medium text-mute underline underline-offset-4 hover:text-ink"
+                  >
+                    Hapus file
+                  </button>
+                )}
+                {uploadError && <span role="alert" className="mt-1 block text-xs text-danger">{uploadError}</span>}
+              </div>
                 <label className="block">
                   <span className="label">Link file</span>
                   <input
@@ -619,7 +644,6 @@ export function OrderForm({
                     Pastikan admin bisa membuka link ini. Belum punya file? Chat kami dulu lewat WhatsApp.
                   </span>
                 </label>
-              </div>
             </fieldset>
           )}
 
