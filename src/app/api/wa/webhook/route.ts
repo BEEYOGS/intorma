@@ -9,12 +9,24 @@ export async function POST(req: Request) {
   const secret = process.env.OPENWA_WEBHOOK_SECRET;
   if (!secret || new URL(req.url).searchParams.get("s") !== secret) return NextResponse.json({ ok: false }, { status: 401 });
   const payload = await req.json().catch(() => null);
-  const msg = payload?.data;
-  if (payload?.event !== "message.received" || !msg) return NextResponse.json({ ok: true, ignored: true });
-  const from = String(msg.from ?? msg.chatId ?? "");
-  const isGroup = msg.isGroup === true || msg.isGroupMsg === true || from.endsWith("@g.us");
-  if (!from || msg.fromMe === true || isGroup) return NextResponse.json({ ok: true, ignored: true });
-  const body = String(msg.body ?? msg.text ?? msg.content ?? "");
+  // OpenWA mengirim { event, data }, Fonnte mengirim { sender, message, ... }.
+  const isFonnte = Boolean(payload && !payload.event && typeof payload.sender === "string");
+  const msg = isFonnte ? payload : payload?.data;
+  if (!isFonnte && (payload?.event !== "message.received" || !msg)) {
+    return NextResponse.json({ ok: true, ignored: true });
+  }
+  const from = isFonnte ? String(payload.sender ?? "") : String(msg?.from ?? msg?.chatId ?? "");
+  const isGroup =
+    msg?.isGroup === true ||
+    msg?.isGroupMsg === true ||
+    from.endsWith("@g.us") ||
+    (isFonnte && Boolean(payload.member));
+  if (!from || (!isFonnte && msg?.fromMe === true) || isGroup) {
+    return NextResponse.json({ ok: true, ignored: true });
+  }
+  const body = String(
+    isFonnte ? payload.message ?? "" : msg?.body ?? msg?.text ?? msg?.content ?? "",
+  );
   const match = body.match(/status\s*[:#-]?\s*(?:INT[-\s]?)?([A-Z0-9]{6})/i);
   if (!match) return NextResponse.json({ ok: true, ignored: true });
   const code = `INT-${match[1].toUpperCase()}`;

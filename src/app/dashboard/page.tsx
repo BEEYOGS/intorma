@@ -17,12 +17,13 @@ export default async function DashboardPage() {
     waDiagnostics().catch(() => null),
     sql`select 1`.then(() => true).catch(() => false),
   ]);
+  const waReady = Boolean(wa?.configured && wa.gatewayReachable && wa.sessionStatus === "ready");
   const status = [
     { label: "Pembayaran online", ok: gatewayEnabled(), on: "aktif", off: "nonaktif" },
     { label: "Database", ok: dbOk, on: "terhubung", off: "gagal" },
     {
-      label: "WhatsApp",
-      ok: Boolean(wa?.configured && wa.gatewayReachable && wa.sessionStatus === "ready"),
+      label: wa?.provider === "fonnte" ? "WhatsApp (Fonnte)" : "WhatsApp",
+      ok: waReady,
       on: "siap",
       off: "belum siap",
     },
@@ -78,6 +79,10 @@ export default async function DashboardPage() {
                   </div>
                 ))}
               </div>
+              <p className="mt-3 border-t border-line pt-3 text-[11px] leading-5 text-mute">
+                Provider: {wa?.provider === "fonnte" ? "Fonnte (hosted)" : "OpenWA"}
+                {!waReady && wa?.error ? ` · ${wa.error}` : ""}
+              </p>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { gatewayEnabled, isSettlement, midtransSignature } from "@/lib/payment";
-import { sendWA, siteUrl } from "@/lib/wa";
+import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
 
 export const runtime = "nodejs";
 
@@ -65,8 +65,8 @@ export async function POST(req: Request) {
   const link = `${siteUrl()}/lacak/${order.code}`;
   await Promise.all([
     sendWA(order.wa, `Halo ${order.name}, pembayaran pesanan ${order.code} sebesar ${rupiah(Number(order.price ?? 0))} sudah kami terima. Terima kasih!\n\nPantau: ${link}`),
-    process.env.ADMIN_WA
-      ? sendWA(process.env.ADMIN_WA, `Pembayaran masuk via Midtrans untuk ${order.code} — ${order.name}.\nTotal: ${rupiah(Number(order.price ?? 0))}`)
+    adminWhatsApp()
+      ? sendWA(adminWhatsApp(), `Pembayaran masuk via Midtrans untuk ${order.code} — ${order.name}.\nTotal: ${rupiah(Number(order.price ?? 0))}`)
       : Promise.resolve(false),
   ]);
 

@@ -89,27 +89,48 @@ Dengan Drive aktif:
 
 ### WhatsApp
 
-Notifikasi langsung dikirim dengan `await` ke gateway. Kalau gateway tidak bisa dijangkau dari
-Vercel, pesan otomatis masuk `wa_outbox` dan dikirim oleh `npm run wa:agent` di mesin yang sama
-dengan gateway. Variabel yang dipakai:
+Ada dua provider. Untuk produksi yang harus **selalu online tanpa PC**, pakai Fonnte:
 
 ```
-OPENWA_BASE_URL=https://gateway-publik-contoh.example.com
-OPENWA_API_KEY=...
-OPENWA_SESSION=intorma
+WA_PROVIDER=fonnte
+FONNTE_TOKEN=token-dari-dashboard-fonnte
+OPENWA_WEBHOOK_SECRET=string-acak-untuk-webhook
 ADMIN_WHATSAPP_NUMBER=0895329940950
 ```
 
-Alias lama `OPENWA_URL`, `OPENWA_KEY`, dan `ADMIN_WA` masih dibaca kalau variabel baru kosong.
+1. Daftar di [fonnte.com](https://fonnte.com), buat device, lalu hubungkan WhatsApp dengan scan QR
+   sekali di dashboard Fonnte.
+2. Salin token device ke `FONNTE_TOKEN` di Vercel.
+3. Set webhook device ke `https://intorma-psi.vercel.app/api/wa/webhook?s=OPENWA_WEBHOOK_SECRET`.
+4. Aktifkan autoread di device Fonnte.
 
-Balasan otomatis `status INT-XXXXXX` tidak bergantung pada Vercel. `npm run wa:agent` menyalakan
-webhook lokal di `http://127.0.0.1:2786/webhook` (health: `/health`), lalu
-`npm run wa:webhook` mendaftarkannya ke sesi OpenWA. Jadi tidak perlu tunnel publik untuk WA.
-Variabel tambahan: `WA_INBOX_PORT` (default `2786`) dan opsional `WA_INBOX_SECRET`
-(default memakai `OPENWA_WEBHOOK_SECRET`).
+Fonnte menyimpan sesi WhatsApp di server mereka, jadi notifikasi dan balasan `status INT-XXXXXX`
+tetap berjalan walau PC mati. `connectOnly=false` membuat pesan tetap diantrekan Fonnte saat device
+sedang reconnect.
 
-Di Windows, task `intorma-openwa` dan `intorma-wa-agent` menjalankan kedua proses otomatis saat
-login dan restart bila mati. Log ada di `logs/openwa.log` dan `logs/wa-agent.log`.
+OpenWA tetap didukung untuk self-hosted:
+
+```
+WA_PROVIDER=openwa
+OPENWA_BASE_URL=https://gateway-publik-stabil.example.com
+OPENWA_API_KEY=...
+OPENWA_SESSION=intorma
+```
+
+`OPENWA_BASE_URL` produksi **tidak boleh** memakai `127.0.0.1` atau quick tunnel
+`trycloudflare.com`, karena URL itu mati saat PC/tunnel berhenti. Untuk OpenWA always-on, jalankan
+gateway di VPS dengan domain HTTPS stabil dan persistent volume.
+
+Kalau gateway tidak bisa dijangkau dari Vercel, pesan otomatis masuk `wa_outbox` dan dikirim oleh
+`npm run wa:agent`. Alias lama `OPENWA_URL`, `OPENWA_KEY`, dan `ADMIN_WA` masih dibaca kalau
+variabel baru kosong.
+
+Balasan otomatis `status INT-XXXXXX` lewat OpenWA memakai `npm run wa:agent` dan
+`npm run wa:webhook` (webhook lokal `http://127.0.0.1:2786/webhook`). Variabel tambahan:
+`WA_INBOX_PORT` (default `2786`) dan opsional `WA_INBOX_SECRET` (default memakai
+`OPENWA_WEBHOOK_SECRET`). Di Windows, task `intorma-openwa` dan `intorma-wa-agent` menjalankan
+kedua proses otomatis saat login dan restart bila mati. Log ada di `logs/openwa.log` dan
+`logs/wa-agent.log`.
 
 Diagnostik & tes:
 
