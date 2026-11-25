@@ -132,6 +132,16 @@ Balasan otomatis `status INT-XXXXXX` lewat OpenWA memakai `npm run wa:agent` dan
 kedua proses otomatis saat login dan restart bila mati. Log ada di `logs/openwa.log` dan
 `logs/wa-agent.log`.
 
+Kalau sudah pindah ke Fonnte, nonaktifkan task OpenWA agar PC tidak lagi menjalankan gateway
+lama:
+
+```powershell
+Disable-ScheduledTask -TaskName intorma-openwa
+Disable-ScheduledTask -TaskName intorma-wa-agent
+```
+
+Script OpenWA tetap bisa dijalankan manual untuk pengembangan.
+
 Diagnostik & tes:
 
 - `GET /api/wa/test-gateway` — status konfigurasi, gateway, sesi, dan latency (butuh login admin
