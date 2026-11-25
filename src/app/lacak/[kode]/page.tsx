@@ -119,7 +119,7 @@ export default async function TrackPage({
                 </Link>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{order.code}</h1>
-                  <StatusBadge color={meta.color} label={meta.label} status={st} />
+                  <StatusBadge key={st} color={meta.color} label={meta.label} status={st} />
                   <LiveRefresh />
                 </div>
                 <p className="mt-2 text-sm text-mute">
@@ -149,7 +149,7 @@ export default async function TrackPage({
                   style={{ background: meta.color, boxShadow: `0 0 0 4px ${meta.soft}` }}
                 />
                 <div>
-                  <h2 id="status-sekarang" className="text-2xl font-semibold tracking-tight sm:text-3xl" style={{ color: meta.color }}>
+                  <h2 id="status-sekarang" key={st} className="animate-in text-2xl font-semibold tracking-tight sm:text-3xl" style={{ color: meta.color }}>
                     {meta.label}
                   </h2>
                   {order.note && <p className="mt-3 max-w-xl text-sm leading-6 text-mute">{order.note}</p>}
