@@ -6,9 +6,16 @@ import { isAdmin } from "@/lib/auth";
 import { getPaymentSettings } from "@/lib/settings";
 import { waDisplay } from "@/lib/site";
 import { adminWhatsApp, waDiagnostics } from "@/lib/wa";
+import { sql } from "@/lib/db";
+import { toggleReminders } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Pengaturan", robots: { index: false } };
+
+async function toggleRemindersAction(formData: FormData) {
+  "use server";
+  await toggleReminders(null, formData);
+}
 
 export default async function SettingsAdmin() {
   if (!(await isAdmin())) redirect("/admin/login");
@@ -16,6 +23,8 @@ export default async function SettingsAdmin() {
     getPaymentSettings(),
     waDiagnostics().catch(() => null),
   ]);
+  const reminderRow = (await sql`select value from app_settings where key = 'reminder_enabled'`)[0];
+  const reminderEnabled = String(reminderRow?.value ?? "0") === "1";
 
   return (
     <AdminShell active="settings">
@@ -55,6 +64,33 @@ export default async function SettingsAdmin() {
             adminNumber={adminWhatsApp()}
           />
         </div>
+      </section>
+
+      <section className="mt-12 max-w-2xl rounded-tag-lg border border-line bg-panel/40 p-5">
+        <h2 className="text-lg font-semibold tracking-tight">Pengingat deadline otomatis</h2>
+        <p className="mt-1 text-sm leading-6 text-mute">
+          Setiap hari jam 09:00 WIB, kirim WhatsApp ke pelanggan yang pesanannya belum selesai/bayar dan
+          deadline dalam 2 hari atau sudah lewat.
+        </p>
+        <form action={toggleRemindersAction} className="mt-4 flex flex-wrap items-center gap-3">
+          <label className="block cursor-pointer">
+            <input
+              type="checkbox"
+              name="enabled"
+              defaultChecked={reminderEnabled}
+              className="peer sr-only"
+            />
+            <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
+              <span aria-hidden className="check-box">✓</span>
+              <span className="text-sm font-semibold">
+                {reminderEnabled ? "Aktif" : "Nonaktif"}
+              </span>
+            </span>
+          </label>
+          <button type="submit" className="btn-outline min-h-10 px-4 text-sm">
+            Simpan
+          </button>
+        </form>
       </section>
 
       <section className="mt-12 max-w-2xl rounded-tag-lg border border-line bg-panel/40 p-5 text-sm leading-6 text-mute">

@@ -1,0 +1,52 @@
+import { NextResponse } from "next/server";
+import { sql } from "@/lib/db";
+import { rupiah } from "@/lib/format";
+import { sendWA, siteUrl } from "@/lib/wa";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
+export async function GET(req: Request) {
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const auth = req.headers.get("authorization") ?? "";
+    if (auth !== `Bearer ${secret}`) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+  }
+
+  const enabled = (await sql`select value from app_settings where key = 'reminder_enabled'`)[0];
+  if (String(enabled?.value ?? "0") !== "1") {
+    return NextResponse.json({ ok: true, skipped: "reminder disabled" });
+  }
+
+  // Pesanan dengan deadline dalam 2 hari atau sudah lewat, belum selesai/batal, dan belum dibayar.
+  const rows = await sql`
+    select code, name, wa, status, price, paid, deadline
+    from orders
+    where deadline is not null
+      and deadline <= (current_date + interval '2 days')
+      and status not in ('selesai','batal')
+      and (price is null or not paid)
+    order by deadline asc
+    limit 50
+  `;
+
+  let sent = 0;
+  for (const r of rows) {
+    const link = `${siteUrl()}/lacak/${r.code}`;
+    const msg = [
+      `Halo ${r.name}, pengingat untuk pesanan ${r.code}.`,
+      r.price ? `Total: ${rupiah(Number(r.price))}` : "Harga menunggu konfirmasi.",
+      r.deadline ? `Target selesai: ${new Date(r.deadline).toLocaleDateString("id-ID")}` : null,
+      r.paid ? null : "Pembayaran belum kami terima.",
+      `Detail: ${link}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    const ok = await sendWA(String(r.wa ?? ""), msg);
+    if (ok) sent += 1;
+  }
+
+  return NextResponse.json({ ok: true, candidates: rows.length, sent });
+}

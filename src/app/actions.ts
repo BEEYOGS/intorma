@@ -697,6 +697,16 @@ export async function bulkUpdateOrders(_prev: ActionResult, f: FormData): Promis
   revalidatePath("/admin");
   return { ok: true, reset: true };
 }
+export async function toggleReminders(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+  const enabled = f.get("enabled") === "on";
+  await sql`
+    insert into app_settings (key, value) values ('reminder_enabled', ${enabled ? "1" : "0"})
+    on conflict (key) do update set value = excluded.value`;
+  await audit("update", "settings", "reminder", { enabled });
+  revalidatePath("/admin/pengaturan");
+  return { ok: true };
+}
 export async function saveCustomerProfile(_prev: ActionResult, f: FormData): Promise<ActionResult> {
   const customer = await getCustomer();
   if (!customer) return { error: "Sesi berakhir. Silakan masuk lagi." };
