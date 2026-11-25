@@ -17,7 +17,7 @@ export function LacakForm() {
           <span className="label">Kode pesanan</span>
           <input
             name="kode"
-            placeholder="INT-ABC123"
+            placeholder="INT-251126001"
             autoCapitalize="characters"
             autoComplete="off"
             spellCheck={false}

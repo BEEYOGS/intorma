@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { rupiah } from "@/lib/format";
+import { normalizeCode } from "@/lib/codes";
 import { getPaymentSettings, paymentLines } from "@/lib/settings";
 import { STATUS_META, isStatus, type Status } from "@/lib/status";
 import { sendWA, siteUrl } from "@/lib/wa";
@@ -27,9 +28,9 @@ export async function POST(req: Request) {
   const body = String(
     isFonnte ? payload.message ?? "" : msg?.body ?? msg?.text ?? msg?.content ?? "",
   );
-  const match = body.match(/status\s*[:#-]?\s*(?:INT[-\s]?)?([A-Z0-9]{6})/i);
+  const match = body.match(/status\s*[:#-]?\s*(?:INT[-\s]?)?([A-Z0-9]{6,})/i);
   if (!match) return NextResponse.json({ ok: true, ignored: true });
-  const code = `INT-${match[1].toUpperCase()}`;
+  const code = normalizeCode(match[1]);
   const order = (await sql`select code, status, price, note, paid from orders where code = ${code}`)[0];
   let reply: string;
   if (!order) {

@@ -5,7 +5,7 @@
 // menjalankan OpenWA) mengambil dan mengirimkannya.
 //
 // Skrip ini juga menyediakan webhook lokal (/webhook) untuk balasan otomatis
-// "status INT-XXXXXX", supaya tidak bergantung pada deployment Vercel.
+// "status INT-DDMMYY001", supaya tidak bergantung pada deployment Vercel.
 //
 // Pakai: npm run wa:agent
 import { readFileSync, existsSync } from "node:fs";
@@ -159,7 +159,7 @@ async function markFailed(row, error) {
   return { attempts, final, delaySeconds };
 }
 
-// --- balasan otomatis "status INT-XXXXXX" ----------------------------------
+// --- balasan otomatis "status INT-DDMMYY001" ----------------------------------
 const STATUS_LABEL = {
   menunggu: "Menunggu konfirmasi",
   dikerjakan: "Sedang dikerjakan",
@@ -178,7 +178,7 @@ function rupiah(value) {
 }
 
 async function statusReply(text) {
-  const match = String(text).match(/status\s*[:#-]?\s*(?:INT[-\s]?)?([A-Z0-9]{6})/i);
+  const match = String(text).match(/status\s*[:#-]?\s*(?:INT[-\s]?)?([A-Z0-9]{6,})/i);
   if (!match) return null;
   const code = `INT-${match[1].toUpperCase()}`;
   const rows = await sql.query(

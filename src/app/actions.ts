@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getServiceWithOptions, sql } from "@/lib/db";
 import { isAdmin, login, logout } from "@/lib/auth";
-import { makeCode, normalizeWA, rupiah } from "@/lib/format";
+import { normalizeWA, rupiah } from "@/lib/format";
+import { isValidCode, makeCode, normalizeCode } from "@/lib/codes";
 import { calculateQuote, type QuoteSelection } from "@/lib/pricing";
 import { STATUS_META, isStatus } from "@/lib/status";
 import { getPaymentSettings, paymentLines, savePaymentSettings } from "@/lib/settings";
@@ -122,7 +123,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
         file_url, payment_method, payment_status
       )
       values (
-        ${makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${svc.name}, ${customer?.id ?? null}, ${values.brief},
+        ${await makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${svc.name}, ${customer?.id ?? null}, ${values.brief},
         ${values.ref || null}, ${values.deadline || null},
         ${quote.qty}, ${quote.unitRate}, ${quote.price},
         ${widthCm}, ${heightCm}, ${snapshot}::jsonb, ${quote.subtotal},
@@ -206,8 +207,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
 }
 
 export async function lookupOrder(_prev: { error?: string } | null, f: FormData) {
-  const code = str(f, "kode").toUpperCase().replace(/\s/g, "");
-  const full = code.startsWith("INT-") ? code : `INT-${code}`;
+  const full = normalizeCode(str(f, "kode"));
   const found = (await sql`select code from orders where code = ${full}`)[0];
   if (!found) return { error: "Kode tidak ditemukan. Cek lagi pesan WhatsApp yang kamu terima." };
   redirect(`/lacak/${full}`);
@@ -315,9 +315,9 @@ export async function deleteOrder(_prev: ActionResult, f: FormData): Promise<Act
   if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
 
   const id = Number(f.get("id"));
-  const code = str(f, "code").toUpperCase();
-  const confirm = str(f, "confirm").toUpperCase();
-  if (!id || !/^INT-[A-Z0-9]{6}$/.test(code)) return { error: "Data pesanan tidak valid." };
+  const code = normalizeCode(str(f, "code"));
+  const confirm = normalizeCode(str(f, "confirm"));
+  if (!id || !isValidCode(code)) return { error: "Data pesanan tidak valid." };
   if (confirm !== code) {
     return { error: `Kode tidak sama. Ketik ${code} persis untuk mengonfirmasi penghapusan.` };
   }
@@ -662,8 +662,8 @@ export async function bulkUpdateOrders(_prev: ActionResult, f: FormData): Promis
   const raw = str(f, "codes");
   const codes = raw
     .split(/[\s,;]+/)
-    .map((c) => c.trim().toUpperCase())
-    .filter((c) => /^INT-[A-Z0-9]{6}$/.test(c));
+    .map(normalizeCode)
+    .filter(isValidCode);
   if (codes.length === 0) return { error: "Tidak ada kode pesanan yang valid." };
 
   const status = str(f, "status");

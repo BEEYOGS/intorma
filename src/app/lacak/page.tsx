@@ -25,8 +25,8 @@ export default function LacakPage() {
             <div className="space-y-3">
               {[
                 ["Kode ada di pesan WhatsApp", "Dikirim otomatis setelah kamu mengisi formulir pesanan."],
-                ["Formatnya INT-XXXXXX", "Huruf besar/kecil sama saja. Tanda hubung opsional."],
-                ["Bisa juga lewat chat", 'Kirim "status INT-XXXXXX" ke WhatsApp kami untuk balasan otomatis.'],
+                ["Formatnya INT-DDMMYY001", "Tanggal pesanan + nomor urut. Huruf besar/kecil dan tanda hubung opsional."],
+                ["Bisa juga lewat chat", 'Kirim "status INT-DDMMYY001" ke WhatsApp kami untuk balasan otomatis.'],
               ].map(([title, body]) => (
                 <div key={title} className="card p-4">
                   <p className="text-sm font-semibold">{title}</p>

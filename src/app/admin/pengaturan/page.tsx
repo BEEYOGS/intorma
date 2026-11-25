@@ -50,7 +50,7 @@ export default async function SettingsAdmin() {
         <h2 className="text-lg font-semibold tracking-tight">WhatsApp</h2>
         <p className="mt-1 max-w-xl text-sm leading-6 text-mute">
           Notifikasi pesanan baru, perubahan status, dan balasan otomatis{" "}
-          <span className="mono">status INT-XXXXXX</span>.
+          <span className="mono">status INT-DDMMYY001</span>.
         </p>
         <div className="mt-6">
           <WhatsAppStatus

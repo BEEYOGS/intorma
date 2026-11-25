@@ -17,7 +17,7 @@ export function BulkOrderForm() {
             name="codes"
             rows={4}
             className="field resize-y font-mono text-xs"
-            placeholder="INT-XXXXXX&#10;INT-YYYYYY"
+            placeholder="INT-251126001&#10;INT-251126002"
             required
           />
         </label>

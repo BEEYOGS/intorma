@@ -1,5 +1,5 @@
 // Daftarkan/Perbarui webhook sesi OpenWA ke inbox lokal (wa-agent),
-// supaya balasan otomatis "status INT-XXXXXX" tidak bergantung pada Vercel.
+// supaya balasan otomatis "status INT-DDMMYY001" tidak bergantung pada Vercel.
 //
 // Pakai: npm run wa:webhook
 //

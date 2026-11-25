@@ -39,7 +39,7 @@ npm run db:wa-trigger      # pengaman notifikasi WhatsApp untuk order baru
 Halaman yang dipakai pelanggan:
 
 - `/order` — pilih layanan, atur bahan/ukuran/finishing/jumlah, lihat total, lalu kirim pesanan.
-- `/lacak` dan `/lacak/INT-XXXXXX` — cek status, rincian harga, dan instruksi transfer.
+- `/lacak` dan `/lacak/INT-DDMMYY001` — cek status, rincian harga, dan instruksi transfer.
 
 Satu fungsi perhitungan dipakai form dan server action (`src/lib/pricing.ts`), sehingga angka di
 layar sama dengan tagihan yang tersimpan. Model harganya:
@@ -104,7 +104,7 @@ ADMIN_WHATSAPP_NUMBER=0895329940950
 3. Set webhook device ke `https://intorma-psi.vercel.app/api/wa/webhook?s=WA_WEBHOOK_SECRET`.
 4. Aktifkan autoread di device Fonnte.
 
-Fonnte menyimpan sesi WhatsApp di server mereka, jadi notifikasi dan balasan `status INT-XXXXXX`
+Fonnte menyimpan sesi WhatsApp di server mereka, jadi notifikasi dan balasan `status INT-DDMMYY001`
 tetap berjalan walau PC mati. `connectOnly=false` membuat pesan tetap diantrekan Fonnte saat device
 sedang reconnect.
 
@@ -125,7 +125,7 @@ Kalau gateway tidak bisa dijangkau dari Vercel, pesan otomatis masuk `wa_outbox`
 `npm run wa:agent`. Alias lama `OPENWA_URL`, `OPENWA_KEY`, dan `ADMIN_WA` masih dibaca kalau
 variabel baru kosong.
 
-Balasan otomatis `status INT-XXXXXX` lewat OpenWA memakai `npm run wa:agent` dan
+Balasan otomatis `status INT-DDMMYY001` lewat OpenWA memakai `npm run wa:agent` dan
 `npm run wa:webhook` (webhook lokal `http://127.0.0.1:2786/webhook`). Variabel tambahan:
 `WA_INBOX_PORT` (default `2786`) dan opsional `WA_INBOX_SECRET` (default memakai
 `OPENWA_WEBHOOK_SECRET`). Di Windows, task `intorma-openwa` dan `intorma-wa-agent` menjalankan

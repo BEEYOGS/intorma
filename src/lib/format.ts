@@ -14,9 +14,3 @@ export function normalizeWA(input: string): string {
   else if (n.startsWith("8")) n = "62" + n;
   return /^62\d{8,13}$/.test(n) ? n : "";
 }
-
-const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-export function makeCode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(6));
-  return "INT-" + Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join("");
-}
