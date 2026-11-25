@@ -82,7 +82,7 @@ export function OrderForm({
   const [uploadError, setUploadError] = useState("");
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "design" | "print">("all");
+  const [filter, setFilter] = useState<"all" | "design" | "print" | "other">("all");
 
   const chosen = services.find((service) => service.id === selectedId);
   const isArea = chosen?.pricing_model === "area";
@@ -99,15 +99,17 @@ export function OrderForm({
   const normalizedQuery = query.trim().toLowerCase();
   const visible = services.filter((service) => {
     const matchFilter =
-      filter === "all" ||
-      (filter === "print" ? service.category === "print" : service.category !== "print");
+      filter === "all" || service.category === filter;
     const matchQuery =
       !normalizedQuery ||
       `${service.name} ${service.blurb} ${service.id}`.toLowerCase().includes(normalizedQuery);
     return matchFilter && matchQuery;
   });
-  const design = visible.filter((service) => service.category !== "print");
-  const print = visible.filter((service) => service.category === "print");
+  const serviceGroups = [
+    { key: "design", label: "Desain & branding", items: visible.filter((service) => service.category === "design") },
+    { key: "print", label: "Cetak & produksi", items: visible.filter((service) => service.category === "print") },
+    { key: "other", label: "Lainnya", items: visible.filter((service) => service.category === "other") },
+  ];
 
   function pick(id: string) {
     const next = services.find((service) => service.id === id);
@@ -169,6 +171,12 @@ export function OrderForm({
 
   function serviceCard(service: Service) {
     const on = selectedId === service.id;
+    const tone =
+      service.category === "print"
+        ? "border-dashed border-line bg-white/[0.015] text-[var(--text-2)] hover:bg-white/[0.035]"
+        : service.category === "other"
+          ? "border-line bg-transparent text-[var(--text-3)] hover:bg-white/[0.025]"
+          : "border-line bg-white/[0.045] text-[var(--text-2)] hover:bg-white/[0.07]";
     return (
       <label key={service.id} className="block cursor-pointer">
         <input
@@ -180,39 +188,34 @@ export function OrderForm({
           className="peer sr-only"
         />
         <span
-          className={`flex h-full flex-col justify-between gap-4 rounded-tag-sm border p-4 transition-all peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
+          className={`relative flex min-h-11 items-center gap-2.5 overflow-hidden rounded-tag-sm border px-2.5 py-2 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
             on
-              ? "border-accent/60 bg-accent/[0.07] shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-              : "border-line bg-panel/50 text-ink hover:border-accent/30 hover:bg-white/[0.03]"
+              ? "border-[var(--border-2)] bg-white/[0.09] text-[var(--text)]"
+              : tone
           }`}
         >
-          <span>
-            <span className="flex items-start justify-between gap-3">
-              <span className="flex min-w-0 items-start gap-3">
-                <span
-                  aria-hidden
-                  className={`grid size-9 shrink-0 place-items-center rounded-tag-sm border transition-colors ${
-                    on ? "border-accent/40 bg-accent/10 text-accent" : "border-line bg-white/[0.03] text-ink/70"
-                  }`}
-                >
-                  <ServiceIcon service={service} className="size-[18px]" />
-                </span>
-                <span className="block min-w-0 font-semibold leading-snug">{service.name}</span>
-              </span>
-              <span
-                aria-hidden
-                className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border text-[10px] font-bold transition-colors ${
-                  on ? "border-accent bg-accent text-[#04110f]" : "border-line text-transparent"
-                }`}
-              >
-                <Check className="size-3" strokeWidth={3} />
-              </span>
-            </span>
-            <span className="mt-1 block text-[13px] leading-5 text-mute">{service.blurb}</span>
+          {on && <span aria-hidden className="absolute inset-y-1.5 left-0 w-[3px] rounded-r bg-[var(--text)]" />}
+          <span
+            aria-hidden
+            className={`grid size-8 shrink-0 place-items-center rounded-[4px] border transition-colors ${
+              on
+                ? "border-[var(--border-2)] bg-white/[0.08] text-[var(--text)]"
+                : service.category === "print"
+                  ? "border-dashed border-line text-[var(--text-2)]"
+                  : "border-line text-[var(--text-3)]"
+            }`}
+          >
+            <ServiceIcon service={service} className="size-4" />
           </span>
-          <span className="flex items-center justify-between gap-3 border-t border-line pt-3 text-[13px]">
-            <span className={`font-semibold ${on ? "text-accent" : "text-ink"}`}>{priceLabel(service)}</span>
-            <span className="text-mute">± {service.days} hari</span>
+          <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{service.name}</span>
+          <span className="mono shrink-0 text-[11px] text-[var(--text-3)]">{priceLabel(service)}</span>
+          <span
+            aria-hidden
+            className={`grid size-4 shrink-0 place-items-center rounded-full border transition-colors ${
+              on ? "border-[var(--text)] bg-[var(--text)] text-[var(--bg)]" : "border-line text-transparent"
+            }`}
+          >
+            <Check className="size-2.5" strokeWidth={3} />
           </span>
         </span>
       </label>
@@ -294,16 +297,21 @@ export function OrderForm({
                   ["all", "Semua"],
                   ["design", "Desain"],
                   ["print", "Cetak"],
+                  ["other", "Lainnya"],
                 ] as const).map(([value, label]) => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => setFilter(value)}
                     aria-pressed={filter === value}
-                    className={`min-h-10 rounded-[var(--radius)] border px-3.5 text-[13px] font-medium transition-colors ${
+                    className={`min-h-9 rounded-[var(--radius)] border px-3 text-xs font-medium transition-colors ${
                       filter === value
-                        ? "border-line bg-sand text-ink"
-                        : "border-line bg-transparent text-mute hover:text-ink"
+                        ? value === "print"
+                          ? "border-dashed border-[var(--border-2)] bg-white/[0.06] text-[var(--text)]"
+                          : value === "other"
+                            ? "border-[var(--border-2)] bg-transparent text-[var(--text)]"
+                            : "border-[var(--border-2)] bg-white/[0.09] text-[var(--text)]"
+                        : "border-line bg-transparent text-[var(--text-3)] hover:text-[var(--text)]"
                     }`}
                   >
                     {label}
@@ -315,27 +323,40 @@ export function OrderForm({
               Menampilkan {visible.length} dari {services.length} layanan
             </p>
 
-            <div className="space-y-7">
+            <div className="space-y-5">
               {visible.length === 0 && (
                 <p className="rounded-[var(--radius)] border border-dashed border-line p-6 text-center text-sm text-mute">
                   Tidak ada layanan yang cocok. Coba kata kunci lain atau pilih “Semua”.
                 </p>
               )}
-              {design.length > 0 && (
-                <div>
-                  <p className="mb-2.5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-ink/70">
-                    Desain &amp; branding <span aria-hidden className="h-px flex-1 bg-line" />
-                  </p>
-                  <div className="grid gap-2.5 sm:grid-cols-2">{design.map(serviceCard)}</div>
-                </div>
+              {serviceGroups.map((group) =>
+                group.items.length === 0 ? null : (
+                  <div key={group.key}>
+                    <p className="mb-2 flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-3)]">
+                      <span
+                        aria-hidden
+                        className={`size-2 shrink-0 ${
+                          group.key === "print"
+                            ? "border border-dashed border-[var(--text-2)]"
+                            : group.key === "other"
+                              ? "rounded-full border border-[var(--text-3)]"
+                              : "bg-[var(--text-2)]"
+                        }`}
+                      />
+                      {group.label}
+                      <span aria-hidden className="h-px flex-1 bg-line" />
+                      <span className="mono font-normal tracking-normal">{group.items.length}</span>
+                    </p>
+                    <div className="grid gap-1.5 sm:grid-cols-2">{group.items.map(serviceCard)}</div>
+                  </div>
+                )
               )}
-              {print.length > 0 && (
-                <div>
-                  <p className="mb-2.5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-ink/70">
-                    Cetak <span aria-hidden className="h-px flex-1 bg-line" />
-                  </p>
-                  <div className="grid gap-2.5 sm:grid-cols-2">{print.map(serviceCard)}</div>
-                </div>
+              {chosen && (
+                <p className="flex items-center gap-2 rounded-tag-sm border border-line bg-white/[0.02] px-3 py-2 text-xs text-[var(--text-3)]">
+                  <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-[var(--text-2)]" />
+                  <span className="min-w-0">{chosen.blurb}</span>
+                  <span className="mono ml-auto shrink-0">± {chosen.days} hari</span>
+                </p>
               )}
             </div>
           </fieldset>
