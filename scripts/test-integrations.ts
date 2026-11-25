@@ -104,6 +104,7 @@ async function main() {
 
   console.log("\n=== WhatsApp Gateway ===");
   const diagnostics = await wa.waDiagnostics();
+  console.log(`Provider          : ${diagnostics.provider}`);
   console.log(`Configured        : ${diagnostics.configured}`);
   console.log(`Base URL          : ${diagnostics.baseUrl || "(kosong)"}`);
   console.log(`Session           : ${diagnostics.sessionName}`);
@@ -115,7 +116,9 @@ async function main() {
     record(
       "WhatsApp gateway",
       "SKIP",
-      "Isi OPENWA_BASE_URL (URL publik HTTPS, bukan localhost) dan OPENWA_API_KEY.",
+      diagnostics.provider === "fonnte"
+        ? "Isi FONNTE_TOKEN dari dashboard Fonnte."
+        : "Isi OPENWA_BASE_URL (URL publik HTTPS, bukan localhost) dan OPENWA_API_KEY.",
     );
   } else if (!diagnostics.gatewayReachable) {
     record("WhatsApp gateway", "FAIL", diagnostics.error ?? "Gateway tidak bisa dihubungi.");
@@ -156,9 +159,12 @@ async function main() {
       "  GOOGLE_CLIENT_SECRET",
       "  GOOGLE_REFRESH_TOKEN",
       "  GOOGLE_DRIVE_FOLDER_ID",
-      "  OPENWA_BASE_URL (HTTPS publik, bukan localhost)",
-      "  OPENWA_API_KEY",
-      "  OPENWA_SESSION",
+      "  WA_PROVIDER (fonnte untuk hosted, openwa untuk self-hosted)",
+      "  FONNTE_TOKEN (wajib kalau WA_PROVIDER=fonnte)",
+      "  WA_WEBHOOK_SECRET",
+      "  OPENWA_BASE_URL (HTTPS publik, bukan localhost — kalau openwa)",
+      "  OPENWA_API_KEY (kalau openwa)",
+      "  OPENWA_SESSION (kalau openwa)",
       "  ADMIN_WHATSAPP_NUMBER",
       "  ADMIN_PASSWORD",
       "  ADMIN_SECRET",
