@@ -6,7 +6,7 @@ import { STATUS_META, isStatus, type Status } from "@/lib/status";
 import { sendWA, siteUrl } from "@/lib/wa";
 
 export async function POST(req: Request) {
-  const secret = process.env.OPENWA_WEBHOOK_SECRET;
+  const secret = process.env.WA_WEBHOOK_SECRET || process.env.OPENWA_WEBHOOK_SECRET;
   if (!secret || new URL(req.url).searchParams.get("s") !== secret) return NextResponse.json({ ok: false }, { status: 401 });
   const payload = await req.json().catch(() => null);
   // OpenWA mengirim { event, data }, Fonnte mengirim { sender, message, ... }.

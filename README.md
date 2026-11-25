@@ -94,14 +94,14 @@ Ada dua provider. Untuk produksi yang harus **selalu online tanpa PC**, pakai Fo
 ```
 WA_PROVIDER=fonnte
 FONNTE_TOKEN=token-dari-dashboard-fonnte
-OPENWA_WEBHOOK_SECRET=string-acak-untuk-webhook
+WA_WEBHOOK_SECRET=string-acak-untuk-webhook
 ADMIN_WHATSAPP_NUMBER=0895329940950
 ```
 
 1. Daftar di [fonnte.com](https://fonnte.com), buat device, lalu hubungkan WhatsApp dengan scan QR
    sekali di dashboard Fonnte.
 2. Salin token device ke `FONNTE_TOKEN` di Vercel.
-3. Set webhook device ke `https://intorma-psi.vercel.app/api/wa/webhook?s=OPENWA_WEBHOOK_SECRET`.
+3. Set webhook device ke `https://intorma-psi.vercel.app/api/wa/webhook?s=WA_WEBHOOK_SECRET`.
 4. Aktifkan autoread di device Fonnte.
 
 Fonnte menyimpan sesi WhatsApp di server mereka, jadi notifikasi dan balasan `status INT-XXXXXX`
