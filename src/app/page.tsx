@@ -8,6 +8,7 @@ import { STATUS_META, asStatus } from "@/lib/status";
 import { isAdmin } from "@/lib/auth";
 import { getLatestJobs, getProductStats } from "@/lib/data";
 import { getServices } from "@/lib/db";
+import { tanggal } from "@/lib/format";
 import { priceLabel } from "@/lib/pricing";
 
 export default async function ProductPage() {
@@ -272,7 +273,7 @@ export default async function ProductPage() {
                           compact
                         />
                       </td>
-                      <td className="mono text-xs">{new Date(job.created_at).toLocaleDateString("id-ID")}</td>
+                      <td className="mono text-xs">{tanggal(job.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>

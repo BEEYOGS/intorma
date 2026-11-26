@@ -194,7 +194,7 @@ export function FileLibrary({
                       </span>
                       <span className="mt-0.5 block truncate text-[11px] text-mute">
                         <span className="mono uppercase">{meta.ext}</span> · {formatSize(file.size)} ·{" "}
-                        {new Date(file.createdAt).toLocaleDateString("id-ID")}
+                        {new Date(file.createdAt).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" })}
                         {file.orderCode && ` · ${file.orderCode}`}
                       </span>
                     </span>

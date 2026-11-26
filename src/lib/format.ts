@@ -2,10 +2,21 @@ export const rupiah = (n: number | null | undefined) =>
   n == null ? "-" : "Rp" + new Intl.NumberFormat("id-ID").format(n);
 
 export const tanggal = (d: string | Date) =>
-  new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  new Date(d).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  });
 
 export const jam = (d: string | Date) =>
-  new Date(d).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  new Date(d).toLocaleString("id-ID", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  });
 
 /** Tanggal + jam lengkap dalam zona WIB, dipakai deadline dan pesan WhatsApp. */
 export const tanggalJam = (d: string | Date | null | undefined) =>
