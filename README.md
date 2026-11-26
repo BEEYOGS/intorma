@@ -48,9 +48,9 @@ Halaman yang dipakai pelanggan:
 - `/order` — pilih layanan, atur bahan/ukuran/finishing/jumlah, lihat total, lalu kirim pesanan.
 - `/lacak` dan `/lacak/INT-DDMMYY001` — cek status, rincian harga, dan instruksi transfer.
 
-Tampilan memakai monokrom berlapis (obsidian → abu → putih). Status dikenali dari ikon dan
-kecerahan: `menunggu` bergaris putus-putus, `dikerjakan`/`revisi` memakai ikon berbeda, `selesai`
-dibalik jadi putih penuh. Merah hanya dipakai untuk `batal` dan zona berbahaya.
+Tampilan memakai tema gelap bertingkat obsidian → panel → garis tipis. Aksen aksi/lunas adalah abu
+perak, bukan hijau; amber, biru, cyan, violet, dan merah tetap dipakai sebagai penanda status yang
+berbeda. Teks status di nota/PDF memakai `printColor` supaya tetap terbaca di atas kertas putih.
 
 Satu fungsi perhitungan dipakai form dan server action (`src/lib/pricing.ts`), sehingga angka di
 layar sama dengan tagihan yang tersimpan. Model harganya:

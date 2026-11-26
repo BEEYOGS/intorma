@@ -166,7 +166,7 @@ export default async function TrackPage({
             </section>
 
             <section aria-label="Langkah berikutnya" className="mt-4 flex gap-3 rounded-tag-sm border border-accent/20 bg-accent/[0.05] px-4 py-3.5">
-              <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-[#080808]">
+              <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-[#09090b]">
                 →
               </span>
               <div>
@@ -187,7 +187,7 @@ export default async function TrackPage({
                     <span
                       aria-hidden
                       className="status-dot"
-                      style={{ background: order.paid ? "#fafafa" : "#6f6f6f" }}
+                      style={{ background: order.paid ? "#d4d4d8" : "#f59e0b" }}
                     />
                     {order.paid ? "Lunas" : "Belum dibayar"}
                   </span>

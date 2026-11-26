@@ -73,8 +73,8 @@ export default async function ServicesAdmin() {
                   {s.pricing_model === "area" ? "Per m²" : s.pricing_model === "per_unit" ? "Per item" : "Paket"}
                 </span>
                 <span className="text-xs text-mute">± {s.days} hari</span>
-                <span className={`tag ${s.active ? "!border-ink/35 !text-ink" : ""}`}>
-                  <span aria-hidden className="status-dot !mr-0" style={{ background: s.active ? "#fafafa" : "var(--text-3)" }} />
+                <span className={`tag ${s.active ? "!border-[#d4d4d8]/35 !text-[#d4d4d8]" : ""}`}>
+                  <span aria-hidden className="status-dot !mr-0" style={{ background: s.active ? "#d4d4d8" : "var(--text-3)" }} />
                   {s.active ? "Aktif" : "Nonaktif"}
                 </span>
                 <span className="text-[11px] text-mute">{orderCount(s.id)} pesanan</span>

@@ -93,7 +93,7 @@ export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; 
         <div
           className={`mt-3 rounded-tag-lg border p-6 ${
             form.enabled
-              ? "border-ink/25 bg-[linear-gradient(135deg,rgba(255,255,255,0.07),rgba(13,13,16,0.65))]"
+              ? "border-accent/30 bg-[linear-gradient(135deg,rgba(212,212,216,0.12),rgba(11,17,24,0.65))]"
               : "border-dashed border-line bg-panel/40"
           }`}
         >

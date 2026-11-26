@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-// Monokrom premium: obsidian, perak, dan putih. Merah hanya untuk batal/bahaya.
+// Vercel/Neon dark: obsidian + perak abu (aksi/lunas), cyan (aktif), amber (menunggu).
 // Warna memakai kanal RGB supaya utilitas opacity seperti text-mute/70 tetap bekerja.
 export default {
   content: ["./src/**/*.{ts,tsx}"],
@@ -10,28 +10,28 @@ export default {
         xs: "400px",
       },
       colors: {
-        base: "#080808",
-        carbon: "#0d0d0d",
-        panel: "rgb(17 17 17 / <alpha-value>)",
-        sand: "rgb(23 23 23 / <alpha-value>)",
-        border: "#262626",
-        line: "rgb(38 38 38 / <alpha-value>)",
-        faint: "#6f6f6f",
-        ink: "rgb(246 246 246 / <alpha-value>)",
-        paper: "rgb(246 246 246 / <alpha-value>)",
-        mute: "rgb(164 164 164 / <alpha-value>)",
-        gold: "#f4f4f4",
-        goldDark: "#d4d4d4",
-        jade: "#d4d4d4",
+        base: "#09090b",
+        carbon: "#0f0f11",
+        panel: "rgb(17 17 19 / <alpha-value>)",
+        sand: "rgb(24 24 27 / <alpha-value>)",
+        border: "#27272a",
+        line: "rgb(39 39 42 / <alpha-value>)",
+        faint: "#71717a",
+        ink: "rgb(250 250 250 / <alpha-value>)",
+        paper: "rgb(250 250 250 / <alpha-value>)",
+        mute: "rgb(161 161 170 / <alpha-value>)",
+        gold: "#d4d4d8",
+        goldDark: "#a1a1aa",
+        jade: "#d4d4d8",
         accent: {
-          DEFAULT: "rgb(244 244 244 / <alpha-value>)",
-          strong: "#ffffff",
-          soft: "rgba(255, 255, 255, 0.08)",
+          DEFAULT: "rgb(212 212 216 / <alpha-value>)",
+          strong: "#e4e4e7",
+          soft: "rgba(212, 212, 216, 0.12)",
         },
-        warn: "rgb(212 212 212 / <alpha-value>)",
-        info: "rgb(161 161 161 / <alpha-value>)",
-        cyan: "rgb(228 228 228 / <alpha-value>)",
-        violet: "rgb(199 199 199 / <alpha-value>)",
+        warn: "rgb(245 158 11 / <alpha-value>)",
+        info: "rgb(59 130 246 / <alpha-value>)",
+        cyan: "rgb(34 211 238 / <alpha-value>)",
+        violet: "rgb(167 139 250 / <alpha-value>)",
         danger: "rgb(239 68 68 / <alpha-value>)",
       },
       fontFamily: {
