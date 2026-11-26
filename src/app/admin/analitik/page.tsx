@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal, tanggalJam } from "@/lib/format";
+import { STATUS_META, asStatus } from "@/lib/status";
 import { BarChart3, Download, TrendingUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -286,12 +287,5 @@ function statusLabel(s: string): string {
 }
 
 function statusColor(s: string): string {
-  const map: Record<string, string> = {
-    menunggu: "#f59e0b",
-    dikerjakan: "#3b82f6",
-    revisi: "#a78bfa",
-    selesai: "#10b981",
-    batal: "#ef4444",
-  };
-  return map[s] ?? "#888";
+  return STATUS_META[asStatus(s)].color;
 }

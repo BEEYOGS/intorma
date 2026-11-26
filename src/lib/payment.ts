@@ -146,7 +146,7 @@ export async function createCoreCharge(order: GatewayOrder, method: PaymentMetho
         margin: 1,
         width: 640,
         errorCorrectionLevel: "M",
-        color: { dark: "#09090b", light: "#ffffff" },
+        color: { dark: "#080808", light: "#ffffff" },
       })
     : undefined;
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
 import { StatusBadge } from "@/components/Chrome";
+import { IconForStatus } from "@/components/StatusIcon";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderEditor } from "@/components/OrderEditor";
 import { BulkOrderForm } from "@/components/BulkOrderForm";
@@ -35,7 +36,7 @@ function buildReturn(filter: string | null, special: Special | null, q: string):
   return query ? `/admin?${query}` : "/admin";
 }
 
-/** Penanda deadline: merah kalau lewat, amber kalau kurang dari 48 jam. */
+/** Penanda deadline: merah kalau lewat, putih terang kalau kurang dari 48 jam. */
 function deadlineBadge(value: string | Date | null | undefined) {
   if (!value) return null;
   const date = new Date(value);
@@ -161,28 +162,28 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       icon: ClipboardCheck,
       label: "Konfirmasi harga",
       value: Number(focus?.konfirmasi ?? 0),
-      color: "#f59e0b",
+      color: "#fafafa",
     },
     {
       href: keepSearch("/admin?p=deadline"),
       icon: Clock,
       label: "Deadline ≤48 jam",
       value: Number(focus?.deadline ?? 0),
-      color: "#22d3ee",
+      color: "#e4e4e4",
     },
     {
       href: keepSearch("/admin?p=aging"),
       icon: Wallet,
       label: "Telat bayar >2 hari",
       value: Number(focus?.aging ?? 0),
-      color: "#a78bfa",
+      color: "#c7c7c7",
     },
     {
       href: keepSearch("/admin?s=revisi"),
       icon: RotateCcw,
       label: "Perlu revisi",
       value: Number(focus?.revisi ?? 0),
-      color: "#3b82f6",
+      color: "#a1a1a1",
     },
   ].filter((item) => item.value > 0);
 
@@ -289,8 +290,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         </FilterLink>
         {STATUSES.map((st) => (
           <FilterLink key={st} href={keepSearch(`/admin?s=${st}`)} active={filter === st}>
-            <span className="inline-flex items-center gap-2">
-              <span aria-hidden className="status-dot" style={{ background: STATUS_META[st].color }} />
+            <span className="inline-flex items-center gap-1.5">
+              <IconForStatus status={st} className="size-3.5" />
               {STATUS_META[st].label} ({count(st)})
             </span>
           </FilterLink>

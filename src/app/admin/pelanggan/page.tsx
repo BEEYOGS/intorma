@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
+import { IconForStatus } from "@/components/StatusIcon";
 import { ChevronRight, MessageCircle, Search, UsersRound, X } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { normalizeWA, rupiah, tanggal } from "@/lib/format";
-import { STATUS_META, isStatus } from "@/lib/status";
+import { isStatus } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Pelanggan", robots: { index: false } };
@@ -189,7 +190,7 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
                             const st = isStatus(o.status) ? o.status : "menunggu";
                             return (
                               <li key={o.code} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm">
-                                <span aria-hidden className="status-dot shrink-0" style={{ background: STATUS_META[st].color }} />
+                                <IconForStatus status={st} className="size-3.5 shrink-0 text-ink/70" />
                                 <Link
                                   href={`/admin?open=${encodeURIComponent(o.code)}`}
                                   className="mono font-semibold underline decoration-line underline-offset-4 hover:decoration-ink"

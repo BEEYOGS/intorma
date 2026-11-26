@@ -256,7 +256,7 @@ export function OrderForm({
           </ol>
 
           <div className="flex items-start gap-3 rounded-tag-sm border border-accent/20 bg-accent/[0.05] px-4 py-3.5">
-            <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-[#04110f]">
+            <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-[#080808]">
               i
             </span>
             <p className="text-sm leading-6 text-ink/75">
@@ -499,7 +499,7 @@ export function OrderForm({
                                   aria-hidden
                                   className={`mt-0.5 grid size-4 shrink-0 place-items-center border text-[9px] font-bold ${
                                     single ? "rounded-full" : "rounded-[3px]"
-                                  } ${active ? "border-accent bg-accent text-[#04110f]" : "border-line text-transparent"}`}
+                                  } ${active ? "border-accent bg-accent text-[#080808]" : "border-line text-transparent"}`}
                                 >
                                   ✓
                                 </span>
