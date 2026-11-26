@@ -24,10 +24,9 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
       <header className="topbar sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur-sm">
         <div className="wrap flex h-14 items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-4 sm:gap-6">
-            <Link href="/" aria-label={`${SITE_NAME} — beranda`} className="flex shrink-0 items-center gap-2">
+            <Link href="/" aria-label={`${SITE_NAME} — beranda`} className="shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon.svg" alt={SITE_NAME} className="size-7 shrink-0" />
-              <span className="display hidden text-base font-semibold tracking-tight sm:inline">{SITE_NAME}</span>
+              <img src="/int.svg" alt={SITE_NAME} className="h-6 w-auto" />
             </Link>
             <div className="hidden items-center gap-1 overflow-x-auto sm:flex" aria-label="Navigasi admin">
               {tabs.map((tab) => {

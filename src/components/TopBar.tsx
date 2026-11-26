@@ -24,8 +24,7 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
     <header className="topbar sticky top-0 z-50 bg-[var(--bg)]/80 backdrop-blur-sm">
       <Link href="/" className="flex items-center gap-2" aria-label="in.torma, beranda">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icon.svg" alt="in.torma" className="size-7 shrink-0" />
-        <span className="display text-lg font-semibold tracking-tight">in.torma</span>
+        <img src="/int.svg" alt="in.torma" className="h-6 w-auto" />
       </Link>
       <nav className="hidden items-center gap-1 sm:flex">
         <Link href="/katalog" className={linkClass}>
