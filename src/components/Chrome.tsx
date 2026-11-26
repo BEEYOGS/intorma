@@ -12,7 +12,7 @@ export function Footer() {
   return (
     <footer className="border-t border-[var(--border)]">
       <div className="wrap flex flex-wrap items-center justify-between gap-4 py-8 text-xs text-[var(--text-3)]">
-        <span className="mono">in.torma ÔÇö Creative without idea</span>
+        <span className="mono">in.torma — Creative without idea</span>
         <div className="flex flex-wrap items-center gap-5">
           <Link href="/order" className="transition-colors hover:text-[var(--text)]">Pesan</Link>
           <Link href="/lacak" className="transition-colors hover:text-[var(--text)]">Lacak</Link>

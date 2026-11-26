@@ -123,7 +123,7 @@ export default async function TrackPage({
                   <LiveRefresh />
                 </div>
                 <p className="mt-2 text-sm text-mute">
-                  {order.service ?? "Pesanan"} ┬À dibuat {tanggal(order.created_at)} ┬À atas nama {order.name}
+                  {order.service ?? "Pesanan"} · dibuat {tanggal(order.created_at)} · atas nama {order.name}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -167,7 +167,7 @@ export default async function TrackPage({
 
             <section aria-label="Langkah berikutnya" className="mt-4 flex gap-3 rounded-tag-sm border border-accent/20 bg-accent/[0.05] px-4 py-3.5">
               <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-[#04110f]">
-                ÔåÆ
+                →
               </span>
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">Langkah berikutnya</p>
@@ -211,7 +211,7 @@ export default async function TrackPage({
                 )}
                 {selectedOptions.length > 0 && (
                   <p className="mt-3 border-t border-line pt-3 text-xs leading-5 text-mute">
-                    {selectedOptions.map((option) => `${option.group_label}: ${option.label}`).join(" ┬À ")}
+                    {selectedOptions.map((option) => `${option.group_label}: ${option.label}`).join(" · ")}
                   </p>
                 )}
 
@@ -292,7 +292,7 @@ export default async function TrackPage({
               <dl className="mt-4 space-y-3 text-sm">
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-mute">Layanan</dt>
-                  <dd className="text-right font-medium">{order.service ?? "ÔÇö"}</dd>
+                  <dd className="text-right font-medium">{order.service ?? "—"}</dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-mute">Atas nama</dt>

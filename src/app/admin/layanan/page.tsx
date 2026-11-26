@@ -24,7 +24,7 @@ export default async function ServicesAdmin() {
   return (
     <AdminShell active="services">
       <div>
-        <p className="eyebrow flex items-center gap-2"><Layers3 aria-hidden className="size-3.5" /> Admin ┬À Katalog</p>
+        <p className="eyebrow flex items-center gap-2"><Layers3 aria-hidden className="size-3.5" /> Admin · Katalog</p>
         <h1 className="display mt-4 text-4xl sm:text-5xl">Layanan &amp; harga</h1>
         <p className="mt-2 max-w-xl text-sm leading-6 text-mute">
           Atur harga dasar, model hitung, minimum order, dan pembulatan. Opsi bahan/finishing
@@ -103,7 +103,7 @@ export default async function ServicesAdmin() {
       )}
 
       <p className="mt-6 max-w-xl text-xs leading-5 text-mute">
-        Untuk menyembunyikan layanan sementara, hilangkan centangan ÔÇ£TampilkanÔÇØ. Gunakan ÔÇ£HapusÔÇØ hanya
+        Untuk menyembunyikan layanan sementara, hilangkan centangan “Tampilkan”. Gunakan “Hapus” hanya
         untuk menghapus layanan beserta opsinya; nama layanan tetap tersimpan di pesanan lama.
       </p>
     </AdminShell>

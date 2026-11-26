@@ -88,7 +88,7 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
     <AdminShell active="customers">
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div>
-          <p className="eyebrow">Admin ┬À CRM</p>
+          <p className="eyebrow">Admin · CRM</p>
           <h1 className="display mt-4 text-4xl sm:text-5xl">Pelanggan</h1>
           <p className="mt-2 text-sm text-mute">
             Riwayat pesanan per nomor WhatsApp, total belanja, dan piutang yang masih menggantung.
@@ -113,7 +113,7 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
           id="cari-pelanggan"
           name="q"
           defaultValue={q}
-          placeholder="Cari nama, WhatsApp, atau kode pesananÔÇª"
+          placeholder="Cari nama, WhatsApp, atau kode pesanan…"
           className="field min-h-10 sm:max-w-sm"
           autoComplete="off"
         />
@@ -129,8 +129,8 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
 
       <p className="mt-6 text-sm text-mute">
         {list.length === 0
-          ? q ? `Tidak ada pelanggan untuk ÔÇ£${q}ÔÇØ.` : "Belum ada pelanggan tercatat."
-          : `Menampilkan ${list.length} pelanggan${q ? ` untuk ÔÇ£${q}ÔÇØ` : ""}.`}
+          ? q ? `Tidak ada pelanggan untuk “${q}”.` : "Belum ada pelanggan tercatat."
+          : `Menampilkan ${list.length} pelanggan${q ? ` untuk “${q}”` : ""}.`}
       </p>
 
       {list.length === 0 ? (
@@ -196,9 +196,9 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
                                 >
                                   {o.code}
                                 </Link>
-                                <span className="min-w-0 flex-1 truncate text-mute">{o.service ?? "ÔÇö"}</span>
+                                <span className="min-w-0 flex-1 truncate text-mute">{o.service ?? "—"}</span>
                                 <span className="text-xs text-mute">{tanggal(o.created_at)}</span>
-                                <span className="tabular-nums">{o.price == null ? "ÔÇö" : rupiah(Number(o.price))}</span>
+                                <span className="tabular-nums">{o.price == null ? "—" : rupiah(Number(o.price))}</span>
                                 <span className="text-xs text-mute">{o.paid ? "Lunas" : "Belum bayar"}</span>
                               </li>
                             );
@@ -206,7 +206,7 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
                         </ul>
                       )}
                       <p className="mt-3 text-xs text-mute">
-                        Pelanggan sejak {tanggal(c.first_at)} ┬À terakhir {tanggal(c.last_at)}
+                        Pelanggan sejak {tanggal(c.first_at)} · terakhir {tanggal(c.last_at)}
                       </p>
                     </div>
 

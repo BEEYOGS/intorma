@@ -252,7 +252,7 @@ export default async function PayPage({
                       <div className="rounded-tag-sm border border-line bg-sand/60 p-4">
                         <p className="text-xs text-mute">Nomor Virtual Account {raw.bank ?? methodMeta?.bank ?? ""}</p>
                         <p className="mt-1 break-all font-mono text-2xl font-semibold tracking-tight text-ink">
-                          {raw.vaNumber ?? "ÔÇö"}
+                          {raw.vaNumber ?? "—"}
                         </p>
                         {raw.vaNumber && (
                           <CopyButton value={raw.vaNumber} label="Salin nomor VA" className="mt-3" />

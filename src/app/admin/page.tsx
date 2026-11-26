@@ -166,7 +166,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
     {
       href: keepSearch("/admin?p=deadline"),
       icon: Clock,
-      label: "Deadline Ôëñ48 jam",
+      label: "Deadline ≤48 jam",
       value: Number(focus?.deadline ?? 0),
       color: "#3291ff",
     },
@@ -254,9 +254,9 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
             <span style={{ width: `${(Number(due?.tua ?? 0) / dueTotal) * 100}%` }} className="bg-danger/70" />
           </div>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-mute">
-            <span><span aria-hidden className="mr-1.5 inline-block size-1.5 rounded-full bg-[var(--text-2)]" />&lt; 3 hari ┬À {rupiah(Number(due?.baru ?? 0))}</span>
-            <span><span aria-hidden className="mr-1.5 inline-block size-1.5 rounded-full bg-[var(--text-3)]" />3ÔÇô7 hari ┬À {rupiah(Number(due?.menengah ?? 0))}</span>
-            <span><span aria-hidden className="mr-1.5 inline-block size-1.5 rounded-full bg-danger/70" />&gt; 7 hari ┬À {rupiah(Number(due?.tua ?? 0))}</span>
+            <span><span aria-hidden className="mr-1.5 inline-block size-1.5 rounded-full bg-[var(--text-2)]" />&lt; 3 hari · {rupiah(Number(due?.baru ?? 0))}</span>
+            <span><span aria-hidden className="mr-1.5 inline-block size-1.5 rounded-full bg-[var(--text-3)]" />3–7 hari · {rupiah(Number(due?.menengah ?? 0))}</span>
+            <span><span aria-hidden className="mr-1.5 inline-block size-1.5 rounded-full bg-danger/70" />&gt; 7 hari · {rupiah(Number(due?.tua ?? 0))}</span>
           </div>
         </Link>
       )}
@@ -269,7 +269,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           id="cari-pesanan"
           name="q"
           defaultValue={q}
-          placeholder="Cari kode, nama, atau WhatsAppÔÇª"
+          placeholder="Cari kode, nama, atau WhatsApp…"
           className="field min-h-10 sm:max-w-sm"
           autoComplete="off"
         />
@@ -313,7 +313,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         <p>
           {resultCount === 0
             ? "Tidak ada pesanan yang cocok."
-            : `Menampilkan ${orders.length} dari ${resultCount} pesanan${q ? ` untuk ÔÇ£${q}ÔÇØ` : ""}.`}
+            : `Menampilkan ${orders.length} dari ${resultCount} pesanan${q ? ` untuk “${q}”` : ""}.`}
         </p>
         {resultCount > orders.length && <p className="text-xs">Batasi pencarian untuk melihat sisanya.</p>}
       </div>
@@ -377,7 +377,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                     <span className="col-span-2 min-w-0 sm:col-span-1">
                       <span className="block truncate font-semibold">{o.name}</span>
                       <span className="block text-xs text-mute sm:hidden">
-                        {o.service ?? "ÔÇö"} ┬À {tanggal(o.created_at)}
+                        {o.service ?? "—"} · {tanggal(o.created_at)}
                       </span>
                       {dl && (
                         <span
@@ -395,7 +395,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       )}
                     </span>
 
-                    <span className="hidden text-sm text-mute sm:block">{o.service ?? "ÔÇö"}</span>
+                    <span className="hidden text-sm text-mute sm:block">{o.service ?? "—"}</span>
                     <span className="hidden sm:block">
                       <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} status={st} />
                       {dl && (
@@ -413,7 +413,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                     <span className="col-span-2 flex items-center justify-between gap-3 border-t border-line/70 pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
                       <span className="text-xs text-mute sm:hidden">Total</span>
                       <span className="text-right">
-                        <span className="block text-sm font-semibold tabular-nums">{price ? rupiah(price) : "ÔÇö"}</span>
+                        <span className="block text-sm font-semibold tabular-nums">{price ? rupiah(price) : "—"}</span>
                         <span className={`block text-xs ${o.paid ? "font-medium text-ink/60" : "text-mute"} sm:hidden`}>
                           {o.paid ? "Lunas" : price ? "Belum dibayar" : "Tanpa harga"}
                         </span>
@@ -421,7 +421,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                     </span>
 
                     <span className="hidden text-right text-xs text-mute sm:block">{tanggal(o.created_at)}</span>
-                    <span aria-hidden className="hidden text-ink/30 transition-transform group-open:rotate-90 sm:block">ÔåÆ</span>
+                    <span aria-hidden className="hidden text-ink/30 transition-transform group-open:rotate-90 sm:block">→</span>
                   </summary>
 
                   <div className="grid gap-8 border-t border-line bg-panel/40 px-1 pb-7 pt-6 sm:px-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -475,7 +475,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                               <a href={o.ref_link} target="_blank" rel="noreferrer" className="underline decoration-ink/25 underline-offset-4 hover:decoration-ink">
                                 Buka link
                               </a>
-                            ) : "ÔÇö"}
+                            ) : "—"}
                           </dd>
                         </div>
                         <div>
@@ -485,7 +485,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                               <a href={o.file_url} target="_blank" rel="noreferrer" className="underline decoration-ink/25 underline-offset-4 hover:decoration-ink">
                                 Buka file
                               </a>
-                            ) : "ÔÇö"}
+                            ) : "—"}
                           </dd>
                         </div>
                         <div>

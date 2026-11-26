@@ -232,7 +232,7 @@ export default async function AnalitikPage({
                         {String(r.code)}
                       </a>
                       <span className="text-xs text-mute">
-                        {String(r.name)} ┬À{" "}
+                        {String(r.name)} ·{" "}
                         {r.deadline_at ? tanggalJam(String(r.deadline_at)) : tanggal(String(r.deadline))}
                       </span>
                     </li>
@@ -251,7 +251,7 @@ export default async function AnalitikPage({
                       <a href={`/admin?open=${r.code}`} className="font-mono text-xs font-semibold hover:text-accent">
                         {String(r.code)}
                       </a>
-                      <span className="text-xs text-mute">{String(r.name)} ┬À {rupiah(Number(r.price))}</span>
+                      <span className="text-xs text-mute">{String(r.name)} · {rupiah(Number(r.price))}</span>
                     </li>
                   ))}
                 </ul>

@@ -24,7 +24,7 @@ export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; 
             className="peer sr-only"
           />
           <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
-            <span aria-hidden className="check-box">Ô£ô</span>
+            <span aria-hidden className="check-box">✓</span>
             <span>
               <span className="block text-sm font-semibold">Tampilkan instruksi pembayaran</span>
               <span className="block text-xs text-mute">Muncul di beranda dan halaman lacak pesanan yang sudah punya harga.</span>
@@ -72,7 +72,7 @@ export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; 
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4">
           <button type="submit" disabled={pending} className="btn btn-primary min-h-11 px-5 text-sm">
-            {pending ? "MenyimpanÔÇª" : "Simpan pengaturan"}
+            {pending ? "Menyimpan…" : "Simpan pengaturan"}
           </button>
           {state?.ok && <span role="status" className="text-sm font-medium text-ink">Tersimpan.</span>}
           {state?.error && <span role="alert" className="text-sm text-danger">{state.error}</span>}
@@ -109,7 +109,7 @@ export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; 
             Transfer {form.bankName || "bank"}
           </p>
           <p className={`mt-1 break-all text-2xl font-semibold tabular-nums tracking-tight ${form.enabled ? "text-ink" : "text-mute"}`}>
-            {form.bankAccount || "ÔÇö"}
+            {form.bankAccount || "—"}
           </p>
           {form.bankHolder && <p className={`mt-1 text-sm ${form.enabled ? "text-mute" : "text-mute/70"}`}>a.n. {form.bankHolder}</p>}
           {form.note && (
