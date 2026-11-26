@@ -287,10 +287,10 @@ function statusLabel(s: string): string {
 
 function statusColor(s: string): string {
   const map: Record<string, string> = {
-    menunggu: "#f59e0b",
-    dikerjakan: "#3b82f6",
-    revisi: "#a78bfa",
-    selesai: "#10b981",
+    menunggu: "#a1a1aa",
+    dikerjakan: "#0070f3",
+    revisi: "#c7c7c7",
+    selesai: "#ffffff",
     batal: "#ef4444",
   };
   return map[s] ?? "#888";
