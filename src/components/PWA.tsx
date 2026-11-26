@@ -55,11 +55,11 @@ export function InstallButton() {
 
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
     const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone;
-    if (ios && !standalone) {
+    if (!standalone) {
       const t = setTimeout(() => {
         setShowPopup(true);
         startTimer();
-      }, 2500);
+      }, 3000);
       timer.current = t;
     }
 
