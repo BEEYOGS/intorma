@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
+import { IconForStatus } from "@/components/StatusIcon";
 import { ChevronRight, MessageCircle, Search, UsersRound, X } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { normalizeWA, rupiah, tanggal } from "@/lib/format";
-import { STATUS_META, isStatus } from "@/lib/status";
+import { isStatus } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Pelanggan", robots: { index: false } };
@@ -88,7 +89,7 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
     <AdminShell active="customers">
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div>
-          <p className="eyebrow">Admin · CRM</p>
+          <p className="eyebrow">Admin ┬À CRM</p>
           <h1 className="display mt-4 text-4xl sm:text-5xl">Pelanggan</h1>
           <p className="mt-2 text-sm text-mute">
             Riwayat pesanan per nomor WhatsApp, total belanja, dan piutang yang masih menggantung.
@@ -113,7 +114,7 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
           id="cari-pelanggan"
           name="q"
           defaultValue={q}
-          placeholder="Cari nama, WhatsApp, atau kode pesanan…"
+          placeholder="Cari nama, WhatsApp, atau kode pesananÔÇª"
           className="field min-h-10 sm:max-w-sm"
           autoComplete="off"
         />
@@ -129,8 +130,8 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
 
       <p className="mt-6 text-sm text-mute">
         {list.length === 0
-          ? q ? `Tidak ada pelanggan untuk “${q}”.` : "Belum ada pelanggan tercatat."
-          : `Menampilkan ${list.length} pelanggan${q ? ` untuk “${q}”` : ""}.`}
+          ? q ? `Tidak ada pelanggan untuk ÔÇ£${q}ÔÇØ.` : "Belum ada pelanggan tercatat."
+          : `Menampilkan ${list.length} pelanggan${q ? ` untuk ÔÇ£${q}ÔÇØ` : ""}.`}
       </p>
 
       {list.length === 0 ? (
@@ -189,16 +190,16 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
                             const st = isStatus(o.status) ? o.status : "menunggu";
                             return (
                               <li key={o.code} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm">
-                                <span aria-hidden className="status-dot shrink-0" style={{ background: STATUS_META[st].color }} />
+                                <IconForStatus status={st} className="size-3.5 shrink-0 text-ink/70" />
                                 <Link
                                   href={`/admin?open=${encodeURIComponent(o.code)}`}
                                   className="mono font-semibold underline decoration-line underline-offset-4 hover:decoration-ink"
                                 >
                                   {o.code}
                                 </Link>
-                                <span className="min-w-0 flex-1 truncate text-mute">{o.service ?? "—"}</span>
+                                <span className="min-w-0 flex-1 truncate text-mute">{o.service ?? "ÔÇö"}</span>
                                 <span className="text-xs text-mute">{tanggal(o.created_at)}</span>
-                                <span className="tabular-nums">{o.price == null ? "—" : rupiah(Number(o.price))}</span>
+                                <span className="tabular-nums">{o.price == null ? "ÔÇö" : rupiah(Number(o.price))}</span>
                                 <span className="text-xs text-mute">{o.paid ? "Lunas" : "Belum bayar"}</span>
                               </li>
                             );
@@ -206,7 +207,7 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
                         </ul>
                       )}
                       <p className="mt-3 text-xs text-mute">
-                        Pelanggan sejak {tanggal(c.first_at)} · terakhir {tanggal(c.last_at)}
+                        Pelanggan sejak {tanggal(c.first_at)} ┬À terakhir {tanggal(c.last_at)}
                       </p>
                     </div>
 

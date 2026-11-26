@@ -12,7 +12,7 @@ export function Footer() {
   return (
     <footer className="border-t border-[var(--border)]">
       <div className="wrap flex flex-wrap items-center justify-between gap-4 py-8 text-xs text-[var(--text-3)]">
-        <span className="mono">in.torma — Creative without idea</span>
+        <span className="mono">in.torma ÔÇö Creative without idea</span>
         <div className="flex flex-wrap items-center gap-5">
           <Link href="/order" className="transition-colors hover:text-[var(--text)]">Pesan</Link>
           <Link href="/lacak" className="transition-colors hover:text-[var(--text)]">Lacak</Link>
@@ -46,6 +46,16 @@ export function StatusDot({
   );
 }
 
+// Monokrom: bentuk badge membawa makna. Menunggu bergaris putus-putus, selesai
+// dibalik menjadi putih penuh, batal satu-satunya yang merah.
+const BADGE_TONE: Record<Status, string> = {
+  menunggu: "border-dashed border-line bg-transparent text-ink/65",
+  dikerjakan: "border-line bg-white/[0.05] text-ink",
+  revisi: "border-line bg-white/[0.03] text-ink/80",
+  selesai: "border-transparent bg-ink text-[#080808]",
+  batal: "border-danger/35 bg-danger/10 text-danger",
+};
+
 export function StatusBadge({
   color,
   label,
@@ -59,12 +69,9 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className="animate-in inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold"
-      style={{
-        color,
-        borderColor: `color-mix(in srgb, ${color} 35%, transparent)`,
-        background: `color-mix(in srgb, ${color} 12%, transparent)`,
-      }}
+      className={`animate-in inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+        status ? BADGE_TONE[status] : "border-line bg-white/[0.03] text-ink/80"
+      }`}
     >
       {status ? (
         <IconForStatus status={status} className="size-3.5" />

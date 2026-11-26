@@ -60,7 +60,7 @@ function Step({ index, label, state }: { index: number; label: string; state: "d
       <span
         className={`grid size-6 place-items-center rounded-full border text-[11px] font-bold ${
           state === "done"
-            ? "border-accent bg-accent text-[#09090b]"
+            ? "border-accent bg-accent text-[#080808]"
             : state === "active"
               ? "border-accent/60 bg-accent/10 text-accent"
               : "border-line text-mute"
@@ -252,7 +252,7 @@ export default async function PayPage({
                       <div className="rounded-tag-sm border border-line bg-sand/60 p-4">
                         <p className="text-xs text-mute">Nomor Virtual Account {raw.bank ?? methodMeta?.bank ?? ""}</p>
                         <p className="mt-1 break-all font-mono text-2xl font-semibold tracking-tight text-ink">
-                          {raw.vaNumber ?? "—"}
+                          {raw.vaNumber ?? "ÔÇö"}
                         </p>
                         {raw.vaNumber && (
                           <CopyButton value={raw.vaNumber} label="Salin nomor VA" className="mt-3" />

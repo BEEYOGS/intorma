@@ -24,7 +24,7 @@ export default async function ServicesAdmin() {
   return (
     <AdminShell active="services">
       <div>
-        <p className="eyebrow flex items-center gap-2"><Layers3 aria-hidden className="size-3.5" /> Admin · Katalog</p>
+        <p className="eyebrow flex items-center gap-2"><Layers3 aria-hidden className="size-3.5" /> Admin ┬À Katalog</p>
         <h1 className="display mt-4 text-4xl sm:text-5xl">Layanan &amp; harga</h1>
         <p className="mt-2 max-w-xl text-sm leading-6 text-mute">
           Atur harga dasar, model hitung, minimum order, dan pembulatan. Opsi bahan/finishing
@@ -70,11 +70,11 @@ export default async function ServicesAdmin() {
                   {priceLabel(s)}
                 </span>
                 <span className="tag">
-                  {s.pricing_model === "area" ? "Per m²" : s.pricing_model === "per_unit" ? "Per item" : "Paket"}
+                  {s.pricing_model === "area" ? "Per m┬▓" : s.pricing_model === "per_unit" ? "Per item" : "Paket"}
                 </span>
-                <span className="text-xs text-mute">± {s.days} hari</span>
-                <span className={`tag ${s.active ? "!border-[#d4d4d8]/35 !text-[#d4d4d8]" : ""}`}>
-                  <span aria-hidden className="status-dot !mr-0" style={{ background: s.active ? "#d4d4d8" : "var(--text-3)" }} />
+                <span className="text-xs text-mute">┬▒ {s.days} hari</span>
+                <span className={`tag ${s.active ? "!border-ink/35 !text-ink" : ""}`}>
+                  <span aria-hidden className="status-dot !mr-0" style={{ background: s.active ? "#fafafa" : "var(--text-3)" }} />
                   {s.active ? "Aktif" : "Nonaktif"}
                 </span>
                 <span className="text-[11px] text-mute">{orderCount(s.id)} pesanan</span>
@@ -103,7 +103,7 @@ export default async function ServicesAdmin() {
       )}
 
       <p className="mt-6 max-w-xl text-xs leading-5 text-mute">
-        Untuk menyembunyikan layanan sementara, hilangkan centangan “Tampilkan”. Gunakan “Hapus” hanya
+        Untuk menyembunyikan layanan sementara, hilangkan centangan ÔÇ£TampilkanÔÇØ. Gunakan ÔÇ£HapusÔÇØ hanya
         untuk menghapus layanan beserta opsinya; nama layanan tetap tersimpan di pesanan lama.
       </p>
     </AdminShell>

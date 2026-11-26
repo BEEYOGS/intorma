@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal, tanggalJam } from "@/lib/format";
+import { STATUS_META, asStatus } from "@/lib/status";
 import { BarChart3, Download, TrendingUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -232,7 +233,7 @@ export default async function AnalitikPage({
                         {String(r.code)}
                       </a>
                       <span className="text-xs text-mute">
-                        {String(r.name)} ·{" "}
+                        {String(r.name)} ┬À{" "}
                         {r.deadline_at ? tanggalJam(String(r.deadline_at)) : tanggal(String(r.deadline))}
                       </span>
                     </li>
@@ -251,7 +252,7 @@ export default async function AnalitikPage({
                       <a href={`/admin?open=${r.code}`} className="font-mono text-xs font-semibold hover:text-accent">
                         {String(r.code)}
                       </a>
-                      <span className="text-xs text-mute">{String(r.name)} · {rupiah(Number(r.price))}</span>
+                      <span className="text-xs text-mute">{String(r.name)} ┬À {rupiah(Number(r.price))}</span>
                     </li>
                   ))}
                 </ul>
@@ -286,12 +287,5 @@ function statusLabel(s: string): string {
 }
 
 function statusColor(s: string): string {
-  const map: Record<string, string> = {
-    menunggu: "#f59e0b",
-    dikerjakan: "#3b82f6",
-    revisi: "#a78bfa",
-    selesai: "#d4d4d8",
-    batal: "#ef4444",
-  };
-  return map[s] ?? "#888";
+  return STATUS_META[asStatus(s)].color;
 }

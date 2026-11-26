@@ -1,5 +1,5 @@
 {
-  "name": "in.torma — order jasa desain",
+  "name": "in.torma ÔÇö order jasa desain",
   "short_name": "in.torma",
   "description": "Pesan desain dan cetak, lihat harga langsung, dan pantau status pesanan.",
   "id": "/",
@@ -7,8 +7,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#09090b",
-  "theme_color": "#09090b",
+  "background_color": "#080808",
+  "theme_color": "#080808",
   "lang": "id",
   "dir": "ltr",
   "prefer_related_applications": false,

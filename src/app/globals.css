@@ -2,26 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Preflight Tailwind memakai border abu kebiruan; samakan dengan garis monokrom. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+}
+
 :root {
   color-scheme: dark;
-  /* Vercel/Neon dark: kanvas obsidian, permukaan bertingkat, aksen abu perak. */
-  --bg: #09090b;
-  --bg-2: #0f0f11;
-  --panel: #111113;
-  --panel-2: #18181b;
-  --border: #27272a;
-  --border-2: #3f3f46;
-  --text: #fafafa;
-  --text-2: #a1a1aa;
+  /* Monokrom premium: kanvas obsidian, permukaan bertingkat, aksen putih. */
+  --bg: #080808;
+  --bg-2: #0d0d0d;
+  --panel: #111111;
+  --panel-2: #171717;
+  --border: #262626;
+  --border-2: #3d3d3d;
+  --text: #f6f6f6;
+  --text-2: #a4a4a4;
   --text-3: #8a8a93;
-  --gold: #d4d4d8;
-  --gold-2: #e4e4e7;
-  --jade: #d4d4d8;
+  --gold: #f4f4f4;
+  --gold-2: #ffffff;
+  --jade: #d4d4d4;
   --red: #ef4444;
-  --warn: #f59e0b;
-  --info: #3b82f6;
-  --cyan: #22d3ee;
-  --violet: #a78bfa;
+  --warn: #d4d4d4;
+  --info: #a1a1a1;
+  --cyan: #e4e4e4;
+  --violet: #c7c7c7;
   --radius: 8px;
 }
 
@@ -34,7 +43,7 @@ html {
 }
 
 :focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--gold) 75%, white);
+  outline: 2px solid color-mix(in srgb, var(--text) 80%, transparent);
   outline-offset: 2px;
 }
 
@@ -73,7 +82,7 @@ body::before {
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
 }
 
-/* Glow aksen tipis di atas halaman, khas dashboard Neon. */
+/* Cahaya putih tipis di atas halaman: kedalaman tanpa warna. */
 body::after {
   content: "";
   position: fixed;
@@ -81,8 +90,8 @@ body::after {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(620px 300px at 12% -6%, rgba(212, 212, 216, 0.10), transparent 72%),
-    radial-gradient(720px 340px at 88% -10%, rgba(34, 211, 238, 0.07), transparent 72%);
+    radial-gradient(620px 300px at 12% -6%, rgba(255, 255, 255, 0.045), transparent 72%),
+    radial-gradient(720px 340px at 88% -10%, rgba(255, 255, 255, 0.025), transparent 72%);
 }
 
 .wrap {
@@ -142,15 +151,19 @@ body::after {
 
 .btn-primary {
   background: var(--gold);
-  color: #09090b;
+  color: #080808;
   border-color: var(--gold);
-  box-shadow: 0 0 0 1px rgba(212, 212, 216, 0.2), 0 10px 28px -14px rgba(212, 212, 216, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 10px 28px -16px rgba(255, 255, 255, 0.45);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--gold-2);
   border-color: var(--gold-2);
-  box-shadow: 0 0 0 1px rgba(228, 228, 231, 0.3), 0 14px 34px -14px rgba(228, 228, 231, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 14px 34px -16px rgba(255, 255, 255, 0.55);
 }
 
 .btn-ghost {
@@ -189,25 +202,25 @@ body::after {
 }
 
 .card-hover:hover {
-  border-color: color-mix(in srgb, var(--gold) 38%, var(--border));
+  border-color: color-mix(in srgb, var(--text) 26%, var(--border));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 0 0 1px rgba(212, 212, 216, 0.08),
-    0 18px 48px -28px rgba(212, 212, 216, 0.45);
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 18px 48px -30px rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
 }
 
-/* Kartu katalog: glow aksen + border menyala saat hover/fokus. */
+/* Kartu katalog: garis menyala netral saat hover/fokus. */
 .glow-card {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .glow-card:hover {
-  border-color: color-mix(in srgb, var(--gold) 42%, var(--border));
+  border-color: color-mix(in srgb, var(--text) 32%, var(--border));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 0 0 1px rgba(212, 212, 216, 0.10),
-    0 24px 60px -32px rgba(212, 212, 216, 0.55);
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 24px 60px -34px rgba(255, 255, 255, 0.28);
   transform: translateY(-2px);
 }
 
@@ -229,8 +242,8 @@ body::after {
 }
 
 .input:focus {
-  border-color: color-mix(in srgb, var(--gold) 65%, var(--border));
-  box-shadow: 0 0 0 3px rgba(212, 212, 216, 0.10);
+  border-color: color-mix(in srgb, var(--text) 55%, var(--border));
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.07);
 }
 
 .input::placeholder {
@@ -451,11 +464,11 @@ button,
   }
 
   input:checked + .check-tile {
-    @apply border-accent/50 bg-accent/[0.07];
+    @apply border-ink/45 bg-ink/[0.06];
   }
 
   input:checked + .check-tile .check-box {
-    @apply border-accent bg-accent text-[var(--bg)];
+    @apply border-ink bg-ink text-[var(--bg)];
   }
 }
 
