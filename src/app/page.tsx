@@ -24,7 +24,7 @@ export default async function ProductPage() {
     <div className="animate-in">
       <TopBar isAdmin={admin} />
       {/* Hero */}
-      <section className="pt-20 pb-16 sm:pt-28 sm:pb-20">
+      <section className="pt-24 pb-20 sm:pt-32 sm:pb-24">
         <div className="wrap">
           <div className="max-w-3xl">
             <p className="eyebrow mb-4">Studio desain & cetak — Indonesia</p>

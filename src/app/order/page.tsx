@@ -27,7 +27,7 @@ export default async function OrderPage({
       <Nav />
       <main id="konten">
         <div className="border-b border-line bg-sand/40">
-          <div className="wrap py-7 sm:py-9">
+          <div className="wrap py-8 sm:py-12">
             <div className="flex flex-wrap items-end justify-between gap-5">
               <div>
                 <Link href="/" className="block w-fit text-xs font-medium text-mute transition-colors hover:text-ink">
@@ -50,7 +50,7 @@ export default async function OrderPage({
           </div>
         </div>
 
-        <div className="wrap pb-28 pt-7 sm:pb-28 sm:pt-9 lg:pb-20">
+        <div className="wrap pb-32 pt-8 sm:pb-32 sm:pt-12 lg:pb-24">
           {services.length === 0 ? (
             <div className="card max-w-lg p-6">
               <p className="font-semibold">Belum ada layanan aktif.</p>

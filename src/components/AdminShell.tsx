@@ -73,7 +73,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
         </div>
       </header>
 
-      <main id="konten" className="wrap pb-28 pt-8 sm:pb-10 sm:pt-10">
+      <main id="konten" className="wrap pb-32 pt-10 sm:pb-12 sm:pt-12">
         {children}
       </main>
 
