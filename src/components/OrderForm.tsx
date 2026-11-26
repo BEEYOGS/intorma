@@ -574,6 +574,14 @@ export function OrderForm({
             </p>
           </div>
 
+          {chosen && activeStep < 2 && (
+            <div className="rounded-tag-sm border border-line bg-white/[0.03] px-4 py-3 text-sm text-mute">
+              Lengkapi spesifikasi dulu agar bisa lanjut ke data dan pembayaran.
+            </div>
+          )}
+
+          {activeStep === 2 && (
+            <>
           <fieldset>
             <legend className="mb-1 text-xl font-semibold tracking-tight">Data kamu</legend>
             <p className="mb-5 text-sm text-mute">Dipakai untuk mengirim kode pesanan dan kabar progres lewat WhatsApp.</p>
@@ -760,6 +768,8 @@ export function OrderForm({
               dikirim lewat WhatsApp.
             </p>
           </div>
+            </>
+          )}
         </form>
 
         <aside aria-label="Ringkasan pesanan" className="hidden lg:sticky lg:top-24 lg:block">
