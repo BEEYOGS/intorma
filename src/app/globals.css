@@ -73,7 +73,7 @@ body::before {
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
 }
 
-/* Glow aksen tipis di atas halaman, khas dashboard Neon. */
+/* Glow aksen tipis di atas halaman, khas dashboard Vercel/Neon. */
 body::after {
   content: "";
   position: fixed;
@@ -81,8 +81,28 @@ body::after {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(620px 300px at 12% -6%, rgba(16, 185, 129, 0.10), transparent 72%),
-    radial-gradient(720px 340px at 88% -10%, rgba(34, 211, 238, 0.07), transparent 72%);
+    radial-gradient(620px 300px at 12% -6%, rgba(16, 185, 129, 0.12), transparent 72%),
+    radial-gradient(720px 340px at 88% -10%, rgba(34, 211, 238, 0.09), transparent 72%),
+    radial-gradient(900px 420px at 50% 110%, rgba(59, 130, 246, 0.06), transparent 72%);
+  animation: hero-glow 18s ease-in-out infinite alternate;
+}
+
+@keyframes hero-glow {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-2%, 1%, 0) scale(1.04); }
+  100% { transform: translate3d(2%, -1%, 0) scale(1.02); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::after { animation: none; }
+}
+
+/* Teks gradasi seperti hero Next.js/Vercel. */
+.gradient-text {
+  background: linear-gradient(110deg, #ffffff 0%, #d4d4d8 38%, #34d399 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .wrap {

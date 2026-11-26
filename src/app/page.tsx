@@ -28,7 +28,7 @@ export default async function ProductPage() {
         <div className="wrap">
           <div className="max-w-3xl">
             <p className="eyebrow mb-4">Studio desain & cetak — Indonesia</p>
-            <h1 className="display text-[clamp(2.5rem,5.5vw,4.25rem)] mb-6">
+            <h1 className="display gradient-text text-[clamp(2.5rem,5.5vw,4.25rem)] mb-6">
               Ide kamu, dibikin kelihatan.
             </h1>
             <p className="text-[17px] leading-relaxed text-[var(--text-2)] max-w-xl mb-8">
