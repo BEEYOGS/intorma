@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Archive, Download, Eye, Upload, X } from "lucide-react";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
@@ -77,13 +77,44 @@ export function FileLibrary({
   const [error, setError] = useState("");
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [preview, setPreview] = useState<FileItem | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!preview) return;
+    if (!preview) {
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+        previousFocusRef.current = null;
+      }
+      return;
+    }
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const panel = previewRef.current;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setPreview(null);
+      if (event.key === "Escape") {
+        setPreview(null);
+        return;
+      }
+      if (event.key !== "Tab" || !panel) return;
+      const focusables = Array.from(
+        panel.querySelectorAll<HTMLElement>('a, button, input, textarea, select, [tabindex]:not([tabindex="-1"])'),
+      ).filter((el) => !el.hasAttribute("disabled"));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
+    setTimeout(() => {
+      const focusables = panel?.querySelectorAll<HTMLElement>('a, button, input, textarea, select, [tabindex]:not([tabindex="-1"])');
+      (focusables?.[0] ?? panel)?.focus();
+    }, 50);
     return () => document.removeEventListener("keydown", onKey);
   }, [preview]);
 
@@ -233,8 +264,10 @@ export function FileLibrary({
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
         >
           <div
+            ref={previewRef}
+            tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
-            className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--border-2)] bg-[var(--panel)] shadow-[0_30px_90px_-30px_rgba(0,0,0,0.95)]"
+            className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--border-2)] bg-[var(--panel)] shadow-[0_30px_90px_-30px_rgba(0,0,0,0.95)] outline-none"
           >
             <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
               <div className="flex min-w-0 items-center gap-3">

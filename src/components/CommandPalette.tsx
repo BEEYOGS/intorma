@@ -58,6 +58,32 @@ export function CommandPalette() {
     const panel = panelRef.current;
     if (!panel) return;
     const onKey = (event: KeyboardEvent) => {
+      const items = Array.from(panel.querySelectorAll<HTMLButtonElement>("[data-cmd-item]"));
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        if (items.length === 0) return;
+        event.preventDefault();
+        const current = items.indexOf(document.activeElement as HTMLButtonElement);
+        const next =
+          event.key === "ArrowDown"
+            ? current < 0
+              ? 0
+              : (current + 1) % items.length
+            : current <= 0
+              ? items.length - 1
+              : current - 1;
+        items[next].focus();
+        return;
+      }
+      if (event.key === "Home" && items.length) {
+        event.preventDefault();
+        items[0].focus();
+        return;
+      }
+      if (event.key === "End" && items.length) {
+        event.preventDefault();
+        items[items.length - 1].focus();
+        return;
+      }
       if (event.key !== "Tab") return;
       const focusables = Array.from(
         panel.querySelectorAll<HTMLElement>(
@@ -207,8 +233,9 @@ function Item({ label, hint, onClick }: { label: string; hint?: string; onClick:
   return (
     <button
       type="button"
+      data-cmd-item
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-3 rounded-tag-sm px-3 py-2 text-left text-sm transition-colors hover:bg-white/[0.04]"
+      className="flex w-full items-center justify-between gap-3 rounded-tag-sm px-3 py-2 text-left text-sm transition-colors hover:bg-white/[0.04] focus:bg-white/[0.06]"
     >
       <span className="truncate">{label}</span>
       {hint && <span className="shrink-0 text-xs text-mute">{hint}</span>}
