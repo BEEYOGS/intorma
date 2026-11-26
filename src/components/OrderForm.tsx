@@ -237,22 +237,33 @@ export function OrderForm({
               ["01", "Pilih layanan"],
               ["02", "Atur spesifikasi"],
               ["03", "Buat & bayar"],
-            ].map(([n, label], index) => (
-              <li key={n} className="flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-semibold transition-colors ${
-                    index === activeStep
-                      ? "border-accent/50 bg-accent/10 text-ink"
-                      : "border-line bg-white/[0.03] text-mute"
-                  }`}
-                >
-                  <span className={`font-mono text-[10px] ${index === activeStep ? "text-accent" : "text-mute"}`}>{n}</span>
-                  <span className="hidden xs:inline">{label}</span>
-                  <span className="xs:hidden">{label.split(" ")[0]}</span>
-                </span>
-                {index < 2 && <span aria-hidden className="text-mute/35">/</span>}
-              </li>
-            ))}
+            ].map(([n, label], index) => {
+              const done = index < activeStep;
+              const current = index === activeStep;
+              return (
+                <li key={n} className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-semibold transition-colors ${
+                      current
+                        ? "border-accent/50 bg-accent/10 text-ink"
+                        : done
+                          ? "border-accent/30 bg-accent/[0.06] text-ink"
+                          : "border-line bg-white/[0.03] text-mute opacity-60"
+                    }`}
+                    aria-current={current ? "step" : undefined}
+                  >
+                    {done ? (
+                      <Check aria-hidden className="size-3.5 text-accent" />
+                    ) : (
+                      <span className={`font-mono text-[10px] ${current ? "text-accent" : "text-mute"}`}>{n}</span>
+                    )}
+                    <span className="hidden xs:inline">{label}</span>
+                    <span className="xs:hidden">{label.split(" ")[0]}</span>
+                  </span>
+                  {index < 2 && <span aria-hidden className="text-mute/35">/</span>}
+                </li>
+              );
+            })}
           </ol>
 
           <div className="flex items-start gap-3 rounded-tag-sm border border-accent/20 bg-accent/[0.05] px-4 py-3.5">
