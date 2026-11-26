@@ -14,14 +14,14 @@
   --text: #fafafa;
   --text-2: #a1a1aa;
   --text-3: #8a8a93;
-  --gold: #10b981;
-  --gold-2: #34d399;
-  --jade: #10b981;
+  --gold: #0070f3;
+  --gold-2: #3291ff;
+  --jade: #0070f3;
   --red: #ef4444;
-  --warn: #f59e0b;
-  --info: #3b82f6;
-  --cyan: #22d3ee;
-  --violet: #a78bfa;
+  --warn: #a1a1aa;
+  --info: #0070f3;
+  --cyan: #e4e4e4;
+  --violet: #c7c7c7;
   --radius: 8px;
 }
 
@@ -80,11 +80,7 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(620px 300px at 12% -6%, rgba(16, 185, 129, 0.12), transparent 72%),
-    radial-gradient(720px 340px at 88% -10%, rgba(34, 211, 238, 0.09), transparent 72%),
-    radial-gradient(900px 420px at 50% 110%, rgba(59, 130, 246, 0.06), transparent 72%);
-  animation: hero-glow 18s ease-in-out infinite alternate;
+  background: none;
 }
 
 @keyframes hero-glow {
@@ -99,7 +95,7 @@ body::after {
 
 /* Teks gradasi seperti hero Next.js/Vercel. */
 .gradient-text {
-  background: linear-gradient(110deg, #ffffff 0%, #d4d4d8 38%, #34d399 100%);
+  background: linear-gradient(110deg, #ffffff 0%, #a1a1aa 45%, #0070f3 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -164,13 +160,13 @@ body::after {
   background: var(--gold);
   color: #04110f;
   border-color: var(--gold);
-  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2), 0 10px 28px -14px rgba(16, 185, 129, 0.65);
+  box-shadow: 0 0 0 1px rgba(0, 112, 243, 0.2), 0 10px 28px -14px rgba(0, 112, 243, 0.65);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--gold-2);
   border-color: var(--gold-2);
-  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.3), 0 14px 34px -14px rgba(52, 211, 153, 0.7);
+  box-shadow: 0 0 0 1px rgba(50, 145, 255, 0.3), 0 14px 34px -14px rgba(50, 145, 255, 0.7);
 }
 
 .btn-ghost {
@@ -212,8 +208,8 @@ body::after {
   border-color: color-mix(in srgb, var(--gold) 38%, var(--border));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 0 0 1px rgba(16, 185, 129, 0.08),
-    0 18px 48px -28px rgba(16, 185, 129, 0.45);
+    0 0 0 1px rgba(0, 112, 243, 0.08),
+    0 18px 48px -28px rgba(0, 112, 243, 0.45);
   transform: translateY(-1px);
 }
 
@@ -226,8 +222,8 @@ body::after {
   border-color: color-mix(in srgb, var(--gold) 42%, var(--border));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 0 0 1px rgba(16, 185, 129, 0.10),
-    0 24px 60px -32px rgba(16, 185, 129, 0.55);
+    0 0 0 1px rgba(0, 112, 243, 0.10),
+    0 24px 60px -32px rgba(0, 112, 243, 0.55);
   transform: translateY(-2px);
 }
 
@@ -250,7 +246,7 @@ body::after {
 
 .input:focus {
   border-color: color-mix(in srgb, var(--gold) 65%, var(--border));
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.10);
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.10);
 }
 
 .input::placeholder {

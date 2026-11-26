@@ -60,7 +60,7 @@ function Step({ index, label, state }: { index: number; label: string; state: "d
       <span
         className={`grid size-6 place-items-center rounded-full border text-[11px] font-bold ${
           state === "done"
-            ? "border-accent bg-accent text-[#04110f]"
+            ? "border-accent bg-accent text-white"
             : state === "active"
               ? "border-accent/60 bg-accent/10 text-accent"
               : "border-line text-mute"

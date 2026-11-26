@@ -161,28 +161,28 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       icon: ClipboardCheck,
       label: "Konfirmasi harga",
       value: Number(focus?.konfirmasi ?? 0),
-      color: "#f59e0b",
+      color: "#a1a1aa",
     },
     {
       href: keepSearch("/admin?p=deadline"),
       icon: Clock,
       label: "Deadline Ôëñ48 jam",
       value: Number(focus?.deadline ?? 0),
-      color: "#22d3ee",
+      color: "#3291ff",
     },
     {
       href: keepSearch("/admin?p=aging"),
       icon: Wallet,
       label: "Telat bayar >2 hari",
       value: Number(focus?.aging ?? 0),
-      color: "#a78bfa",
+      color: "#c7c7c7",
     },
     {
       href: keepSearch("/admin?s=revisi"),
       icon: RotateCcw,
       label: "Perlu revisi",
       value: Number(focus?.revisi ?? 0),
-      color: "#3b82f6",
+      color: "#0070f3",
     },
   ].filter((item) => item.value > 0);
 
