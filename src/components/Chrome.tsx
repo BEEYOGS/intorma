@@ -46,16 +46,6 @@ export function StatusDot({
   );
 }
 
-// Monokrom: bentuk badge membawa makna. Menunggu bergaris putus-putus, selesai
-// dibalik menjadi putih penuh, batal satu-satunya yang merah.
-const BADGE_TONE: Record<Status, string> = {
-  menunggu: "border-dashed border-line bg-transparent text-ink/65",
-  dikerjakan: "border-line bg-white/[0.05] text-ink",
-  revisi: "border-line bg-white/[0.03] text-ink/80",
-  selesai: "border-transparent bg-ink text-[#080808]",
-  batal: "border-danger/35 bg-danger/10 text-danger",
-};
-
 export function StatusBadge({
   color,
   label,
@@ -69,9 +59,12 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className={`animate-in inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-        status ? BADGE_TONE[status] : "border-line bg-white/[0.03] text-ink/80"
-      }`}
+      className="animate-in inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+      style={{
+        color,
+        borderColor: `color-mix(in srgb, ${color} 35%, transparent)`,
+        background: `color-mix(in srgb, ${color} 12%, transparent)`,
+      }}
     >
       {status ? (
         <IconForStatus status={status} className="size-3.5" />

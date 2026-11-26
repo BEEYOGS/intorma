@@ -92,7 +92,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kode: s
     y,
     { width: quarter - 6 },
   );
-  doc.fillColor(meta.printColor);
+  doc.fillColor(meta.color);
   doc.text(meta.label, M + quarter * 2, y, { width: quarter - 6 });
   doc.fillColor("#111111");
   doc.text(
@@ -107,7 +107,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kode: s
   const cols = [M, M + 40, M + 325, M + 425];
   const colWidths = [40, 285, 100, width - 425];
   const headers = ["No", "Nama", "Jumlah", "Harga"];
-  doc.rect(M, y, width, 24).fill("#F1F1F1");
+  doc.rect(M, y, width, 24).fill("#EEF4F3");
   doc.fillColor("#111111").font("Helvetica-Bold").fontSize(9);
   headers.forEach((header, i) => {
     doc.text(header, cols[i] + 6, y + 7, {
@@ -126,7 +126,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kode: s
     if (row.name) doc.text(String(index + 1), cols[0] + 6, y + 7, { width: colWidths[0] - 12, align: "center" });
     y += 24;
   });
-  doc.rect(M, y, width, 24).fill("#F1F1F1");
+  doc.rect(M, y, width, 24).fill("#EEF4F3");
   doc.fillColor("#111111").font("Helvetica-Bold").fontSize(9);
   doc.text("Total:", cols[2] + 6, y + 7, { width: colWidths[2] - 12, align: "right" });
   doc.text(notaTotal(order), cols[3] + 6, y + 7, { width: colWidths[3] - 12, align: "right" });
