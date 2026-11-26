@@ -87,7 +87,7 @@ export function InstallButton() {
             setShowPopup(true);
             startTimer();
           }}
-          className="btn-on-dark-line mt-3 min-h-10 px-4 text-sm"
+          className="btn btn-ghost mt-3 min-h-10 px-4 text-sm"
         >
           Install aplikasi <Download aria-hidden className="size-4" />
         </button>
@@ -99,7 +99,7 @@ export function InstallButton() {
         <div
           role="dialog"
           aria-label="Pasang aplikasi in.torma"
-          className="fixed inset-x-4 bottom-24 z-50 w-auto overflow-hidden rounded-tag-lg border border-line bg-panel shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-[22rem]"
+          className="fixed inset-x-4 bottom-6 z-50 w-auto overflow-hidden rounded-[var(--radius)_var(--radius)_var(--radius)_0] border border-line bg-panel shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] sm:inset-x-auto sm:right-6 sm:w-[22rem]"
         >
           <div className="p-5">
             <button
@@ -113,7 +113,7 @@ export function InstallButton() {
 
             <div className="flex items-start gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon.svg" alt="" className="size-12 shrink-0 rounded-tag-sm bg-[#f4f1ea] p-1" />
+              <img src="/icon.svg" alt="" className="size-12 shrink-0 rounded-[var(--radius)_var(--radius)_var(--radius)_0] bg-[var(--panel-2)] p-1" />
               <div className="min-w-0">
                 <p className="eyebrow">Lebih mudah lewat aplikasi</p>
                 <h2 className="mt-1.5 text-lg font-semibold tracking-tight">Pasang in.torma</h2>
