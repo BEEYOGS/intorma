@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Download, X } from "lucide-react";
 
 type InstallPrompt = Event & {
   prompt: () => Promise<void>;
@@ -51,6 +52,17 @@ export function InstallButton() {
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
+
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone;
+    if (ios && !standalone) {
+      const t = setTimeout(() => {
+        setShowPopup(true);
+        startTimer();
+      }, 2500);
+      timer.current = t;
+    }
+
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
@@ -77,7 +89,7 @@ export function InstallButton() {
           }}
           className="btn-on-dark-line mt-3 min-h-10 px-4 text-sm"
         >
-          Install aplikasi <span aria-hidden="true">Ôåô</span>
+          Install aplikasi <Download aria-hidden className="size-4" />
         </button>
       )}
 
@@ -96,7 +108,7 @@ export function InstallButton() {
               aria-label="Tutup notifikasi"
               className="absolute right-3 top-3 grid size-8 place-items-center rounded-full text-ink/45 transition-colors hover:bg-white/[0.06] hover:text-ink"
             >
-              Ô£ò
+              <X className="size-4" />
             </button>
 
             <div className="flex items-start gap-3">
@@ -111,14 +123,21 @@ export function InstallButton() {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={install} className="btn btn-primary min-h-10 flex-1 px-4 text-sm">
-                Install sekarang <span aria-hidden="true">Ôåô</span>
-              </button>
-              <button type="button" onClick={hidePopup} className="btn btn-ghost min-h-10 px-4 text-sm">
-                Nanti
-              </button>
-            </div>
+            {prompt ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" onClick={install} className="btn btn-primary min-h-10 flex-1 px-4 text-sm">
+                  Install sekarang <Download aria-hidden className="size-4" />
+                </button>
+                <button type="button" onClick={hidePopup} className="btn btn-ghost min-h-10 px-4 text-sm">
+                  Nanti
+                </button>
+              </div>
+            ) : (
+              <p className="mt-4 text-[12px] leading-5 text-mute">
+                Di iPhone/iPad: ketuk <span className="font-semibold text-ink">Share</span> lalu pilih{" "}
+                <span className="font-semibold text-ink">Add to Home Screen</span>.
+              </p>
+            )}
           </div>
 
           <div aria-hidden="true" className="h-0.5 bg-line">
