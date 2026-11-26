@@ -10,10 +10,10 @@ export function LoginForm() {
     <form action={action} className="space-y-4">
       <div className="space-y-2">
         <label htmlFor="password" className="eyebrow">Password</label>
-        <PasswordField id="password" name="password" required placeholder="••••••••" />
+        <PasswordField id="password" name="password" required placeholder="••••••••" aria-invalid={Boolean(state?.error)} aria-describedby={state?.error ? "login-error" : undefined} />
       </div>
       {state?.error ? (
-        <p role="alert" className="text-sm text-[var(--red)]">{state.error}</p>
+        <p id="login-error" role="alert" className="text-sm text-[var(--red)]">{state.error}</p>
       ) : null}
       <button type="submit" disabled={pending} className="btn btn-primary w-full">
         {pending ? "Memeriksa..." : "Masuk"}

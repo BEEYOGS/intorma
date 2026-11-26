@@ -21,6 +21,8 @@ export function CommandPalette() {
   const [data, setData] = useState<SearchResponse>({ pages: [], orders: [], services: [] });
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const close = useCallback(() => {
@@ -43,8 +45,38 @@ export function CommandPalette() {
 
   useEffect(() => {
     if (open) {
+      previousFocusRef.current = document.activeElement as HTMLElement | null;
       setTimeout(() => inputRef.current?.focus(), 50);
+    } else if (previousFocusRef.current) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
     }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const focusables = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a, button, input, textarea, select, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("disabled"));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    panel.addEventListener("keydown", onKey);
+    return () => panel.removeEventListener("keydown", onKey);
   }, [open]);
 
   useEffect(() => {
@@ -87,14 +119,16 @@ export function CommandPalette() {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Pencarian cepat"
+      aria-labelledby="command-palette-title"
       className="fixed inset-0 z-[60] flex items-start justify-center bg-black/60 px-4 pt-[12vh] backdrop-blur-sm"
       onClick={close}
     >
       <div
+        ref={panelRef}
         className="w-full max-w-xl overflow-hidden rounded-tag-lg border border-line bg-panel shadow-[0_30px_80px_-30px_rgba(0,0,0,0.9)]"
         onClick={(e) => e.stopPropagation()}
       >
+        <h2 id="command-palette-title" className="sr-only">Pencarian cepat</h2>
         <div className="flex items-center gap-3 border-b border-line px-4 py-3">
           <Search aria-hidden className="size-4 text-mute" />
           <input

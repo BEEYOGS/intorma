@@ -45,9 +45,9 @@ export function CustomerAuthForm() {
             </label>
             <label className="block">
               <span className="label">Password</span>
-              <input name="password" type="password" autoComplete="current-password" className="input" required placeholder="Minimal 8 karakter" />
+              <input name="password" type="password" autoComplete="current-password" className="input" required placeholder="Minimal 8 karakter" aria-invalid={Boolean(loginState?.error)} aria-describedby={loginState?.error ? "login-error" : undefined} />
             </label>
-            {loginState?.error && <p role="alert" className="text-xs text-danger">{loginState.error}</p>}
+            {loginState?.error && <p id="login-error" role="alert" className="text-xs text-danger">{loginState.error}</p>}
             <button type="submit" disabled={loginPending} className="btn btn-primary !h-11 text-sm">
               {loginPending ? "Memeriksa…" : "Masuk ke portal"}
             </button>
@@ -74,9 +74,9 @@ export function CustomerAuthForm() {
             </div>
             <label className="block">
               <span className="label">Password</span>
-              <input name="password" type="password" autoComplete="new-password" className="input" required minLength={8} placeholder="Minimal 8 karakter" />
+              <input name="password" type="password" autoComplete="new-password" className="input" required minLength={8} placeholder="Minimal 8 karakter" aria-invalid={Boolean(registerState?.error)} aria-describedby={registerState?.error ? "register-error" : undefined} />
             </label>
-            {registerState?.error && <p role="alert" className="text-xs text-danger">{registerState.error}</p>}
+            {registerState?.error && <p id="register-error" role="alert" className="text-xs text-danger">{registerState.error}</p>}
             <button type="submit" disabled={registerPending} className="btn btn-primary !h-11 text-sm">
               {registerPending ? "Membuat akun…" : "Daftar & masuk"}
             </button>

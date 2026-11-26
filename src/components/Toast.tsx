@@ -38,11 +38,16 @@ export function ToastHost() {
   if (items.length === 0) return null;
 
   return (
-    <div className="pointer-events-none fixed bottom-24 left-1/2 z-[70] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:bottom-6">
+    <div
+      className="pointer-events-none fixed bottom-24 left-1/2 z-[70] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:bottom-6"
+      aria-live="polite"
+      aria-atomic="false"
+    >
       {items.map((t) => (
         <div
           key={t.id}
-          role="status"
+          role={t.tone === "error" ? "alert" : "status"}
+          aria-live={t.tone === "error" ? "assertive" : "polite"}
           className={`pointer-events-auto rounded-tag-sm border px-4 py-3 text-sm shadow-[0_16px_40px_-20px_rgba(0,0,0,0.8)] backdrop-blur-sm toast-item ${
             t.tone === "ok"
               ? "border-[var(--jade)]/40 bg-[var(--panel)] text-[var(--text)]"

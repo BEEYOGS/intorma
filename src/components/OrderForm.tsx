@@ -787,7 +787,7 @@ export function OrderForm({
 
             <div className="mt-6 rounded-tag-sm border border-accent/20 bg-accent/[0.06] p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-mute">Total</p>
-              <p className="mt-1.5 text-4xl font-semibold tabular-nums tracking-tight text-accent">
+              <p className="mt-1.5 text-4xl font-semibold tabular-nums tracking-tight text-accent" aria-live="polite" aria-atomic="true">
                 {total != null ? rupiah(total) : "—"}
               </p>
               {hasPriceError && <p className="mt-1 text-xs text-danger">{quote?.error}</p>}

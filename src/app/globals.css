@@ -13,7 +13,7 @@
   --border-2: #3f3f46;
   --text: #fafafa;
   --text-2: #a1a1aa;
-  --text-3: #71717a;
+  --text-3: #8a8a93;
   --gold: #d4d4d8;
   --gold-2: #e4e4e7;
   --jade: #d4d4d8;
@@ -496,6 +496,50 @@ button,
   .card {
     border-radius: 8px;
   }
+}
+
+/* Skeleton loading: shimmer halus untuk state muat. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--panel-2);
+  border-radius: var(--radius);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}
+
+/* Skip link untuk akses keyboard cepat ke konten utama. */
+.skip-link {
+  position: fixed;
+  top: -40px;
+  left: 16px;
+  z-index: 100;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 600;
+  transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+  top: 16px;
 }
 
 /* Nota: kertas putih di atas tema gelap, mengikuti nota asli in.torma. */

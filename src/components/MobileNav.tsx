@@ -23,14 +23,26 @@ type NavLink = { href: string; label: string; icon: LucideIcon };
 export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const close = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
     document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   const links: NavLink[] = [
@@ -50,9 +62,11 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
   return (
     <div ref={rootRef} className="relative sm:hidden">
       <button
+        ref={buttonRef}
         type="button"
         aria-label={open ? "Tutup menu" : "Buka menu"}
         aria-expanded={open}
+        aria-controls="mobile-nav-menu"
         onClick={() => setOpen((v) => !v)}
         className="grid size-10 place-items-center rounded-[var(--radius)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
       >
@@ -60,7 +74,7 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-60 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]">
+        <div id="mobile-nav-menu" className="absolute right-0 top-12 z-50 w-60 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]">
           <nav aria-label="Navigasi seluler" className="grid">
             {links.map(({ href, label, icon: Icon }) => (
               <Link key={href} href={href} onClick={() => setOpen(false)} className={rowClass}>

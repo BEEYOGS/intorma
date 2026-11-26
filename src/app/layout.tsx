@@ -39,8 +39,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="id" className={`${fontSans.variable} ${fontSerifItalic.variable}`}>
       <body className="min-h-dvh bg-[var(--bg)] text-[var(--text)]">
+        <a href="#konten" className="skip-link">Lewati ke konten</a>
         <PageFade>
-          <main>{children}</main>
+          <main id="konten">{children}</main>
         </PageFade>
         <ToastHost />
       </body>

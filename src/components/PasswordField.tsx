@@ -1,6 +1,17 @@
-import { useId } from "react";
+import { useId, type InputHTMLAttributes } from "react";
 
-export function PasswordField({ id, name, required = true, placeholder = "" }: { id?: string; name: string; required?: boolean; placeholder?: string }) {
+export function PasswordField({
+  id,
+  name,
+  required = true,
+  placeholder = "",
+  ...rest
+}: {
+  id?: string;
+  name: string;
+  required?: boolean;
+  placeholder?: string;
+} & InputHTMLAttributes<HTMLInputElement>) {
   const fallbackId = useId();
   const inputId = id || fallbackId;
   return (
@@ -12,6 +23,7 @@ export function PasswordField({ id, name, required = true, placeholder = "" }: {
       placeholder={placeholder}
       autoComplete="current-password"
       className="input"
+      {...rest}
     />
   );
 }

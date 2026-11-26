@@ -16,7 +16,7 @@ export default {
         sand: "rgb(24 24 27 / <alpha-value>)",
         border: "#27272a",
         line: "rgb(39 39 42 / <alpha-value>)",
-        faint: "#71717a",
+        faint: "#8a8a93",
         ink: "rgb(250 250 250 / <alpha-value>)",
         paper: "rgb(250 250 250 / <alpha-value>)",
         mute: "rgb(161 161 170 / <alpha-value>)",
