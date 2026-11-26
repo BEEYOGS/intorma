@@ -4,7 +4,7 @@ import Helvetica from "pdfkit/standard-fonts/Helvetica";
 import HelveticaBold from "pdfkit/standard-fonts/HelveticaBold";
 import TimesItalic from "pdfkit/standard-fonts/TimesItalic";
 import { sql } from "@/lib/db";
-import { rupiah, tanggal } from "@/lib/format";
+import { jam, rupiah, tanggal } from "@/lib/format";
 import { notaRows, notaTotal, type NotaOrder, type NotaSnapshot } from "@/lib/nota";
 import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, asStatus } from "@/lib/status";
@@ -22,7 +22,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kode: s
   const order = (
     await sql`
       select o.code, o.name, o.status, o.price, o.options, o.brief, o.created_at,
-        o.qty, o.width_cm, o.height_cm, o.paid,
+        o.qty, o.width_cm, o.height_cm, o.paid, o.deadline, o.deadline_at,
         coalesce(s.name, o.service_label) as service
       from orders o left join services s on s.id = o.service_id
       where o.code = ${kode.toUpperCase()}`
@@ -63,7 +63,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kode: s
   text(order.code, M, 193, { align: "center", characterSpacing: 2 });
 
   let y = 232;
-  const third = width / 3;
+  const quarter = width / 4;
   doc.font("Helvetica").fontSize(8).fillColor("#555555");
   text("DITUTJUKAN KEPADA", M, y);
   y += 16;
@@ -75,20 +75,31 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kode: s
 
   y += 30;
   doc.font("Helvetica").fontSize(8).fillColor("#555555");
-  doc.text("TANGGAL", M, y, { width: third - 8 });
-  doc.text("STATUS", M + third, y, { width: third - 8 });
-  doc.text("PEMBAYARAN", M + third * 2, y, { width: third - 8 });
+  doc.text("TANGGAL", M, y, { width: quarter - 6 });
+  doc.text("DEADLINE", M + quarter, y, { width: quarter - 6 });
+  doc.text("STATUS", M + quarter * 2, y, { width: quarter - 6 });
+  doc.text("PEMBAYARAN", M + quarter * 3, y, { width: quarter - 6 });
   y += 15;
-  doc.font("Helvetica-Bold").fontSize(10).fillColor("#111111");
-  doc.text(tanggal(order.created_at), M, y, { width: third - 8 });
+  doc.font("Helvetica-Bold").fontSize(9).fillColor("#111111");
+  doc.text(tanggal(order.created_at), M, y, { width: quarter - 6 });
+  doc.text(
+    order.deadline_at
+      ? jam(order.deadline_at)
+      : order.deadline
+        ? tanggal(order.deadline)
+        : "Fleksibel",
+    M + quarter,
+    y,
+    { width: quarter - 6 },
+  );
   doc.fillColor(meta.color);
-  doc.text(meta.label, M + third, y, { width: third - 8 });
+  doc.text(meta.label, M + quarter * 2, y, { width: quarter - 6 });
   doc.fillColor("#111111");
   doc.text(
     order.paid ? "Lunas" : order.price == null ? "Menunggu harga" : "Belum dibayar",
-    M + third * 2,
+    M + quarter * 3,
     y,
-    { width: third - 8 },
+    { width: quarter - 6 },
   );
 
   // Tabel rincian.

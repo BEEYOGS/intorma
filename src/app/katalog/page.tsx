@@ -31,7 +31,7 @@ function ProductCard({ service }: { service: Service }) {
   return (
     <Link
       href={`/order?layanan=${service.id}`}
-      className="card group flex flex-col overflow-hidden transition-colors hover:border-[var(--border-2)]"
+      className="card glow-card group flex flex-col overflow-hidden"
     >
       <div className="relative grid h-40 place-items-center overflow-hidden border-b border-line bg-white/[0.015] px-5 text-[var(--text-2)] transition-colors group-hover:text-[var(--text)]">
         <span

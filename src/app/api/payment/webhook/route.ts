@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
-import { sql } from "@/lib/db";
-import { rupiah } from "@/lib/format";
-import { gatewayEnabled, isSettlement, midtransSignature } from "@/lib/payment";
-import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
-import { audit } from "@/lib/audit";
+import { gatewayEnabled, midtransSignature } from "@/lib/payment";
+import { settleMidtransPayment } from "@/lib/payment-settle";
 
 export const runtime = "nodejs";
 
@@ -32,57 +28,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Signature tidak cocok." }, { status: 403 });
   }
 
-  const code = payload.order_id.toUpperCase();
-  const order = (await sql`
-    select id, code, name, wa, price, paid, status from orders where code = ${code}
-  `)[0] as { id: number; code: string; name: string; wa: string; price: number | null; paid: boolean; status: string } | undefined;
-  if (!order) return NextResponse.json({ ok: true, ignored: true });
+  const result = await settleMidtransPayment({
+    orderId: payload.order_id,
+    transactionStatus: payload.transaction_status ?? "",
+    fraudStatus: payload.fraud_status,
+    grossAmount: payload.gross_amount,
+    transactionId: payload.transaction_id,
+    paymentType: payload.payment_type,
+    raw: payload,
+  });
 
-  if (!isSettlement(payload.transaction_status ?? "") || payload.fraud_status === "challenge") {
-    return NextResponse.json({ ok: true, ignored: true });
-  }
-  if (order.paid) return NextResponse.json({ ok: true, already: true });
-  if (order.price == null || Number(payload.gross_amount) !== Number(order.price)) {
-    console.warn(`[payment] nominal tidak cocok untuk ${order.code}: webhook=${payload.gross_amount}, order=${order.price}`);
-    await audit("payment_rejected", "order", order.code, {
-      amount: payload.gross_amount,
-      expected: order.price,
-      provider: "midtrans",
-    });
-    return NextResponse.json({ ok: true, ignored: true, reason: "amount_mismatch" });
-  }
-
-  const paidAt = new Date();
-  await sql`
-    update orders set paid = true, paid_at = ${paidAt}, payment_status = 'paid',
-      payment_method = 'midtrans', updated_at = now()
-    where id = ${order.id}`;
-  await sql`
-    insert into order_events (order_id, status, note)
-    values (${order.id}, ${order.status}, 'Pembayaran diterima via Midtrans')`;
-
-  const updated = await sql`
-    update payments set status = 'paid', paid_at = ${paidAt}, reference = ${payload.transaction_id ?? null},
-      raw = ${JSON.stringify(payload)}::jsonb
-    where order_id = ${order.id} and provider = 'midtrans' and status = 'pending'
-    returning id`;
-  if (!updated.length) {
-    await sql`
-      insert into payments (order_id, provider, method, amount, status, reference, raw, paid_at)
-      values (${order.id}, 'midtrans', ${payload.payment_type ?? "snap"}, ${order.price ?? 0}, 'paid',
-        ${payload.transaction_id ?? null}, ${JSON.stringify(payload)}::jsonb, ${paidAt})`;
-  }
-
-  const link = `${siteUrl()}/lacak/${order.code}`;
-  await Promise.all([
-    sendWA(order.wa, `Halo ${order.name}, pembayaran pesanan ${order.code} sebesar ${rupiah(Number(order.price ?? 0))} sudah kami terima. Terima kasih!\n\nPantau: ${link}`),
-    adminWhatsApp()
-      ? sendWA(adminWhatsApp(), `Pembayaran masuk via Midtrans untuk ${order.code} — ${order.name}.\nTotal: ${rupiah(Number(order.price ?? 0))}`)
-      : Promise.resolve(false),
-  ]);
-
-  revalidatePath(`/lacak/${order.code}`);
-  revalidatePath("/admin");
-  await audit("payment", "order", order.code, { amount: order.price, provider: "midtrans" });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: result.ok,
+    code: result.code,
+    reason: result.reason,
+    already: result.already ?? false,
+  });
 }

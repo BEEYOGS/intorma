@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getServiceWithOptions, sql } from "@/lib/db";
 import { isAdmin, login, logout } from "@/lib/auth";
-import { normalizeWA, rupiah } from "@/lib/format";
+import { normalizeWA, rupiah, tanggalJam } from "@/lib/format";
 import { isValidCode, makeCode, normalizeCode } from "@/lib/codes";
 import { calculateQuote, type QuoteSelection } from "@/lib/pricing";
 import { STATUS_META, isStatus } from "@/lib/status";
@@ -17,7 +17,12 @@ import {
   setCustomerSession,
   verifyPassword,
 } from "@/lib/customer-auth";
-import { createMidtransTransaction, gatewayEnabled } from "@/lib/payment";
+import {
+  createCoreCharge,
+  gatewayEnabled,
+  PAYMENT_METHODS,
+  type PaymentMethod,
+} from "@/lib/payment";
 import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
 import { audit } from "@/lib/audit";
 
@@ -104,6 +109,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     brief: str(f, "brief"),
     ref: str(f, "ref"),
     deadline: str(f, "deadline"),
+    deadlineTime: str(f, "deadlineTime"),
     qty: str(f, "qty"),
     width: str(f, "width"),
     height: str(f, "height"),
@@ -128,6 +134,14 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     };
   }
   if (values.ref && !/^https?:\/\//i.test(values.ref)) return { error: "Link referensi harus diawali http:// atau https://.", values };
+  if (!values.deadline) return { error: "Pilih tanggal deadline pengerjaan dulu.", values };
+  const deadlineTime = /^\d{2}:\d{2}$/.test(values.deadlineTime) ? values.deadlineTime : "17:00";
+  // Input dari browser adalah waktu WIB; ubah ke UTC agar konsisten di server.
+  const deadlineAt = new Date(`${values.deadline}T${deadlineTime}:00+07:00`);
+  if (Number.isNaN(deadlineAt.getTime())) return { error: "Tanggal atau jam deadline belum valid.", values };
+  if (deadlineAt.getTime() < Date.now() - 60_000) {
+    return { error: "Deadline tidak boleh di masa lalu.", values };
+  }
   if (svc.requires_file && !values.file) {
     return { error: "Tempel link file siap cetak dulu (Google Drive/WeTransfer).", values };
   }
@@ -155,13 +169,13 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   for (let i = 0; i < 5 && !order; i++) {
     const rows = await sql`
       insert into orders (
-        code, name, wa, service_id, service_label, customer_id, brief, ref_link, deadline,
+        code, name, wa, service_id, service_label, customer_id, brief, ref_link, deadline, deadline_at,
         qty, unit_rate, price, width_cm, height_cm, options, subtotal,
         file_url, payment_method, payment_status
       )
       values (
         ${await makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${svc.name}, ${customer?.id ?? null}, ${values.brief},
-        ${values.ref || null}, ${values.deadline || null},
+        ${values.ref || null}, ${values.deadline}, ${deadlineAt},
         ${quote.qty}, ${quote.unitRate}, ${quote.price},
         ${widthCm}, ${heightCm}, ${snapshot}::jsonb, ${quote.subtotal},
         ${fileUrl}, 'transfer', ${paymentStatus}
@@ -201,6 +215,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   const detail = [
     quote.snapshot?.summary ?? svc.name,
     quote.price != null ? `Total: ${rupiah(quote.price)}` : "Total: menunggu konfirmasi",
+    `Target selesai: ${tanggalJam(deadlineAt)}`,
   ].join("\n");
 
   // Kalau trigger database aktif, trigger sudah mengantrekan pesan pelanggan
@@ -660,23 +675,59 @@ export async function startPayment(_prev: ActionResult, f: FormData): Promise<Ac
   if (!gatewayEnabled()) return { error: "Payment gateway belum dikonfigurasi. Gunakan transfer manual." };
 
   const order = (await sql`
-    select id, code, name, wa, price, paid from orders where code = ${code}
-  `)[0] as { id: number; code: string; name: string; wa: string; price: number | null; paid: boolean } | undefined;
+    select id, code, paid, price, status from orders where code = ${code}
+  `)[0] as
+    | { id: number; code: string; paid: boolean; price: number | null; status: string }
+    | undefined;
 
   if (!order) return { error: "Pesanan tidak ditemukan." };
   if (order.paid) return { error: "Pesanan ini sudah lunas." };
+  if (order.status === "batal") return { error: "Pesanan ini sudah dibatalkan." };
   if (order.price == null || order.price <= 0) return { error: "Harga pesanan belum ditentukan." };
 
-  let transaction;
+  redirect(`/bayar/${order.code}`);
+}
+
+/**
+ * Membuat tagihan Midtrans Core API (QRIS / VA) lalu menyimpannya supaya
+ * halaman pembayaran bisa menampilkan QR/nomor VA yang sama saat dimuat ulang.
+ */
+export async function chargePayment(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  const code = str(f, "code").toUpperCase();
+  const method = str(f, "method") as PaymentMethod;
+  if (!code) return { error: "Kode pesanan tidak ditemukan." };
+  if (!PAYMENT_METHODS.some((item) => item.id === method)) {
+    return { error: "Pilih metode pembayaran dulu." };
+  }
+  if (!gatewayEnabled()) return { error: "Payment gateway belum dikonfigurasi. Gunakan transfer manual." };
+
+  const order = (await sql`
+    select id, code, name, wa, price, paid, status from orders where code = ${code}
+  `)[0] as
+    | {
+        id: number;
+        code: string;
+        name: string;
+        wa: string;
+        price: number | null;
+        paid: boolean;
+        status: string;
+      }
+    | undefined;
+
+  if (!order) return { error: "Pesanan tidak ditemukan." };
+  if (order.paid) return { error: "Pesanan ini sudah lunas." };
+  if (order.status === "batal") return { error: "Pesanan ini sudah dibatalkan." };
+  if (order.price == null || order.price <= 0) return { error: "Harga pesanan belum ditentukan." };
+
+  let charge;
   try {
-    transaction = await createMidtransTransaction({
-      code: order.code,
-      price: Number(order.price),
-      name: order.name,
-      wa: String(order.wa ?? ""),
-    });
+    charge = await createCoreCharge(
+      { code: order.code, price: Number(order.price), name: order.name, wa: String(order.wa ?? "") },
+      method,
+    );
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Gagal memulai pembayaran." };
+    return { error: error instanceof Error ? error.message : "Gagal membuat pembayaran." };
   }
 
   await sql`
@@ -684,9 +735,11 @@ export async function startPayment(_prev: ActionResult, f: FormData): Promise<Ac
     where order_id = ${order.id} and provider = 'midtrans' and status = 'pending'`;
   await sql`
     insert into payments (order_id, provider, method, amount, status, reference, raw)
-    values (${order.id}, 'midtrans', 'snap', ${order.price}, 'pending', ${transaction.token}, ${JSON.stringify({ redirect_url: transaction.redirectUrl })}::jsonb)`;
+    values (${order.id}, 'midtrans', ${method}, ${order.price}, 'pending', ${charge.transactionId},
+      ${JSON.stringify(charge)}::jsonb)`;
 
-  redirect(transaction.redirectUrl);
+  revalidatePath(`/bayar/${order.code}`);
+  return { ok: true };
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

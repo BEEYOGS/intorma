@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { rupiah, tanggal } from "@/lib/format";
+import { rupiah, tanggal, tanggalJam } from "@/lib/format";
 import { BarChart3, Download, TrendingUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -71,10 +71,11 @@ export default async function AnalitikPage({
       paramsArr,
     ),
     sql.query(
-      `select code, name, deadline, status from orders
-       where deadline is not null and deadline < current_date
+      `select code, name, deadline, deadline_at, status from orders
+       where coalesce(deadline_at, (deadline + time '23:59') at time zone 'Asia/Jakarta') is not null
+         and coalesce(deadline_at, (deadline + time '23:59') at time zone 'Asia/Jakarta') < now()
          and status not in ('selesai','batal')
-       order by deadline asc limit 8`,
+       order by coalesce(deadline_at, (deadline + time '23:59') at time zone 'Asia/Jakarta') asc limit 8`,
     ),
     sql.query(
       `select code, name, price, created_at from orders
@@ -230,7 +231,10 @@ export default async function AnalitikPage({
                       <a href={`/admin?open=${r.code}`} className="font-mono text-xs font-semibold hover:text-accent">
                         {String(r.code)}
                       </a>
-                      <span className="text-xs text-mute">{String(r.name)} · {tanggal(r.deadline)}</span>
+                      <span className="text-xs text-mute">
+                        {String(r.name)} ·{" "}
+                        {r.deadline_at ? tanggalJam(String(r.deadline_at)) : tanggal(String(r.deadline))}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -283,11 +287,11 @@ function statusLabel(s: string): string {
 
 function statusColor(s: string): string {
   const map: Record<string, string> = {
-    menunggu: "#d8a13a",
-    dikerjakan: "#5b9bd5",
-    revisi: "#a986e8",
-    selesai: "#4fae86",
-    batal: "#d45a4a",
+    menunggu: "#f59e0b",
+    dikerjakan: "#3b82f6",
+    revisi: "#a78bfa",
+    selesai: "#10b981",
+    batal: "#ef4444",
   };
   return map[s] ?? "#888";
 }

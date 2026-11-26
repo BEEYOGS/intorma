@@ -1,11 +1,11 @@
 import type { ProductStats } from "@/lib/data";
 
 const STAT_LABELS: Array<{ key: keyof ProductStats; label: string; color?: string }> = [
-  { key: "services", label: "Services", color: "#d9ad82" },
-  { key: "orders", label: "Orders", color: "#d9ad82" },
-  { key: "menunggu", label: "Pending", color: "#c8a16c" },
-  { key: "dikerjakan", label: "In progress", color: "#a3582b" },
-  { key: "selesi", label: "Done", color: "#6abf7b" },
+  { key: "services", label: "Services", color: "#10b981" },
+  { key: "orders", label: "Orders", color: "#10b981" },
+  { key: "menunggu", label: "Pending", color: "#f59e0b" },
+  { key: "dikerjakan", label: "In progress", color: "#3b82f6" },
+  { key: "selesi", label: "Done", color: "#10b981" },
 ];
 
 export function GridStat({ stats }: { stats: ProductStats }) {

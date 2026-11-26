@@ -22,6 +22,8 @@ export type NotaOrder = {
   options: unknown;
   brief: string | null;
   created_at: string | Date;
+  deadline?: string | Date | null;
+  deadline_at?: string | Date | null;
   qty: number | string | null;
   width_cm: number | string | null;
   height_cm: number | string | null;

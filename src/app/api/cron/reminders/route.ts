@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { rupiah } from "@/lib/format";
+import { rupiah, tanggal, tanggalJam } from "@/lib/format";
 import { sendWA, siteUrl } from "@/lib/wa";
 
 export const runtime = "nodejs";
@@ -22,13 +22,13 @@ export async function GET(req: Request) {
 
   // Pesanan dengan deadline dalam 2 hari atau sudah lewat, belum selesai/batal, dan belum dibayar.
   const rows = await sql`
-    select code, name, wa, status, price, paid, deadline
+    select code, name, wa, status, price, paid, deadline, deadline_at
     from orders
-    where deadline is not null
-      and deadline <= (current_date + interval '2 days')
+    where coalesce(deadline_at, (deadline + time '23:59') at time zone 'Asia/Jakarta') is not null
+      and coalesce(deadline_at, (deadline + time '23:59') at time zone 'Asia/Jakarta') <= now() + interval '2 days'
       and status not in ('selesai','batal')
       and (price is null or not paid)
-    order by deadline asc
+    order by coalesce(deadline_at, (deadline + time '23:59') at time zone 'Asia/Jakarta') asc
     limit 50
   `;
 
@@ -50,7 +50,11 @@ export async function GET(req: Request) {
     const msg = [
       `Halo ${r.name}, pengingat untuk pesanan ${r.code}.`,
       r.price ? `Total: ${rupiah(Number(r.price))}` : "Harga menunggu konfirmasi.",
-      r.deadline ? `Target selesai: ${new Date(r.deadline).toLocaleDateString("id-ID")}` : null,
+      r.deadline_at
+        ? `Target selesai: ${tanggalJam(r.deadline_at)}`
+        : r.deadline
+          ? `Target selesai: ${tanggal(r.deadline)}`
+          : null,
       r.paid ? null : "Pembayaran belum kami terima.",
       `Detail: ${link}`,
     ]

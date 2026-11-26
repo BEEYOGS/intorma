@@ -32,7 +32,7 @@ export async function GET(req: Request) {
   const rows = await sql.query(
     `select o.code, o.name, o.wa, coalesce(s.name, o.service_label) as service,
             o.status, o.price, o.paid, o.paid_at, o.qty, o.width_cm, o.height_cm,
-            o.subtotal, o.note, o.created_at, o.updated_at, o.deadline
+            o.subtotal, o.note, o.created_at, o.updated_at, o.deadline, o.deadline_at
      from orders o left join services s on s.id = o.service_id
      ${where}
      order by o.created_at desc`,
@@ -41,14 +41,14 @@ export async function GET(req: Request) {
 
   const header = [
     "kode", "nama", "whatsapp", "layanan", "status", "harga", "lunas", "dibayar_pada",
-    "qty", "lebar_cm", "tinggi_cm", "subtotal", "catatan", "dibuat", "diupdate", "deadline",
+    "qty", "lebar_cm", "tinggi_cm", "subtotal", "catatan", "dibuat", "diupdate", "deadline", "deadline_jam",
   ];
   const lines = [header.join(",")];
   for (const r of rows) {
     lines.push(
       [
         r.code, r.name, r.wa, r.service, r.status, r.price, r.paid, r.paid_at,
-        r.qty, r.width_cm, r.height_cm, r.subtotal, r.note, r.created_at, r.updated_at, r.deadline,
+        r.qty, r.width_cm, r.height_cm, r.subtotal, r.note, r.created_at, r.updated_at, r.deadline, r.deadline_at,
       ]
         .map(csvEscape)
         .join(","),

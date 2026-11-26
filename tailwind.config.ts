@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-// Monokrom: hitam, putih, abu + satu aksen hangat. Merah hanya untuk status/peringatan.
+// Vercel/Neon dark: obsidian + emerald (aksi/lunas), cyan (aktif), amber (menunggu).
 // Warna memakai kanal RGB supaya utilitas opacity seperti text-mute/70 tetap bekerja.
 export default {
   content: ["./src/**/*.{ts,tsx}"],
@@ -10,25 +10,29 @@ export default {
         xs: "400px",
       },
       colors: {
-        base: "#0a0a0a",
-        carbon: "#121212",
-        panel: "rgb(23 23 23 / <alpha-value>)",
-        sand: "rgb(31 31 31 / <alpha-value>)",
-        border: "#2e2e2e",
-        line: "rgb(46 46 46 / <alpha-value>)",
-        faint: "#7a7a7a",
-        ink: "rgb(245 245 245 / <alpha-value>)",
-        paper: "rgb(245 245 245 / <alpha-value>)",
-        mute: "rgb(184 184 184 / <alpha-value>)",
-        gold: "#e6e6e6",
-        goldDark: "#bfbfbf",
-        jade: "#b8b8b8",
+        base: "#09090b",
+        carbon: "#0f0f11",
+        panel: "rgb(17 17 19 / <alpha-value>)",
+        sand: "rgb(24 24 27 / <alpha-value>)",
+        border: "#27272a",
+        line: "rgb(39 39 42 / <alpha-value>)",
+        faint: "#71717a",
+        ink: "rgb(250 250 250 / <alpha-value>)",
+        paper: "rgb(250 250 250 / <alpha-value>)",
+        mute: "rgb(161 161 170 / <alpha-value>)",
+        gold: "#10b981",
+        goldDark: "#059669",
+        jade: "#10b981",
         accent: {
-          DEFAULT: "rgb(230 230 230 / <alpha-value>)",
-          strong: "#bfbfbf",
-          soft: "rgba(255, 255, 255, 0.10)",
+          DEFAULT: "rgb(16 185 129 / <alpha-value>)",
+          strong: "#34d399",
+          soft: "rgba(16, 185, 129, 0.12)",
         },
-        danger: "rgb(212 90 74 / <alpha-value>)",
+        warn: "rgb(245 158 11 / <alpha-value>)",
+        info: "rgb(59 130 246 / <alpha-value>)",
+        cyan: "rgb(34 211 238 / <alpha-value>)",
+        violet: "rgb(167 139 250 / <alpha-value>)",
+        danger: "rgb(239 68 68 / <alpha-value>)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],

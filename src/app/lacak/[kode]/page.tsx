@@ -11,7 +11,7 @@ import { LiveRefresh } from "@/components/LiveRefresh";
 import { IconForStatus } from "@/components/StatusIcon";
 import { ArrowLeft } from "lucide-react";
 import { sql } from "@/lib/db";
-import { rupiah, tanggal } from "@/lib/format";
+import { rupiah, tanggal, tanggalJam } from "@/lib/format";
 import { priceBreakdown } from "@/lib/pricing";
 import { gatewayEnabled } from "@/lib/payment";
 import { getPaymentSettings } from "@/lib/settings";
@@ -30,7 +30,7 @@ export default async function TrackPage({
   const [{ kode }, { baru }] = await Promise.all([params, searchParams]);
   const order = (
     await sql`
-      select o.id, o.code, o.name, o.status, o.price, o.note, o.paid, o.deadline, o.brief,
+      select o.id, o.code, o.name, o.status, o.price, o.note, o.paid, o.deadline, o.deadline_at, o.brief,
         o.created_at, o.qty, o.unit_rate, o.width_cm, o.height_cm, o.options, o.subtotal,
         o.file_url, o.payment_status, o.payment_method,
         coalesce(s.name, o.service_label) as service, s.unit_label as unit_label
@@ -187,7 +187,7 @@ export default async function TrackPage({
                     <span
                       aria-hidden
                       className="status-dot"
-                      style={{ background: order.paid ? "#4fae86" : "#d8a13a" }}
+                      style={{ background: order.paid ? "#10b981" : "#f59e0b" }}
                     />
                     {order.paid ? "Lunas" : "Belum dibayar"}
                   </span>
@@ -310,7 +310,13 @@ export default async function TrackPage({
                 )}
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-mute">Target selesai</dt>
-                  <dd className="text-right font-medium">{order.deadline ? tanggal(order.deadline) : "Fleksibel"}</dd>
+                  <dd className="text-right font-medium">
+                    {order.deadline_at
+                      ? tanggalJam(order.deadline_at)
+                      : order.deadline
+                        ? tanggal(order.deadline)
+                        : "Fleksibel"}
+                  </dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-mute">Dibuat</dt>

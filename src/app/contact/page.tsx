@@ -30,9 +30,9 @@ export default function ContactPage() {
             <div className="p-5 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[var(--text)]">Email</p>
-                <p className="mono text-sm text-[var(--text-2)] mt-1">hello@in.torma</p>
+                <p className="mono text-sm text-[var(--text-2)] mt-1">lucky77ag@gmail.com</p>
               </div>
-              <a href="mailto:hello@in.torma" className="btn btn-ghost text-xs">
+              <a href="mailto:lucky77ag@gmail.com" className="btn btn-ghost text-xs">
                 <Mail aria-hidden className="size-4" /> Kirim email
               </a>
             </div>

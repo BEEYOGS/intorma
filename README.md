@@ -113,7 +113,8 @@ ADMIN_WHATSAPP_NUMBER=0895329940950
 
 Fonnte menyimpan sesi WhatsApp di server mereka, jadi notifikasi dan balasan `status INT-DDMMYY001`
 tetap berjalan walau PC mati. `connectOnly=false` membuat pesan tetap diantrekan Fonnte saat device
-sedang reconnect.
+sedang reconnect. Branding “sent via fonnte” ditentukan oleh paket/device Fonnte, bukan parameter API;
+untuk menghapusnya perlu paket berbayar atau pengaturan branding di dashboard Fonnte.
 
 OpenWA tetap didukung untuk self-hosted:
 
@@ -163,10 +164,16 @@ Dua jalur bisa dipakai berdampingan:
 
 - **Transfer manual** (default): atur rekening di `/admin/pengaturan`. Admin mencentang
   “Pembayaran sudah masuk” di `/admin` setelah mengecek bukti transfer.
-- **Midtrans Snap** (opsional): isi `MIDTRANS_SERVER_KEY` di environment. Tombol “Bayar sekarang”
-  akan muncul di halaman lacak, dan webhook `/api/payment/webhook` menandai pesanan lunas otomatis
-  setelah status `settlement`/`capture`. Set `MIDTRANS_IS_PRODUCTION=1` setelah pindah ke akun
-  produksi, lalu daftarkan URL webhook tersebut di dashboard Midtrans.
+- **Midtrans Core API** (opsional): isi `MIDTRANS_SERVER_KEY` di environment. Tombol
+  “Pilih metode pembayaran” di halaman lacak membuka `/bayar/[kode]`, lalu pelanggan memilih
+  **QRIS** atau **Virtual Account** (BCA/BNI/BRI/Permata) tanpa popup Snap. Tagihan disimpan di
+  tabel `payments`, QR dibuat lokal dari `qr_string`, dan halaman memantau status lewat
+  `/api/payment/status`. Webhook `/api/payment/webhook` menandai pesanan lunas otomatis setelah
+  status `settlement`/`capture`. Set `MIDTRANS_IS_PRODUCTION=1` setelah pindah ke akun produksi,
+  aktifkan QRIS + VA di dashboard Midtrans, lalu daftarkan URL webhook tersebut.
+- **Deadline**: form pesanan mewajibkan tanggal dan jam. Nilai lengkap disimpan di
+  `orders.deadline_at` (WIB → UTC), tampil di lacak/nota/PDF, dan dipakai cron pengingat.
+  Kolom lama `orders.deadline` (tanggal saja) tetap dibaca sebagai fallback.
 
 Tanpa server key, alur tetap memakai transfer manual seperti sebelumnya.
 

@@ -696,18 +696,43 @@ export function OrderForm({
           </fieldset>
 
           <fieldset>
-            <legend className="mb-1 text-xl font-semibold tracking-tight">Detail tambahan</legend>
-            <p className="mb-5 text-sm text-mute">Opsional. Boleh dikosongkan kalau belum ada.</p>
-            <div className="grid gap-5 sm:grid-cols-2">
+            <legend className="mb-1 text-xl font-semibold tracking-tight">Deadline pengerjaan</legend>
+            <p className="mb-5 text-sm text-mute">
+              Kapan pesanan ini harus selesai? Tanggal dan jam wajib diisi supaya antrean produksi jelas.
+            </p>
+            <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_10rem]">
               <label className="block">
-                <span className="label">Link referensi</span>
-                <input name="ref" type="url" defaultValue={v.ref} placeholder="https://" className="field" />
+                <span className="label">
+                  Tanggal <span className="text-[var(--warn)]">*</span>
+                </span>
+                <DateField name="deadline" defaultValue={v.deadline} placeholder="Pilih tanggal deadline" />
               </label>
               <label className="block">
-                <span className="label">Ingin selesai tanggal</span>
-                <DateField name="deadline" defaultValue={v.deadline} />
+                <span className="label">
+                  Jam <span className="text-[var(--warn)]">*</span>
+                </span>
+                <input
+                  name="deadlineTime"
+                  type="time"
+                  defaultValue={v.deadlineTime || "17:00"}
+                  className="field tabular-nums"
+                  required
+                />
               </label>
             </div>
+            <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-mute">
+              <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--warn)]" />
+              Deadline otomatis masuk ke nota, halaman lacak, dan pesan WhatsApp ke kamu serta admin.
+            </p>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-1 text-xl font-semibold tracking-tight">Detail tambahan</legend>
+            <p className="mb-5 text-sm text-mute">Opsional. Boleh dikosongkan kalau belum ada.</p>
+            <label className="block">
+              <span className="label">Link referensi</span>
+              <input name="ref" type="url" defaultValue={v.ref} placeholder="https://" className="field" />
+            </label>
           </fieldset>
 
           <div className="flex flex-col gap-4 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">

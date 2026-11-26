@@ -9,7 +9,7 @@ import { QuickActions } from "@/components/QuickActions";
 import { ChevronRight, Eye, MessageCircle, Printer, Search, X } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { normalizeWA, rupiah, tanggal } from "@/lib/format";
+import { jam, normalizeWA, rupiah, tanggal, tanggalJam } from "@/lib/format";
 import { STATUSES, STATUS_META, isStatus, type Status } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +31,21 @@ function buildReturn(filter: string | null, unpaidOnly: boolean, q: string): str
   if (q) params.set("q", q);
   const query = params.toString();
   return query ? `/admin?${query}` : "/admin";
+}
+
+/** Penanda deadline: merah kalau lewat, amber kalau kurang dari 48 jam. */
+function deadlineBadge(value: string | Date | null | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const diff = date.getTime() - Date.now();
+  const late = diff < 0;
+  const soon = diff <= 48 * 3600_000;
+  return {
+    label: `${late ? "Lewat" : "Deadline"} ${jam(date)}`,
+    late,
+    soon,
+  };
 }
 
 /** Ringkasan snapshot harga self-service: ukuran, opsi, dan rincian. */
@@ -255,6 +270,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           {orders.map((o) => {
             const st = (isStatus(o.status) ? o.status : "menunggu") as Status;
             const price = o.price == null ? null : Number(o.price);
+            const dl = deadlineBadge(o.deadline_at);
             return (
               <li key={o.id} className="border-b border-line">
                 <details className="group" open={o.code === openCode}>
@@ -270,11 +286,35 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       <span className="block text-xs text-mute sm:hidden">
                         {o.service ?? "—"} · {tanggal(o.created_at)}
                       </span>
+                      {dl && (
+                        <span
+                          className={`mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold sm:hidden ${
+                            dl.late
+                              ? "border-danger/35 bg-danger/[0.06] text-danger"
+                              : dl.soon
+                                ? "border-[var(--warn)]/35 bg-[var(--warn)]/[0.07] text-[var(--warn)]"
+                                : "border-line text-mute"
+                          }`}
+                        >
+                          <span aria-hidden className="size-1.5 rounded-full bg-current" />
+                          {dl.label}
+                        </span>
+                      )}
                     </span>
 
                     <span className="hidden text-sm text-mute sm:block">{o.service ?? "—"}</span>
                     <span className="hidden sm:block">
                       <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} status={st} />
+                      {dl && (
+                        <span
+                          className={`mt-1 flex items-center gap-1 text-[10px] font-semibold ${
+                            dl.late ? "text-danger" : dl.soon ? "text-[var(--warn)]" : "text-mute"
+                          }`}
+                        >
+                          <span aria-hidden className="size-1.5 rounded-full bg-current" />
+                          {dl.label}
+                        </span>
+                      )}
                     </span>
 
                     <span className="col-span-2 flex items-center justify-between gap-3 border-t border-line/70 pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
@@ -327,7 +367,13 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                         </div>
                         <div>
                           <dt className="text-mute">Target selesai</dt>
-                          <dd className="mt-1 font-medium">{o.deadline ? tanggal(o.deadline) : "Fleksibel"}</dd>
+                          <dd className="mt-1 font-medium">
+                            {o.deadline_at
+                              ? tanggalJam(o.deadline_at)
+                              : o.deadline
+                                ? tanggal(o.deadline)
+                                : "Fleksibel"}
+                          </dd>
                         </div>
                         <div>
                           <dt className="text-mute">Referensi</dt>

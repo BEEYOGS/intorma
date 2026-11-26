@@ -6,7 +6,7 @@ import { NotaQrCard } from "@/components/NotaQrCard";
 import { PrintButton } from "@/components/PrintButton";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { rupiah, tanggal } from "@/lib/format";
+import { jam, rupiah, tanggal } from "@/lib/format";
 import { notaRows, type NotaOrder, type NotaSnapshot } from "@/lib/nota";
 import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, asStatus } from "@/lib/status";
@@ -19,7 +19,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
   const order = (
     await sql`
       select o.id, o.code, o.name, o.status, o.price, o.options, o.brief, o.created_at,
-        o.qty, o.unit_rate, o.width_cm, o.height_cm, o.paid,
+        o.qty, o.unit_rate, o.width_cm, o.height_cm, o.paid, o.deadline, o.deadline_at,
         coalesce(s.name, o.service_label) as service, s.unit_label as unit_label
       from orders o left join services s on s.id = o.service_id
       where o.code = ${kode.toUpperCase()}`
@@ -96,10 +96,20 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
           <p className="text-xs text-[#333]">Pesanan {order.service ?? "custom"}</p>
         </section>
 
-        <section className="mt-6 grid gap-3 border-y border-[#c9c9c9] py-3 text-xs sm:grid-cols-3">
+        <section className="mt-6 grid gap-3 border-y border-[#c9c9c9] py-3 text-xs sm:grid-cols-4">
           <div>
             <span className="nota-caption">Tanggal</span>
             <p className="mt-0.5 font-semibold">{tanggal(order.created_at)}</p>
+          </div>
+          <div>
+            <span className="nota-caption">Deadline</span>
+            <p className="mt-0.5 font-semibold">
+              {order.deadline_at
+                ? jam(order.deadline_at)
+                : order.deadline
+                  ? tanggal(order.deadline)
+                  : "Fleksibel"}
+            </p>
           </div>
           <div>
             <span className="nota-caption">Status</span>

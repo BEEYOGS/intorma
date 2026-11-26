@@ -4,21 +4,25 @@
 
 :root {
   color-scheme: dark;
-  /* Grayscale ramp: hitam → putih. Aksen = terang, merah hanya untuk status. */
-  --bg: #0a0a0a;
-  --bg-2: #121212;
-  --panel: #171717;
-  --panel-2: #1f1f1f;
-  --border: #2e2e2e;
-  --border-2: #454545;
-  --text: #f5f5f5;
-  --text-2: #b8b8b8;
-  --text-3: #7a7a7a;
-  --gold: #e6e6e6;
-  --gold-2: #ffffff;
-  --jade: #b8b8b8;
-  --red: #d45a4a;
-  --radius: 6px;
+  /* Vercel/Neon dark: kanvas obsidian, permukaan bertingkat, aksen fungsional. */
+  --bg: #09090b;
+  --bg-2: #0f0f11;
+  --panel: #111113;
+  --panel-2: #18181b;
+  --border: #27272a;
+  --border-2: #3f3f46;
+  --text: #fafafa;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
+  --gold: #10b981;
+  --gold-2: #34d399;
+  --jade: #10b981;
+  --red: #ef4444;
+  --warn: #f59e0b;
+  --info: #3b82f6;
+  --cyan: #22d3ee;
+  --violet: #a78bfa;
+  --radius: 8px;
 }
 
 html {
@@ -30,7 +34,7 @@ html {
 }
 
 :focus-visible {
-  outline: 2px solid var(--text-2);
+  outline: 2px solid color-mix(in srgb, var(--gold) 75%, white);
   outline-offset: 2px;
 }
 
@@ -62,11 +66,23 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+}
+
+/* Glow aksen tipis di atas halaman, khas dashboard Neon. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(620px 300px at 12% -6%, rgba(16, 185, 129, 0.10), transparent 72%),
+    radial-gradient(720px 340px at 88% -10%, rgba(34, 211, 238, 0.07), transparent 72%);
 }
 
 .wrap {
@@ -109,7 +125,7 @@ body::before {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
   border: 1px solid transparent;
   white-space: nowrap;
   user-select: none;
@@ -121,18 +137,20 @@ body::before {
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.98);
 }
 
 .btn-primary {
   background: var(--gold);
-  color: #090c10;
+  color: #04110f;
   border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2), 0 10px 28px -14px rgba(16, 185, 129, 0.65);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--gold-2);
   border-color: var(--gold-2);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.3), 0 14px 34px -14px rgba(52, 211, 153, 0.7);
 }
 
 .btn-ghost {
@@ -150,27 +168,51 @@ body::before {
 .btn-danger {
   background: transparent;
   color: var(--red);
-  border-color: rgba(212, 90, 74, 0.3);
+  border-color: rgba(239, 68, 68, 0.32);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: rgba(212, 90, 74, 0.08);
+  background: rgba(239, 68, 68, 0.08);
   border-color: var(--red);
 }
 
-/* Cards - minimal, no shadow glow */
+/* Cards - permukaan bertingkat dengan garis tipis dan glow halus saat hover. */
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .card-hover {
-  transition: border-color 0.15s ease;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .card-hover:hover {
-  border-color: var(--border-2);
+  border-color: color-mix(in srgb, var(--gold) 38%, var(--border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(16, 185, 129, 0.08),
+    0 18px 48px -28px rgba(16, 185, 129, 0.45);
+  transform: translateY(-1px);
+}
+
+/* Kartu katalog: glow aksen + border menyala saat hover/fokus. */
+.glow-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glow-card:hover {
+  border-color: color-mix(in srgb, var(--gold) 42%, var(--border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(16, 185, 129, 0.10),
+    0 24px 60px -32px rgba(16, 185, 129, 0.55);
+  transform: translateY(-2px);
+}
+
+.glow-card:active {
+  transform: scale(0.99);
 }
 
 /* Inputs */
@@ -187,7 +229,8 @@ body::before {
 }
 
 .input:focus {
-  border-color: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 65%, var(--border));
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.10);
 }
 
 .input::placeholder {
