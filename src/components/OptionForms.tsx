@@ -3,8 +3,6 @@
 import { useActionState } from "react";
 import { Trash2 } from "lucide-react";
 import {
-  deleteOption,
-  deleteOptionGroup,
   saveOption,
   saveOptionGroup,
   type ActionResult,

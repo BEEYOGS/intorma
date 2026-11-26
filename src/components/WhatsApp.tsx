@@ -70,15 +70,4 @@ export function WhatsAppLink({
   );
 }
 
-export function WhatsAppFab() {
-  return (
-    <WhatsAppLink
-      text="Halo in.torma, saya mau tanya soal layanan desain."
-      ariaLabel="Chat WhatsApp in.torma"
-      className="group fixed bottom-20 right-4 z-40 inline-flex items-center gap-2 rounded-[var(--radius)] border border-[var(--border-2)] bg-[var(--panel-2)] px-4 py-2.5 text-sm font-medium text-[var(--text)] shadow-[0_16px_40px_-20px_rgba(0,0,0,0.8)] transition-colors hover:border-[var(--gold)] sm:bottom-6 sm:right-6"
-    >
-      <WhatsAppIcon className="size-5" />
-      <span className="hidden sm:inline">Chat WhatsApp</span>
-    </WhatsAppLink>
-  );
-}
+

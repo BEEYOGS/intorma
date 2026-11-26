@@ -20,6 +20,7 @@ const fontSerifItalic = localFont({
 
 import { ToastHost } from "@/components/Toast";
 import { PageFade } from "@/components/PageFade";
+import { ServiceWorkerRegister, InstallButton } from "@/components/PWA";
 
 export const metadata: Metadata = {
   title: { default: "in.torma — Studio desain & cetak", template: "%s — in.torma" },
@@ -43,6 +44,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <PageFade>
           <main id="konten">{children}</main>
         </PageFade>
+        <ServiceWorkerRegister />
+        <InstallButton />
         <ToastHost />
       </body>
     </html>

@@ -4,7 +4,7 @@ import Helvetica from "pdfkit/standard-fonts/Helvetica";
 import HelveticaBold from "pdfkit/standard-fonts/HelveticaBold";
 import TimesItalic from "pdfkit/standard-fonts/TimesItalic";
 import { sql } from "@/lib/db";
-import { jam, rupiah, tanggal } from "@/lib/format";
+import { jam, tanggal } from "@/lib/format";
 import { notaRows, notaTotal, type NotaOrder, type NotaSnapshot } from "@/lib/nota";
 import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, asStatus } from "@/lib/status";

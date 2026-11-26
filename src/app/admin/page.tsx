@@ -141,12 +141,6 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const focus = attention[0] as
     | { konfirmasi: number; revisi: number; deadline: number; aging: number }
     | undefined;
-  const focusTotal =
-    Number(focus?.konfirmasi ?? 0) +
-    Number(focus?.revisi ?? 0) +
-    Number(focus?.deadline ?? 0) +
-    Number(focus?.aging ?? 0);
-
   const keepSearch = (path: string) =>
     q ? `${path}${path.includes("?") ? "&" : "?"}q=${encodeURIComponent(q)}` : path;
   const clearSearch = filter

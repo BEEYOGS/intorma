@@ -28,24 +28,6 @@ export function Footer() {
   );
 }
 
-export function StatusDot({
-  color,
-  label,
-  status,
-}: {
-  color: string;
-  label: string;
-  status?: Status;
-}) {
-  return (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap text-xs text-[var(--text-2)]">
-      <span aria-hidden className="status-dot" style={{ background: color }} />
-      {status ? <IconForStatus status={status} className="size-3.5" /> : null}
-      {label}
-    </span>
-  );
-}
-
 export function StatusBadge({
   color,
   label,

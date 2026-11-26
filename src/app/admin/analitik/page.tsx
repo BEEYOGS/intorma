@@ -3,7 +3,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal, tanggalJam } from "@/lib/format";
-import { BarChart3, Download, TrendingUp } from "lucide-react";
+import { Download } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Analitik", robots: { index: false } };
