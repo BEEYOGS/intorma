@@ -178,7 +178,9 @@ insert into app_settings (key, value) values
   ('bank_name', 'BCA'),
   ('bank_account', '8171700213'),
   ('bank_holder', 'Yogi'),
-  ('payment_note', 'Transfer sesuai total, lalu konfirmasi lewat WhatsApp.')
+  ('payment_note', 'Transfer sesuai total, lalu konfirmasi lewat WhatsApp.'),
+  ('reminder_enabled', '0'),
+  ('admin_digest_enabled', '1')
 on conflict (key) do nothing;
 
 insert into services (id, name, blurb, price_from, days, sort, pricing_mode, unit_label, min_qty, max_qty) values

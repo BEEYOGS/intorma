@@ -25,6 +25,8 @@ export default async function SettingsAdmin() {
   ]);
   const reminderRow = (await sql`select value from app_settings where key = 'reminder_enabled'`)[0];
   const reminderEnabled = String(reminderRow?.value ?? "0") === "1";
+  const digestRow = (await sql`select value from app_settings where key = 'admin_digest_enabled'`)[0];
+  const digestEnabled = String(digestRow?.value ?? "1") !== "0";
 
   return (
     <AdminShell active="settings">
@@ -67,28 +69,51 @@ export default async function SettingsAdmin() {
       </section>
 
       <section className="mt-12 max-w-2xl rounded-tag-lg border border-line bg-panel/40 p-5">
-        <h2 className="text-lg font-semibold tracking-tight">Pengingat deadline otomatis</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Pengingat otomatis</h2>
         <p className="mt-1 text-sm leading-6 text-mute">
-          Setiap hari jam 09:00 WIB, kirim WhatsApp ke pelanggan yang pesanannya belum selesai/bayar dan
-          deadline dalam 2 hari atau sudah lewat.
+          Cron berjalan setiap hari pukul 09.00 WIB. Pesan klien dibatasi agar kuota Fonnte tetap hemat.
         </p>
-        <form action={toggleRemindersAction} className="mt-4 flex flex-wrap items-center gap-3">
-          <label className="block cursor-pointer">
-            <input
-              type="checkbox"
-              name="enabled"
-              defaultChecked={reminderEnabled}
-              className="peer sr-only"
-            />
-            <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
-              <span aria-hidden className="check-box">✓</span>
-              <span className="text-sm font-semibold">
-                {reminderEnabled ? "Aktif" : "Nonaktif"}
+        <ul className="mt-4 space-y-1.5 text-sm leading-6 text-mute">
+          <li>• Deadline H-2 atau sudah lewat: maksimal satu pengingat per pesanan per hari.</li>
+          <li>• Belum dibayar: pengingat pada hari ke-2, 7, dan 14 sejak pesanan dibuat.</li>
+          <li>• Rangkuman admin: sekali sehari, hanya kalau ada pesanan baru, menunggu konfirmasi, atau deadline dekat.</li>
+        </ul>
+        <form action={toggleRemindersAction} className="mt-5 space-y-3">
+          <input type="hidden" name="digestForm" value="1" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block cursor-pointer">
+              <input
+                type="checkbox"
+                name="enabled"
+                defaultChecked={reminderEnabled}
+                className="peer sr-only"
+              />
+              <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
+                <span aria-hidden className="check-box">✓</span>
+                <span>
+                  <span className="block text-sm font-semibold">Pengingat klien</span>
+                  <span className="mt-0.5 block text-xs text-mute">Deadline &amp; tagihan</span>
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
+            <label className="block cursor-pointer">
+              <input
+                type="checkbox"
+                name="digest"
+                defaultChecked={digestEnabled}
+                className="peer sr-only"
+              />
+              <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
+                <span aria-hidden className="check-box">✓</span>
+                <span>
+                  <span className="block text-sm font-semibold">Rangkuman admin</span>
+                  <span className="mt-0.5 block text-xs text-mute">Sekali sehari ke WhatsApp admin</span>
+                </span>
+              </span>
+            </label>
+          </div>
           <button type="submit" className="btn btn-outline min-h-10 px-4 text-sm">
-            Simpan
+            Simpan pengaturan
           </button>
         </form>
       </section>

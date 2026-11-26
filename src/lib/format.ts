@@ -31,6 +31,15 @@ export const tanggalJam = (d: string | Date | null | undefined) =>
         timeZone: "Asia/Jakarta",
       });
 
+/** Tanggal hari ini di WIB, format YYYY-MM-DD. Dipakai kunci idempoten cron. */
+export const tanggalHariIni = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
 /** 0812..., 812..., +62812... -> 62812... (kosong kalau tidak valid) */
 export function normalizeWA(input: string): string {
   let n = input.replace(/\D/g, "");

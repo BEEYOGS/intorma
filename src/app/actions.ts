@@ -863,7 +863,18 @@ export async function toggleReminders(_prev: ActionResult, f: FormData): Promise
   await sql`
     insert into app_settings (key, value) values ('reminder_enabled', ${enabled ? "1" : "0"})
     on conflict (key) do update set value = excluded.value`;
-  await audit("update", "settings", "reminder", { enabled });
+
+  // Form pengaturan mengirim digestForm=1 supaya checkbox yang tidak dicentang
+  // tetap bisa dibedakan dari form lama yang belum punya opsi ini.
+  let digest: boolean | null = null;
+  if (f.get("digestForm") === "1") {
+    digest = f.get("digest") === "on";
+    await sql`
+      insert into app_settings (key, value) values ('admin_digest_enabled', ${digest ? "1" : "0"})
+      on conflict (key) do update set value = excluded.value`;
+  }
+
+  await audit("update", "settings", "reminder", { enabled, digest });
   revalidatePath("/admin/pengaturan");
   return { ok: true };
 }

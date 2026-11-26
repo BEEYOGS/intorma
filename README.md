@@ -194,11 +194,19 @@ Perubahan langsung dipakai halaman `/order` tanpa menjalankan SQL manual.
   Kosongkan untuk menghapus tautan lama.
 - **Piutang**: kartu “Piutang menunggu transfer” di `/admin` memecah nominal berdasarkan umur
   (<3 hari, 3–7 hari, >7 hari). Klik untuk membuka filter `?p=belum`.
+- **Fokus hari ini**: panel di atas daftar pesanan menampilkan konfirmasi harga, deadline ≤48 jam,
+  telat bayar >2 hari, dan revisi. Semuanya bisa diklik menjadi filter (`?p=deadline`, `?p=aging`).
 - **Aksi massal**: bisa mengubah status sekaligus memilih **lunas / belum dibayar / tidak diubah**.
   Sinkronisasi `payment_status`, `paid_at`, tabel `payments`, dan `order_events` ikut berjalan.
 - **CRM**: `/admin/pelanggan` mengelompokkan pesanan per nomor WhatsApp lengkap dengan total
   belanja, piutang, riwayat pesanan, dan tombol chat langsung.
-- **Pengingat**: cron harian mengirim maksimal satu WA per pesanan per hari (kunci idempotensi
-  `reminder-<kode>-<tanggal>` di `wa_outbox`).
+- **Pengingat**: cron harian pukul 09.00 WIB mengirim pengingat deadline H-2 (maksimal sekali per
+  pesanan per hari, kunci `reminder-<kode>-<tanggal>`) dan tagihan belum dibayar pada hari ke-2, 7,
+  dan 14 (kunci `unpaid-<kode>-<stage>`). Rangkuman admin dikirim sekali sehari dengan kunci
+  `admin-digest-<tanggal>`.
+- **Pesan klien**: balasan yang bukan perintah `status` diteruskan ke WhatsApp admin, maksimal sekali
+  per nomor per hari (`inbound-<nomor>-<tanggal>`) supaya kuota tetap hemat.
+- **Pengaturan notifikasi**: `/admin/pengaturan` punya dua sakelar terpisah untuk pengingat klien dan
+  rangkuman admin.
 
 Kolom `orders.internal_note` ditambahkan lewat `npm run db:migrate` (idempoten).

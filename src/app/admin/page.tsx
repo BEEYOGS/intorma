@@ -6,7 +6,7 @@ import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderEditor } from "@/components/OrderEditor";
 import { BulkOrderForm } from "@/components/BulkOrderForm";
 import { QuickActions } from "@/components/QuickActions";
-import { ChevronRight, Eye, MessageCircle, Printer, Search, X } from "lucide-react";
+import { ChevronRight, ClipboardCheck, Clock, Eye, MessageCircle, Printer, RotateCcw, Search, Wallet, X, type LucideIcon } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { jam, normalizeWA, rupiah, tanggal, tanggalJam } from "@/lib/format";
@@ -24,10 +24,12 @@ type Params = {
   deleted?: string;
 };
 
-function buildReturn(filter: string | null, unpaidOnly: boolean, q: string): string {
+type Special = "belum" | "deadline" | "aging";
+
+function buildReturn(filter: string | null, special: Special | null, q: string): string {
   const params = new URLSearchParams();
   if (filter) params.set("s", filter);
-  if (unpaidOnly) params.set("p", "belum");
+  if (special) params.set("p", special);
   if (q) params.set("q", q);
   const query = params.toString();
   return query ? `/admin?${query}` : "/admin";
@@ -59,12 +61,15 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   if (!(await isAdmin())) redirect("/admin/login");
   const params = await searchParams;
   const filter = params.s && isStatus(params.s) ? params.s : null;
-  const unpaidOnly = params.p === "belum" && !filter;
+  const special: Special | null =
+    !filter && (params.p === "belum" || params.p === "deadline" || params.p === "aging")
+      ? params.p
+      : null;
   const q = (params.q ?? "").trim().slice(0, 80);
   const openCode = params.open?.toUpperCase() ?? null;
   const saved = params.saved === "1";
   const deleted = params.deleted?.toUpperCase() ?? null;
-  const returnTo = buildReturn(filter, unpaidOnly, q);
+  const returnTo = buildReturn(filter, special, q);
 
   const conditions: string[] = [];
   const values: Array<string | number> = [];
@@ -72,8 +77,18 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
     values.push(filter);
     conditions.push(`o.status = $${values.length}`);
   }
-  if (unpaidOnly) {
+  if (special === "belum") {
     conditions.push(`o.price is not null and not o.paid and o.status <> 'batal'`);
+  }
+  if (special === "deadline") {
+    conditions.push(
+      `o.status not in ('selesai', 'batal') and coalesce(o.deadline_at, (o.deadline + time '23:59') at time zone 'Asia/Jakarta') <= now() + interval '2 days'`,
+    );
+  }
+  if (special === "aging") {
+    conditions.push(
+      `o.price is not null and not o.paid and o.status <> 'batal' and o.created_at <= now() - interval '2 days'`,
+    );
   }
   if (q) {
     values.push(`%${q}%`);
@@ -83,7 +98,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const where = conditions.length ? `where ${conditions.join(" and ")}` : "";
   const from = `from orders o left join services v on v.id = o.service_id`;
 
-  const [orders, matched, counts, unpaid, revenue, aging] = await Promise.all([
+  const [orders, matched, counts, unpaid, revenue, aging, attention] = await Promise.all([
     sql.query(
       `select o.*, coalesce(v.name, o.service_label) as service, v.price_from as service_price, v.unit_label as unit_label,
         (select p.proof_url from payments p where p.order_id = o.id and p.provider = 'manual' order by p.id desc limit 1) as proof_url
@@ -103,6 +118,17 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         coalesce(sum(price), 0)::int as total
       from orders
       where price is not null and not paid and status <> 'batal'`,
+    sql`
+      select
+        (select count(*)::int from orders where status = 'menunggu') as konfirmasi,
+        (select count(*)::int from orders where status = 'revisi') as revisi,
+        (select count(*)::int from orders
+          where status not in ('selesai', 'batal')
+            and coalesce(deadline_at, (deadline + time '23:59') at time zone 'Asia/Jakarta')
+              <= now() + interval '48 hours') as deadline,
+        (select count(*)::int from orders
+          where price is not null and not paid and status <> 'batal'
+            and created_at <= now() - interval '2 days') as aging`,
   ]);
 
   const count = (st: string) => Number(counts.find((c) => c.status === st)?.n ?? 0);
@@ -112,14 +138,53 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const resultCount = Number(matched[0]?.n ?? 0);
   const due = aging[0] as { baru: number; menengah: number; tua: number; total: number } | undefined;
   const dueTotal = Number(due?.total ?? 0);
+  const focus = attention[0] as
+    | { konfirmasi: number; revisi: number; deadline: number; aging: number }
+    | undefined;
+  const focusTotal =
+    Number(focus?.konfirmasi ?? 0) +
+    Number(focus?.revisi ?? 0) +
+    Number(focus?.deadline ?? 0) +
+    Number(focus?.aging ?? 0);
 
   const keepSearch = (path: string) =>
     q ? `${path}${path.includes("?") ? "&" : "?"}q=${encodeURIComponent(q)}` : path;
   const clearSearch = filter
     ? `/admin?s=${filter}`
-    : unpaidOnly
-      ? "/admin?p=belum"
+    : special
+      ? `/admin?p=${special}`
       : "/admin";
+
+  const focusItems = [
+    {
+      href: keepSearch("/admin?s=menunggu"),
+      icon: ClipboardCheck,
+      label: "Konfirmasi harga",
+      value: Number(focus?.konfirmasi ?? 0),
+      color: "#f59e0b",
+    },
+    {
+      href: keepSearch("/admin?p=deadline"),
+      icon: Clock,
+      label: "Deadline ≤48 jam",
+      value: Number(focus?.deadline ?? 0),
+      color: "#22d3ee",
+    },
+    {
+      href: keepSearch("/admin?p=aging"),
+      icon: Wallet,
+      label: "Telat bayar >2 hari",
+      value: Number(focus?.aging ?? 0),
+      color: "#a78bfa",
+    },
+    {
+      href: keepSearch("/admin?s=revisi"),
+      icon: RotateCcw,
+      label: "Perlu revisi",
+      value: Number(focus?.revisi ?? 0),
+      color: "#3b82f6",
+    },
+  ].filter((item) => item.value > 0);
 
   return (
     <AdminShell active="orders">
@@ -151,6 +216,24 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         <Stat label="Belum dibayar" value={unpaidCount} hint="harga sudah disepakati" href={keepSearch("/admin?p=belum")} />
       </div>
 
+      {focusItems.length > 0 && (
+        <section className="mt-4 rounded-tag-lg border border-line bg-panel/40 p-4 sm:p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">
+              Fokus hari ini
+            </h2>
+            <p className="text-xs text-mute">
+              {focusItems.reduce((sum, item) => sum + item.value, 0)} hal perlu dicek
+            </p>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {focusItems.map((item) => (
+              <FocusLink key={item.label} {...item} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {dueTotal > 0 && (
         <Link
           href={keepSearch("/admin?p=belum")}
@@ -180,7 +263,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
 
       <form action="/admin" method="get" className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
         {filter && <input type="hidden" name="s" value={filter} />}
-        {unpaidOnly && <input type="hidden" name="p" value="belum" />}
+        {special && <input type="hidden" name="p" value={special} />}
         <label htmlFor="cari-pesanan" className="sr-only">Cari pesanan</label>
         <input
           id="cari-pesanan"
@@ -201,7 +284,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       </form>
 
       <nav aria-label="Filter pesanan" className="mt-4 flex flex-wrap gap-2">
-        <FilterLink href={keepSearch("/admin")} active={!filter && !unpaidOnly}>
+        <FilterLink href={keepSearch("/admin")} active={!filter && !special}>
           Semua ({total})
         </FilterLink>
         {STATUSES.map((st) => (
@@ -212,8 +295,14 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
             </span>
           </FilterLink>
         ))}
-        <FilterLink href={keepSearch("/admin?p=belum")} active={unpaidOnly}>
+        <FilterLink href={keepSearch("/admin?p=belum")} active={special === "belum"}>
           Belum dibayar ({unpaidCount})
+        </FilterLink>
+        <FilterLink href={keepSearch("/admin?p=deadline")} active={special === "deadline"}>
+          Deadline dekat ({Number(focus?.deadline ?? 0)})
+        </FilterLink>
+        <FilterLink href={keepSearch("/admin?p=aging")} active={special === "aging"}>
+          Telat bayar ({Number(focus?.aging ?? 0)})
         </FilterLink>
       </nav>
 
@@ -233,12 +322,16 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         <div className="mt-4 rounded-tag-lg border border-dashed border-line p-8 text-center">
           <p className="font-semibold">
             {q
-              ? `Tidak ada pesanan untuk “${q}”.`
-              : unpaidOnly
+              ? `Tidak ada pesanan untuk "${q}".`
+              : special === "belum"
                 ? "Semua pesanan berharga sudah dibayar."
-                : filter
-                  ? "Belum ada pesanan dengan status ini."
-                  : "Belum ada pesanan."}
+                : special === "deadline"
+                  ? "Tidak ada deadline dalam 48 jam ke depan."
+                  : special === "aging"
+                    ? "Tidak ada pesanan yang telat bayar."
+                    : filter
+                      ? "Belum ada pesanan dengan status ini."
+                      : "Belum ada pesanan."}
           </p>
           <p className="mt-2 text-sm text-mute">
             {q
@@ -501,6 +594,43 @@ function FilterLink({ href, active, children }: { href: string; active: boolean;
       }`}
     >
       {children}
+    </Link>
+  );
+}
+
+function FocusLink({
+  href,
+  icon: Icon,
+  label,
+  value,
+  color,
+}: {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-3 rounded-tag-sm border border-line bg-panel/60 p-3 transition-colors hover:border-[var(--border-2)]"
+    >
+      <span
+        aria-hidden
+        className="grid size-9 shrink-0 place-items-center rounded-tag-sm border border-line bg-white/[0.03]"
+        style={{ color }}
+      >
+        <Icon className="size-4" strokeWidth={1.8} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] font-semibold">{label}</span>
+        <span className="block text-xs text-mute">{value} pesanan</span>
+      </span>
+      <ChevronRight
+        aria-hidden
+        className="size-4 shrink-0 text-ink/30 transition-transform group-hover:translate-x-0.5"
+      />
     </Link>
   );
 }
