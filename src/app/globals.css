@@ -129,6 +129,7 @@ body::after {
 
 /* Buttons - sharp, no glow */
 .btn {
+  border-radius: var(--radius) var(--radius) var(--radius) 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -195,7 +196,7 @@ body::after {
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius) var(--radius) var(--radius) 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
@@ -227,7 +228,7 @@ body::after {
   background: var(--bg-2);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: var(--radius);
+  border-radius: var(--radius) var(--radius) var(--radius) 0;
   padding: 8px 12px;
   font-size: 14px;
   outline: none;
@@ -463,6 +464,17 @@ button,
   input:checked + .check-tile .check-box {
     @apply border-accent bg-accent text-[var(--bg)];
   }
+
+/* Ciri khas in.torma: sudut rounded, kiri bawah tajam. */
+.tag,
+.card,
+.btn,
+.input,
+.field,
+.skeleton,
+.skip-link {
+  border-radius: var(--radius) var(--radius) var(--radius) 0;
+}
 }
 
 /* Responsive */
@@ -509,7 +521,7 @@ button,
   position: relative;
   overflow: hidden;
   background: var(--panel-2);
-  border-radius: var(--radius);
+  border-radius: var(--radius) var(--radius) var(--radius) 0;
 }
 
 .skeleton::after {
@@ -536,7 +548,7 @@ button,
   left: 16px;
   z-index: 100;
   padding: 8px 12px;
-  border-radius: var(--radius);
+  border-radius: var(--radius) var(--radius) var(--radius) 0;
   background: var(--text);
   color: var(--bg);
   font-size: 13px;
