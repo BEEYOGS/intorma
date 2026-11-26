@@ -163,16 +163,17 @@ body::after {
 }
 
 .btn-primary {
-  background: var(--gold);
-  color: #04110f;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 1px rgba(0, 112, 243, 0.2), 0 10px 28px -14px rgba(0, 112, 243, 0.65);
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--gold-2);
-  border-color: var(--gold-2);
-  box-shadow: 0 0 0 1px rgba(50, 145, 255, 0.3), 0 14px 34px -14px rgba(50, 145, 255, 0.7);
+  background: var(--gold);
+  color: #fff;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(0, 112, 243, 0.25), 0 12px 30px -14px rgba(0, 112, 243, 0.7);
 }
 
 .btn-ghost {

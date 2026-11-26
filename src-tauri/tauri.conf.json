@@ -1,0 +1,41 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "in.torma",
+  "version": "0.1.0",
+  "identifier": "com.intorma.app",
+  "build": {
+    "frontendDist": "../public",
+    "devUrl": "https://intorma-psi.vercel.app",
+    "beforeDevCommand": " ",
+    "beforeBuildCommand": " "
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "in.torma",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "url": "https://intorma-psi.vercel.app"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "android": {
+      "debugApplicationIdSuffix": ".debug"
+    }
+  }
+}
