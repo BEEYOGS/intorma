@@ -95,7 +95,7 @@ export default async function ProductPage() {
               <Link
                 key={svc.id}
                 href={`/order?layanan=${svc.id}`}
-                className="bg-[var(--panel)] p-5 sm:p-6 hover:bg-[var(--panel-2)] transition-colors group"
+                className="bg-[var(--panel)] p-5 sm:p-6 transition-all duration-200 group hover:-translate-y-0.5 hover:bg-[var(--panel-2)]"
               >
                 <div className="relative mb-4 grid h-32 place-items-center overflow-hidden rounded-tag-sm border border-line bg-white/[0.015] px-4 text-[var(--text-2)] transition-colors group-hover:text-[var(--text)]">
                   <span
