@@ -10,7 +10,8 @@ export default {
         xs: "400px",
       },
       colors: {
-        base: "#09090b",
+        // Tidak ada warna bernama `base`: itu bertabrakan dengan utilitas
+        // font-size `text-base` dan membuat teks legal berubah hitam.
         carbon: "#0f0f11",
         panel: "rgb(17 17 19 / <alpha-value>)",
         sand: "rgb(24 24 27 / <alpha-value>)",

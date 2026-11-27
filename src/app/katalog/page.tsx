@@ -49,7 +49,7 @@ function ProductCard({ service }: { service: Service }) {
         <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-3)]">{service.blurb}</p>
         <div className="mt-auto flex items-end justify-between gap-3 pt-5">
           <div>
-            <p className="mono text-sm text-[var(--gold)]">{priceLabel(service)}</p>
+            <p className="mono text-sm text-[var(--gold-2)]">{priceLabel(service)}</p>
             <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--text-3)]">
               <Clock3 aria-hidden className="size-3" /> ± {service.days} hari
             </p>

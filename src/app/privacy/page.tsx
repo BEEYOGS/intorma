@@ -57,9 +57,9 @@ export default function PrivacyPage() {
           <section className="card p-5 sm:p-6">
             <h2 className="mb-2 text-base font-medium text-[var(--text)]">Penyimpanan file</h2>
             <p>
-              File yang kamu unggah tersimpan di penyimpanan aplikasi atau, bila fitur diaktifkan, di
-              Google Drive milik kami. File hanya bisa diakses lewat endpoint aplikasi setelah sesi
-              akun kamu terverifikasi. Kami tidak menjadikan file kamu publik.
+              File yang kamu unggah tersimpan di Google Drive milik kami. Database Neon hanya menyimpan
+              metadata (nama, ukuran, dan tautan). File hanya bisa diakses lewat endpoint aplikasi
+              setelah sesi akun kamu terverifikasi. Kami tidak menjadikan file kamu publik.
             </p>
           </section>
 
@@ -84,10 +84,9 @@ export default function PrivacyPage() {
           <section className="card p-5 sm:p-6">
             <h2 className="mb-2 text-base font-medium text-[var(--text)]">Pihak ketiga &amp; Google Drive</h2>
             <p>
-              Kami memakai Neon Postgres sebagai database aplikasi dan WhatsApp gateway untuk notifikasi.
-              Jika fitur penyimpanan Google Drive diaktifkan, file kamu disimpan di Google Drive milik
-              operator dengan izin akun Google yang kita autorisasi. Akses file tetap dikontrol oleh
-              aplikasi dan tidak dipublikasikan. Kami tidak menjual data pribadi kamu.
+              Kami memakai Neon Postgres sebagai database aplikasi, Google Drive untuk seluruh file
+              pesanan, dan WhatsApp gateway untuk notifikasi. Akses file tetap dikontrol oleh aplikasi
+              dan tidak dipublikasikan. Kami tidak menjual data pribadi kamu.
             </p>
           </section>
 

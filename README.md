@@ -99,7 +99,17 @@ Dengan Drive aktif:
 - `POST /api/drive/finalize-upload` memverifikasi file benar-benar ada di folder yang dikonfigurasi,
   lalu mencatat `drive_file_id` dan ukuran di tabel `uploads`.
 - Preview/download memakai `/api/upload/<kode>` yang meneruskan stream + Range dari Drive.
-- ZIP tetap tanpa kompresi dan mengambil file dari Drive/DB.
+- ZIP tetap tanpa kompresi, mengambil file dari Drive, dan dibatasi 200 MB total.
+
+### Aplikasi native & PWA
+
+Halaman `/download` mengarah ke aset rilis GitHub yang dibangun oleh
+`.github/workflows/build-native.yml` (`.exe`, `.msi`, `.apk` v1.0.2). PWA dipasang lewat
+`manifest.webmanifest` + `sw.js` (cache `intorma-v5`).
+
+Tauri adalah jalur wrapper utama. Konfigurasi Capacitor disimpan hanya sebagai percobaan Android;
+keduanya memuat URL produksi yang sama, sehingga folder `public` bukan hasil static export Next.js
+dan build lokal Tauri memerlukan Windows SDK. Jangan menganggap build lokal sebagai pengganti rilis CI.
 
 ### WhatsApp
 
