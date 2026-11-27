@@ -7,7 +7,7 @@ import { isAdmin, login, logout } from "@/lib/auth";
 import { normalizeWA, rupiah, tanggalJam } from "@/lib/format";
 import { isValidCode, makeCode, normalizeCode } from "@/lib/codes";
 import { calculateQuote, type QuoteSelection } from "@/lib/pricing";
-import { STATUS_META, isStatus } from "@/lib/status";
+import { STATUS_META, isStatus, type Status } from "@/lib/status";
 import { getPaymentSettings, paymentLines, savePaymentSettings } from "@/lib/settings";
 import {
   claimOrders,
@@ -23,9 +23,16 @@ import {
   PAYMENT_METHODS,
   type PaymentMethod,
 } from "@/lib/payment";
-import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
+import { siteUrl } from "@/lib/wa";
 import { audit } from "@/lib/audit";
 import { clientErrorMessage } from "@/lib/error";
+import {
+  adminWhatsApp,
+  orderCreatedAdminMessage,
+  orderCreatedCustomerMessage,
+  orderStatusMessage,
+  sendStudioMessage,
+} from "@/lib/notifications/whatsapp";
 
 export type OrderState = {
   error?: string;
@@ -260,36 +267,39 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   }
 
   const link = `${siteUrl()}/lacak/${order.code}`;
-  const detail = [
-    quote.snapshot?.summary ?? svc.name,
-    quote.price != null ? `Total: ${rupiah(quote.price)}` : "Total: menunggu konfirmasi",
-    `Target selesai: ${tanggalJam(deadlineAt)}`,
-  ].join("\n");
+  const serviceSummary = quote.snapshot?.summary ?? svc.name;
+  const total = quote.price != null ? quote.price - discountAmount : null;
 
   // Kalau trigger database aktif, trigger sudah mengantrekan pesan pelanggan
   // dan admin. Jangan kirim lagi dari sini supaya tidak dobel.
   if (!(await waTriggerActive())) {
     const adminWa = adminWhatsApp();
     await Promise.all([
-      sendWA(
+      sendStudioMessage(
         wa,
-        `Halo ${values.name}, pesananmu ${order.code} sudah kami terima.\n\n${detail}\n\nPantau & bayar: ${link}`,
+        orderCreatedCustomerMessage({
+          name: values.name,
+          code: order.code,
+          service: serviceSummary,
+          total,
+          deadline: tanggalJam(deadlineAt),
+          link,
+        }),
       ),
       adminWa
-        ? sendWA(
+        ? sendStudioMessage(
             adminWa,
-            [
-              `Pesanan baru ${order.code}`,
-              `${values.name} (${wa})`,
-              "",
-              detail,
-              "",
-              `Brief: ${values.brief}`,
-              fileUrl ? `File: ${fileUrl}` : null,
-              driveLink ? `Drive: ${driveLink}` : null,
-            ]
-              .filter((line) => line !== null)
-              .join("\n"),
+            orderCreatedAdminMessage({
+              code: order.code,
+              name: values.name,
+              wa,
+              service: serviceSummary,
+              total,
+              deadline: tanggalJam(deadlineAt),
+              brief: values.brief,
+              fileUrl,
+              driveLink,
+            }),
           )
         : Promise.resolve(false),
     ]);
@@ -423,21 +433,20 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
   }
 
   if (f.get("notify") === "on" && (statusChanged || noteChanged || priceChanged || paidChanged)) {
-    const parts: string[] = [];
-    if (statusChanged) parts.push(STATUS_META[status].wa(order.code, order.name));
-    else parts.push(`Halo ${order.name}, ada kabar untuk pesanan ${order.code}.`);
-    if (price !== null) parts.push(`Total: ${rupiah(price)}`);
-    if (note) parts.push(`Catatan: ${note}`);
-
     const payment = await getPaymentSettings();
-    if (paid) parts.push("Pembayaran sudah kami terima. Terima kasih.");
-    else if (price !== null && payment.enabled) {
-      const lines = paymentLines(payment);
-      if (lines.length) parts.push(lines.join("\n"));
-    }
-
-    parts.push(`Pantau di: ${siteUrl()}/lacak/${order.code}`);
-    await sendWA(order.wa, parts.join("\n\n"));
+    const paymentLinesList = payment.enabled && price !== null ? paymentLines(payment) : [];
+    await sendStudioMessage(
+      order.wa,
+      orderStatusMessage({
+        code: order.code,
+        name: order.name,
+        status: status as Status,
+        price,
+        note: note || null,
+        paid,
+        paymentLines: paymentLinesList,
+      }),
+    );
   }
 
   await audit("update", "order", order.code, {
