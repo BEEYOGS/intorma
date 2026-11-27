@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { ArrowRight, Landmark, Loader2, QrCode } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { chargePayment, type ActionResult } from "@/app/actions";
+import { PaymentLogo } from "@/components/PaymentLogo";
 import type { PaymentMethodMeta } from "@/lib/payment";
 
 export function PaymentMethodPicker({
@@ -24,7 +25,6 @@ export function PaymentMethodPicker({
       <div role="radiogroup" aria-label="Metode pembayaran" className="grid gap-2">
         {methods.map((method) => {
           const active = method.id === selected;
-          const Icon = method.kind === "qris" ? QrCode : Landmark;
           return (
             <button
               key={method.id}
@@ -39,12 +39,11 @@ export function PaymentMethodPicker({
               }`}
             >
               <span
-                aria-hidden
-                className={`grid size-9 shrink-0 place-items-center rounded-[6px] border ${
-                  active ? "border-accent/40 bg-accent/10 text-accent" : "border-line text-mute"
+                className={`grid size-9 shrink-0 place-items-center overflow-hidden rounded-[6px] border bg-white p-1 ${
+                  active ? "border-accent/60" : "border-line"
                 }`}
               >
-                <Icon className="size-4" />
+                <PaymentLogo method={method} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-ink">{method.label}</span>

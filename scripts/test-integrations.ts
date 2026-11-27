@@ -116,9 +116,11 @@ async function main() {
     record(
       "WhatsApp gateway",
       "SKIP",
-      diagnostics.provider === "fonnte"
-        ? "Isi FONNTE_TOKEN dari dashboard Fonnte."
-        : "Isi OPENWA_BASE_URL (URL publik HTTPS, bukan localhost) dan OPENWA_API_KEY.",
+      diagnostics.provider === "cloud"
+        ? "Isi META_WA_TOKEN dan META_WA_PHONE_ID dari Meta App Dashboard."
+        : diagnostics.provider === "fonnte"
+          ? "Isi FONNTE_TOKEN dari dashboard Fonnte."
+          : "Isi OPENWA_BASE_URL (URL publik HTTPS, bukan localhost) dan OPENWA_API_KEY.",
     );
   } else if (!diagnostics.gatewayReachable) {
     record("WhatsApp gateway", "FAIL", diagnostics.error ?? "Gateway tidak bisa dihubungi.");
@@ -159,7 +161,10 @@ async function main() {
       "  GOOGLE_CLIENT_SECRET",
       "  GOOGLE_REFRESH_TOKEN",
       "  GOOGLE_DRIVE_FOLDER_ID",
-      "  WA_PROVIDER (fonnte untuk hosted, openwa untuk self-hosted)",
+      "  WA_PROVIDER (cloud | fonnte | openwa)",
+      "  META_WA_TOKEN dan META_WA_PHONE_ID (wajib kalau WA_PROVIDER=cloud)",
+      "  META_WA_VERSION (opsional, default v26.0)",
+      "  META_WA_VERIFY_TOKEN dan META_WA_APP_SECRET (opsional, untuk webhook Meta)",
       "  FONNTE_TOKEN (wajib kalau WA_PROVIDER=fonnte)",
       "  WA_WEBHOOK_SECRET",
       "  OPENWA_BASE_URL (HTTPS publik, bukan localhost — kalau openwa)",

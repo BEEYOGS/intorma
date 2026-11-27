@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { ProductIllustration } from "@/components/ProductIllustration";
 import { StatusBadge } from "@/components/Chrome";
+import { BankLogo } from "@/components/BankLogo";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { STATUS_META, asStatus } from "@/lib/status";
 import { isAdmin } from "@/lib/auth";
@@ -180,8 +181,8 @@ export default async function ProductPage() {
             <div className="card p-6">
               <p className="eyebrow mb-4">Rekening tujuan</p>
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-8 bg-[var(--bg-2)] rounded flex items-center justify-center border border-[var(--border)]">
-                  <span className="mono text-xs text-[var(--text-3)]">BCA</span>
+                <div className="grid h-8 w-12 place-items-center rounded border border-[var(--border)] bg-white p-1">
+                  <BankLogo bank="BCA" className="h-full w-auto max-w-full object-contain" />
                 </div>
                 <div>
                   <p className="mono text-lg font-medium text-[var(--text)]">8171700213</p>

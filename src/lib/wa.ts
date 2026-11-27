@@ -23,26 +23,48 @@ export function gatewayConfigured(): boolean {
   return Boolean(gatewayBase() && gatewayKey());
 }
 
-export type WAProvider = "openwa" | "fonnte";
+export type WAProvider = "openwa" | "fonnte" | "cloud";
 
 const FONNTE_BASE = "https://api.fonnte.com";
+const META_GRAPH_BASE = "https://graph.facebook.com";
 
 function fonnteToken(): string {
   return (process.env.FONNTE_TOKEN || "").trim();
 }
 
+function metaToken(): string {
+  return (process.env.META_WA_TOKEN || "").trim();
+}
+
+function metaPhoneId(): string {
+  return (process.env.META_WA_PHONE_ID || "").trim();
+}
+
+function metaVersion(): string {
+  return (process.env.META_WA_VERSION || "v26.0").trim();
+}
+
+function cloudConfigured(): boolean {
+  return Boolean(metaToken() && metaPhoneId());
+}
+
 /**
- * Utamakan provider hosted kalau tokennya tersedia. OpenWA tetap dipakai
- * sebagai fallback supaya instalasi lama tidak langsung rusak.
+ * Provider hosted lebih dulu. OpenWA tetap dipakai sebagai fallback supaya
+ * instalasi lama tidak langsung rusak. Atur WA_PROVIDER=cloud untuk memakai
+ * Meta WhatsApp Cloud API (tanpa watermark pihak ketiga).
  */
 export function waProvider(): WAProvider {
   const configured = (process.env.WA_PROVIDER || "").trim().toLowerCase();
-  if (configured === "fonnte" || configured === "openwa") return configured;
+  if (configured === "cloud" || configured === "fonnte" || configured === "openwa") return configured;
+  if (cloudConfigured()) return "cloud";
   return fonnteToken() ? "fonnte" : "openwa";
 }
 
 export function waConfigured(): boolean {
-  return waProvider() === "fonnte" ? Boolean(fonnteToken()) : gatewayConfigured();
+  const provider = waProvider();
+  if (provider === "cloud") return cloudConfigured();
+  if (provider === "fonnte") return Boolean(fonnteToken());
+  return gatewayConfigured();
 }
 
 type SessionRow = { id?: string; name?: string; status?: string };
@@ -246,6 +268,70 @@ async function sendFonnte(number: string, content: string): Promise<WASendResult
   }
 }
 
+async function sendCloud(number: string, content: string): Promise<WASendResult> {
+  const startedAt = Date.now();
+  const token = metaToken();
+  const phoneId = metaPhoneId();
+
+  try {
+    const response = await fetch(`${META_GRAPH_BASE}/${metaVersion()}/${phoneId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: number,
+        type: "text",
+        text: { preview_url: false, body: content.slice(0, MAX_LENGTH) },
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+    const text = await response.text().catch(() => "");
+    type CloudError = { error?: { message?: string; code?: number } };
+    let parsed: CloudError | null = null;
+    try {
+      parsed = text ? (JSON.parse(text) as CloudError) : null;
+    } catch {
+      /* bukan JSON */
+    }
+    const ok = response.ok && !parsed?.error;
+    const detail = parsed?.error?.message || `Meta menolak pesan (HTTP ${response.status}).`;
+    const hint =
+      parsed?.error?.code === 131047
+        ? " Pesan teks hanya boleh dikirim dalam 24 jam setelah pelanggan membalas; di luar itu pakai template yang disetujui Meta."
+        : "";
+
+    return {
+      ok,
+      configured: true,
+      gatewayReachable: response.status > 0,
+      sessionStatus: ok ? "ready" : null,
+      latencyMs: Date.now() - startedAt,
+      status: response.status,
+      phone: number,
+      error: ok ? undefined : `${detail}${hint}`,
+      gatewayResponse: text.slice(0, 500),
+      provider: "cloud",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      configured: true,
+      gatewayReachable: false,
+      sessionStatus: null,
+      latencyMs: Date.now() - startedAt,
+      status: 0,
+      phone: number,
+      error: error instanceof Error ? error.message : "Gagal menghubungi Meta Cloud API.",
+      provider: "cloud",
+    };
+  }
+}
+
 export type WASendResult = {
   ok: boolean;
   configured: boolean;
@@ -265,6 +351,11 @@ export async function waSendTest(to: string, content: string): Promise<WASendRes
   const number = normalizeWA(to);
   const startedAt = Date.now();
   if (!waConfigured()) {
+    const missing: Record<WAProvider, string> = {
+      cloud: "META_WA_TOKEN dan META_WA_PHONE_ID belum diisi di environment production.",
+      fonnte: "FONNTE_TOKEN belum diisi di environment production.",
+      openwa: "Gateway WhatsApp belum dikonfigurasi. Isi OPENWA_BASE_URL dan OPENWA_API_KEY di environment.",
+    };
     return {
       ok: false,
       configured: false,
@@ -272,10 +363,7 @@ export async function waSendTest(to: string, content: string): Promise<WASendRes
       sessionStatus: null,
       latencyMs: 0,
       status: 0,
-      error:
-        provider === "fonnte"
-          ? "FONNTE_TOKEN belum diisi di environment production."
-          : "Gateway WhatsApp belum dikonfigurasi. Isi OPENWA_BASE_URL dan OPENWA_API_KEY di environment.",
+      error: missing[provider],
       provider,
     };
   }
@@ -304,6 +392,7 @@ export async function waSendTest(to: string, content: string): Promise<WASendRes
     };
   }
 
+  if (provider === "cloud") return sendCloud(number, content);
   if (provider === "fonnte") return sendFonnte(number, content);
 
   const lookup = await lookupSession(5000);
@@ -317,6 +406,7 @@ export async function waSendTest(to: string, content: string): Promise<WASendRes
       status: lookup.httpStatus,
       phone: number,
       error: lookup.error ?? "Sesi WhatsApp tidak ditemukan.",
+      provider,
     };
   }
   if (lookup.session.status !== "ready") {
@@ -329,6 +419,7 @@ export async function waSendTest(to: string, content: string): Promise<WASendRes
       status: lookup.httpStatus,
       phone: number,
       error: `Sesi WhatsApp belum ready (status: ${lookup.session.status ?? "unknown"}).`,
+      provider,
     };
   }
 
@@ -356,6 +447,7 @@ export async function waSendTest(to: string, content: string): Promise<WASendRes
       phone: number,
       error: response.ok ? undefined : `Gateway menolak pesan (HTTP ${response.status}).`,
       gatewayResponse: body.slice(0, 500),
+      provider,
     };
   } catch (error) {
     return {
@@ -367,6 +459,7 @@ export async function waSendTest(to: string, content: string): Promise<WASendRes
       status: 0,
       phone: number,
       error: error instanceof Error ? error.message : "Gagal menghubungi gateway.",
+      provider,
     };
   }
 }
@@ -388,6 +481,67 @@ export type WADiagnostics = {
 
 export async function waDiagnostics(): Promise<WADiagnostics> {
   const provider = waProvider();
+
+  if (provider === "cloud") {
+    const baseUrl = `${META_GRAPH_BASE}/${metaVersion()}`;
+    if (!cloudConfigured()) {
+      return {
+        configured: false,
+        provider,
+        baseUrl,
+        sessionName: metaPhoneId() || "cloud",
+        gatewayReachable: false,
+        sessionStatus: null,
+        sessionId: null,
+        latencyMs: 0,
+        httpStatus: 0,
+        error: "META_WA_TOKEN dan META_WA_PHONE_ID belum diisi.",
+      };
+    }
+    const startedAt = Date.now();
+    try {
+      const response = await fetch(
+        `${baseUrl}/${encodeURIComponent(metaPhoneId())}?fields=verified_name`,
+        {
+          headers: { Authorization: `Bearer ${metaToken()}` },
+          cache: "no-store",
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+      const text = await response.text().catch(() => "");
+      let row: { verified_name?: string } | null = null;
+      try {
+        row = text ? (JSON.parse(text) as { verified_name?: string }) : null;
+      } catch {
+        /* bukan JSON */
+      }
+      return {
+        configured: true,
+        provider,
+        baseUrl,
+        sessionName: row?.verified_name ?? metaPhoneId(),
+        gatewayReachable: response.ok,
+        sessionStatus: response.ok ? "ready" : null,
+        sessionId: metaPhoneId(),
+        latencyMs: Date.now() - startedAt,
+        httpStatus: response.status,
+        error: response.ok ? undefined : text.slice(0, 300) || `Meta merespons HTTP ${response.status}.`,
+      };
+    } catch (error) {
+      return {
+        configured: true,
+        provider,
+        baseUrl,
+        sessionName: metaPhoneId(),
+        gatewayReachable: false,
+        sessionStatus: null,
+        sessionId: metaPhoneId(),
+        latencyMs: Date.now() - startedAt,
+        httpStatus: 0,
+        error: error instanceof Error ? error.message : "Meta Cloud API tidak bisa dihubungi.",
+      };
+    }
+  }
 
   if (provider === "fonnte") {
     if (!fonnteToken()) {

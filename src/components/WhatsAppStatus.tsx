@@ -4,10 +4,24 @@ import { useState } from "react";
 import { RefreshCw, Send } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsApp";
 
+type Provider = "openwa" | "fonnte" | "cloud";
+
+const PROVIDER_LABEL: Record<Provider, string> = {
+  cloud: "Meta Cloud API",
+  fonnte: "Fonnte (hosted)",
+  openwa: "OpenWA (self-hosted)",
+};
+
+const PROVIDER_HINT: Record<Provider, string> = {
+  cloud: "Isi META_WA_TOKEN dan META_WA_PHONE_ID di environment production, lalu deploy ulang.",
+  fonnte: "Isi FONNTE_TOKEN di environment production, lalu deploy ulang. Token hanya perlu diisi sekali.",
+  openwa: "Isi OPENWA_BASE_URL dan OPENWA_API_KEY di environment production, lalu deploy ulang.",
+};
+
 type StatusPayload = {
   ok?: boolean;
   configured?: boolean;
-  provider?: "openwa" | "fonnte";
+  provider?: Provider;
   gatewayReachable?: boolean;
   sessionStatus?: string | null;
   sessionId?: string | null;
@@ -20,11 +34,11 @@ type TestPayload = {
   ok?: boolean;
   error?: string;
   status?: number;
-  provider?: "openwa" | "fonnte";
+  provider?: Provider;
 };
 
 export type WhatsAppStatusProps = {
-  provider: "openwa" | "fonnte";
+  provider: Provider;
   configured: boolean;
   ready: boolean;
   device: string | null;
@@ -117,7 +131,7 @@ export function WhatsAppStatus(initial: WhatsAppStatusProps) {
           <div>
             <p className="text-sm font-semibold text-ink">Notifikasi otomatis</p>
             <p className="mono text-[11px] text-mute">
-              {status.provider === "fonnte" ? "Fonnte (hosted)" : "OpenWA (self-hosted)"}
+              {PROVIDER_LABEL[status.provider]}
             </p>
           </div>
         </div>
@@ -186,10 +200,7 @@ export function WhatsAppStatus(initial: WhatsAppStatusProps) {
       </div>
 
       {!status.configured && (
-        <p className="mt-3 text-xs leading-5 text-mute">
-          Isi <span className="mono">FONNTE_TOKEN</span> di environment production, lalu deploy
-          ulang. Token hanya perlu diisi sekali.
-        </p>
+        <p className="mt-3 text-xs leading-5 text-mute">{PROVIDER_HINT[status.provider]}</p>
       )}
     </div>
   );

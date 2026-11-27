@@ -2,7 +2,6 @@ import { TopBar } from "@/components/TopBar";
 import { CheckCircle2, Clock3, Download, ExternalLink, Monitor, Smartphone } from "lucide-react";
 
 export const metadata = { title: "Download aplikasi", robots: { index: false } };
-export const revalidate = 120;
 
 const RELEASES_URL = "https://github.com/BEEYOGS/intorma/releases";
 const RELEASES_API = "https://api.github.com/repos/BEEYOGS/intorma/releases?per_page=20";
@@ -27,24 +26,34 @@ function versionValue(tag: string) {
   return Number(match[1]) * 1_000_000 + Number(match[2]) * 1_000 + Number(match[3]);
 }
 
+/** Cache singkat per instance serverless: cukup segar, tapi tidak boros kuota GitHub API. */
+let releaseCache: { at: number; release: Release | null } | null = null;
+const RELEASE_TTL_MS = 5 * 60 * 1000;
+
 async function getLatestRelease(): Promise<Release | null> {
+  if (releaseCache && Date.now() - releaseCache.at < RELEASE_TTL_MS) {
+    return releaseCache.release;
+  }
   try {
     const res = await fetch(RELEASES_API, {
       headers: {
         Accept: "application/vnd.github+json",
         "User-Agent": "in.torma-download-page",
       },
-      next: { revalidate: 120 },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) return releaseCache?.release ?? null;
     const releases = (await res.json()) as Release[];
     const published = releases.filter(
       (release) => release?.tag_name && !release.draft && !release.prerelease,
     );
     published.sort((a, b) => versionValue(b.tag_name) - versionValue(a.tag_name));
-    return published[0] ?? null;
+    const latest = published[0] ?? null;
+    releaseCache = { at: Date.now(), release: latest };
+    return latest;
   } catch {
-    return null;
+    return releaseCache?.release ?? null;
   }
 }
 

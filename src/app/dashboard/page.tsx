@@ -9,6 +9,12 @@ import { gatewayEnabled } from "@/lib/payment";
 import { waDiagnostics } from "@/lib/wa";
 import { redirect } from "next/navigation";
 
+const WA_LABEL: Record<string, string> = {
+  cloud: "Meta Cloud API",
+  fonnte: "Fonnte (hosted)",
+  openwa: "OpenWA (self-hosted)",
+};
+
 export default async function DashboardPage() {
   if (!(await isAdmin())) redirect("/admin/login");
   const [stats, jobs, wa, dbOk] = await Promise.all([
@@ -22,7 +28,7 @@ export default async function DashboardPage() {
     { label: "Pembayaran online", ok: gatewayEnabled(), on: "aktif", off: "nonaktif" },
     { label: "Database", ok: dbOk, on: "terhubung", off: "gagal" },
     {
-      label: wa?.provider === "fonnte" ? "WhatsApp (Fonnte)" : "WhatsApp",
+      label: wa?.provider ? `WhatsApp (${WA_LABEL[wa.provider] ?? wa.provider})` : "WhatsApp",
       ok: waReady,
       on: "siap",
       off: "belum siap",
@@ -80,7 +86,7 @@ export default async function DashboardPage() {
                 ))}
               </div>
               <p className="mt-3 border-t border-line pt-3 text-[11px] leading-5 text-mute">
-                Provider: {wa?.provider === "fonnte" ? "Fonnte (hosted)" : "OpenWA"}
+                Provider: {wa?.provider ? WA_LABEL[wa.provider] ?? wa.provider : "—"}
                 {!waReady && wa?.error ? ` · ${wa.error}` : ""}
               </p>
             </div>

@@ -100,7 +100,30 @@ Dengan Drive aktif:
 
 ### WhatsApp
 
-Ada dua provider. Untuk produksi yang harus **selalu online tanpa PC**, pakai Fonnte:
+Ada tiga provider. **Rekomendasi produksi: Meta WhatsApp Cloud API**, karena hosted dan tidak
+menyisipkan watermark pihak ketiga.
+
+```
+WA_PROVIDER=cloud
+META_WA_TOKEN=system-user-token-dari-meta
+META_WA_PHONE_ID=phone-number-id-dari-meta
+META_WA_VERSION=v26.0
+META_WA_VERIFY_TOKEN=string-acak-untuk-verifikasi-webhook
+META_WA_APP_SECRET=app-secret-untuk-tanda-tangan-webhook (opsional)
+ADMIN_WHATSAPP_NUMBER=0895329940950
+```
+
+1. Buat Meta App dengan use case WhatsApp, lalu daftarkan nomor bisnis (bukan nomor pribadi).
+2. Pakai **system user token** permanen, bukan token sementara dari App Dashboard.
+3. Daftarkan webhook `https://intorma-psi.vercel.app/api/wa/webhook` dengan verify token yang sama
+   dengan `META_WA_VERIFY_TOKEN`, lalu subscribe field `messages`.
+4. Ajukan template pesan yang disetujui Meta untuk notifikasi di luar jendela 24 jam. Di dalam
+   jendela 24 jam setelah pelanggan membalas, aplikasi mengirim teks biasa.
+
+Pesan teks di luar jendela 24 jam ditolak Meta dengan kode `131047`; aplikasi akan menampilkan
+pesan error tersebut di diagnostik. Nomor pengirim berubah dari nomor lama, jadi beri tahu pelanggan.
+
+Fonnte masih didukung sebagai alternatif hosted:
 
 ```
 WA_PROVIDER=fonnte
@@ -118,7 +141,7 @@ ADMIN_WHATSAPP_NUMBER=0895329940950
 Fonnte menyimpan sesi WhatsApp di server mereka, jadi notifikasi dan balasan `status INT-DDMMYY001`
 tetap berjalan walau PC mati. `connectOnly=false` membuat pesan tetap diantrekan Fonnte saat device
 sedang reconnect. Branding “sent via fonnte” ditentukan oleh paket/device Fonnte, bukan parameter API;
-untuk menghapusnya perlu paket berbayar atau pengaturan branding di dashboard Fonnte.
+satu-satunya cara menghapusnya adalah pindah provider atau mengaktifkan fitur branding di paket Fonnte.
 
 OpenWA tetap didukung untuk self-hosted:
 
@@ -144,8 +167,8 @@ Balasan otomatis `status INT-DDMMYY001` lewat OpenWA memakai `npm run wa:agent` 
 kedua proses otomatis saat login dan restart bila mati. Log ada di `logs/openwa.log` dan
 `logs/wa-agent.log`.
 
-Kalau sudah pindah ke Fonnte, nonaktifkan task OpenWA agar PC tidak lagi menjalankan gateway
-lama:
+Kalau sudah pindah ke provider hosted (Cloud API/Fonnte), nonaktifkan task OpenWA agar PC tidak lagi
+menjalankan gateway lama:
 
 ```powershell
 Disable-ScheduledTask -TaskName intorma-openwa
@@ -178,6 +201,9 @@ Dua jalur bisa dipakai berdampingan:
 - **Deadline**: form pesanan mewajibkan tanggal dan jam. Nilai lengkap disimpan di
   `orders.deadline_at` (WIB → UTC), tampil di lacak/nota/PDF, dan dipakai cron pengingat.
   Kolom lama `orders.deadline` (tanggal saja) tetap dibaca sebagai fallback.
+
+Logo QRIS dan bank (BCA/BNI/BRI/Permata) disimpan lokal di `public/logos` dari Wikimedia Commons;
+sumber dan lisensinya ada di `public/logos/CREDITS.md`.
 
 Tanpa server key, alur tetap memakai transfer manual seperti sebelumnya.
 

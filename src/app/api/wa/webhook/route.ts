@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { normalizeWA, rupiah, tanggalHariIni } from "@/lib/format";
@@ -6,28 +7,101 @@ import { getPaymentSettings, paymentLines } from "@/lib/settings";
 import { STATUS_META, isStatus, type Status } from "@/lib/status";
 import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
 
+function webhookSecret() {
+  return (process.env.WA_WEBHOOK_SECRET || process.env.OPENWA_WEBHOOK_SECRET || "").trim();
+}
+
+function signatureValid(signature: string, digest: string) {
+  const a = Buffer.from(signature);
+  const b = Buffer.from(digest);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** Meta mengirim GET subscribe sekali saat webhook didaftarkan. */
+export async function GET(req: Request) {
+  const params = new URL(req.url).searchParams;
+  const expected = (process.env.META_WA_VERIFY_TOKEN || webhookSecret()).trim();
+  const challenge = params.get("hub.challenge");
+  if (
+    !expected ||
+    params.get("hub.mode") !== "subscribe" ||
+    params.get("hub.verify_token") !== expected ||
+    !challenge
+  ) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+  return new NextResponse(challenge, { status: 200, headers: { "content-type": "text/plain" } });
+}
+
+type CloudInbound = { from: string; body: string; media: boolean };
+
+function cloudInbound(payload: unknown): CloudInbound | null {
+  const changes = (payload as { entry?: Array<{ changes?: unknown[] }> })?.entry?.flatMap(
+    (entry) => entry?.changes ?? [],
+  ) ?? [];
+  for (const change of changes) {
+    const value = (change as { value?: { messages?: unknown[] } })?.value;
+    const messages = value?.messages ?? [];
+    for (const item of messages) {
+      const message = item as { from?: string; text?: { body?: string }; type?: string };
+      if (!message?.from) continue;
+      const body = String(message.text?.body ?? "");
+      return { from: message.from, body, media: !body && message.type !== "text" };
+    }
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
-  const secret = process.env.WA_WEBHOOK_SECRET || process.env.OPENWA_WEBHOOK_SECRET;
-  if (!secret || new URL(req.url).searchParams.get("s") !== secret) return NextResponse.json({ ok: false }, { status: 401 });
-  const payload = await req.json().catch(() => null);
+  const raw = await req.text().catch(() => "");
+  let payload: any = null;
+  try {
+    payload = raw ? JSON.parse(raw) : null;
+  } catch {
+    /* payload bukan JSON */
+  }
+  const isCloud = Boolean(payload && payload.object === "whatsapp_business_account");
+
+  if (isCloud) {
+    const appSecret = (process.env.META_WA_APP_SECRET || "").trim();
+    if (appSecret) {
+      const digest = `sha256=${createHmac("sha256", appSecret).update(raw).digest("hex")}`;
+      const signature = req.headers.get("x-hub-signature-256") ?? "";
+      if (!signatureValid(signature, digest)) return NextResponse.json({ ok: false }, { status: 401 });
+    }
+  } else {
+    const secret = webhookSecret();
+    if (!secret || new URL(req.url).searchParams.get("s") !== secret) {
+      return NextResponse.json({ ok: false }, { status: 401 });
+    }
+  }
+
+  const cloud = isCloud ? cloudInbound(payload) : null;
   // OpenWA mengirim { event, data }, Fonnte mengirim { sender, message, ... }.
-  const isFonnte = Boolean(payload && !payload.event && typeof payload.sender === "string");
-  const msg = isFonnte ? payload : payload?.data;
-  if (!isFonnte && (payload?.event !== "message.received" || !msg)) {
+  const isFonnte = !isCloud && Boolean(payload && !payload.event && typeof payload.sender === "string");
+  const msg = isCloud ? cloud : isFonnte ? payload : payload?.data;
+  if (!isCloud && !isFonnte && (payload?.event !== "message.received" || !msg)) {
     return NextResponse.json({ ok: true, ignored: true });
   }
-  const from = isFonnte ? String(payload.sender ?? "") : String(msg?.from ?? msg?.chatId ?? "");
+  if (isCloud && !cloud) {
+    return NextResponse.json({ ok: true, ignored: true });
+  }
+  const from = isCloud
+    ? cloud!.from
+    : isFonnte
+      ? String(payload.sender ?? "")
+      : String(msg?.from ?? msg?.chatId ?? "");
   const isGroup =
     msg?.isGroup === true ||
     msg?.isGroupMsg === true ||
     from.endsWith("@g.us") ||
     (isFonnte && Boolean(payload.member));
-  if (!from || (!isFonnte && msg?.fromMe === true) || isGroup) {
+  if (!from || (!isFonnte && !isCloud && msg?.fromMe === true) || isGroup) {
     return NextResponse.json({ ok: true, ignored: true });
   }
-  const body = String(
-    isFonnte ? payload.message ?? "" : msg?.body ?? msg?.text ?? msg?.content ?? "",
-  );
+  const body = isCloud
+    ? cloud!.body
+    : String(isFonnte ? payload.message ?? "" : msg?.body ?? msg?.text ?? msg?.content ?? "");
   const match = body.match(/status\s*[:#-]?\s*(?:INT[-\s]?)?([A-Z0-9]{6,})/i);
   if (!match) {
     // Balasan klien yang bukan perintah status bisa berisi perubahan brief atau

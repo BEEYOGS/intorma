@@ -5,7 +5,7 @@ import { WhatsAppStatus } from "@/components/WhatsAppStatus";
 import { isAdmin } from "@/lib/auth";
 import { getPaymentSettings } from "@/lib/settings";
 import { waDisplay } from "@/lib/site";
-import { adminWhatsApp, waDiagnostics } from "@/lib/wa";
+import { adminWhatsApp, waDiagnostics, waProvider } from "@/lib/wa";
 import { sql } from "@/lib/db";
 import { toggleReminders } from "@/app/actions";
 
@@ -56,7 +56,7 @@ export default async function SettingsAdmin() {
         </p>
         <div className="mt-6">
           <WhatsAppStatus
-            provider={wa?.provider ?? "openwa"}
+            provider={wa?.provider ?? waProvider()}
             configured={Boolean(wa?.configured)}
             ready={Boolean(wa?.configured && wa.gatewayReachable && wa.sessionStatus === "ready")}
             device={wa?.sessionId ?? null}
@@ -71,7 +71,7 @@ export default async function SettingsAdmin() {
       <section className="mt-12 max-w-2xl rounded-tag-lg border border-line bg-panel/40 p-5">
         <h2 className="text-lg font-semibold tracking-tight">Pengingat otomatis</h2>
         <p className="mt-1 text-sm leading-6 text-mute">
-          Cron berjalan setiap hari pukul 09.00 WIB. Pesan klien dibatasi agar kuota Fonnte tetap hemat.
+          Cron berjalan setiap hari pukul 09.00 WIB. Pesan klien dibatasi agar pengiriman tetap hemat.
         </p>
         <ul className="mt-4 space-y-1.5 text-sm leading-6 text-mute">
           <li>• Deadline H-2 atau sudah lewat: maksimal satu pengingat per pesanan per hari.</li>
