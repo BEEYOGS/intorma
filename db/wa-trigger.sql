@@ -125,7 +125,7 @@ begin
     end if;
     cust_text := cust_text || chr(10) || chr(10) || 'Kami cek brief-nya dulu, lalu kabari soal harga dan jadwal.';
   end if;
-  cust_text := cust_text || chr(10) || chr(10) || 'Pantau di: ' || site || '/lacak/' || new.code;
+  cust_text := cust_text || chr(10) || chr(10) || 'Pantau di: ' || site || '/lacak/' || new.code || '?t=' || coalesce(new.access_token, '');
 
   if cust_wa <> '' then
     insert into wa_outbox (to_number, content, idempotency_key)

@@ -1,4 +1,5 @@
 import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
+import { withAccess } from "@/lib/order-access";
 import { rupiah } from "@/lib/format";
 import { STATUS_META } from "@/lib/status";
 import type { Status } from "@/lib/status";
@@ -66,6 +67,7 @@ export function orderStatusMessage(input: {
   note: string | null;
   paid: boolean;
   paymentLines?: string[];
+  accessToken?: string | null;
 }) {
   const parts: string[] = [];
   parts.push(STATUS_META[input.status].wa(input.code, input.name));
@@ -75,7 +77,9 @@ export function orderStatusMessage(input: {
   else if (input.price !== null && input.paymentLines?.length) {
     parts.push(input.paymentLines.join("\n"));
   }
-  parts.push(`Pantau di: ${siteUrl()}/lacak/${input.code}`);
+  parts.push(
+    `Pantau di: ${siteUrl()}${withAccess(`/lacak/${input.code}`, input.accessToken)}`,
+  );
   return parts.join("\n\n");
 }
 

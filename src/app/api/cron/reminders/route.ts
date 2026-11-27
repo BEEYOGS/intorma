@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { normalizeWA, rupiah, tanggal, tanggalHariIni, tanggalJam } from "@/lib/format";
+import { withAccess } from "@/lib/order-access";
 import { planReminder } from "@/lib/reminders";
 import { getPaymentSettings, paymentLines } from "@/lib/settings";
 import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
@@ -20,6 +21,7 @@ type Candidate = {
   deadline: string | Date | null;
   deadline_at: string | Date | null;
   age_days: number;
+  access_token?: string | null;
 };
 
 type Digest = {
@@ -40,7 +42,8 @@ function recordMessage(to: string, content: string, key: string, ok: boolean) {
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret && process.env.NODE_ENV === "production") {
+  const localDev = process.env.NODE_ENV !== "production" && process.env.ALLOW_LOCAL_CRON === "1";
+  if (!secret && !localDev) {
     return NextResponse.json({ error: "CRON_SECRET belum dikonfigurasi." }, { status: 503 });
   }
   if (secret) {
@@ -65,7 +68,7 @@ export async function GET(req: Request) {
   if (remindersEnabled) {
     // Kandidat: deadline dalam 2 hari/lewat, atau belum dibayar sejak 2 hari lalu.
     const rows = (await sql`
-      select id, code, name, wa, status, price, paid, deadline, deadline_at,
+      select id, code, name, wa, status, price, paid, deadline, deadline_at, access_token,
         greatest(0, floor(extract(epoch from (now() - created_at)) / 86400))::int as age_days
       from orders
       where status <> 'batal'
@@ -84,6 +87,7 @@ export async function GET(req: Request) {
     for (const r of rows) {
       const deadlineAt = r.deadline_at ?? r.deadline ?? null;
       const price = r.price == null ? null : Number(r.price);
+      const detailLink = `${siteUrl()}${withAccess(`/lacak/${r.code}`, r.access_token)}`;
       const plan = planReminder(
         {
           code: r.code,
@@ -118,7 +122,7 @@ export async function GET(req: Request) {
               deadlineAt ? `Target selesai: ${tanggalJam(deadlineAt)}` : null,
               r.paid ? "Pembayaran: lunas." : "Pembayaran belum kami terima.",
               paymentBlock,
-              `Detail & bayar: ${siteUrl()}/lacak/${r.code}`,
+              `Detail & bayar: ${detailLink}`,
             ]
           : [
               `Halo ${r.name}, pesanan ${r.code} masih menunggu pembayaran.`,
@@ -126,7 +130,7 @@ export async function GET(req: Request) {
               `Sudah ${Number(r.age_days ?? 0)} hari sejak pesanan dibuat.`,
               deadlineAt ? `Target selesai: ${tanggalJam(deadlineAt)}` : null,
               paymentBlock,
-              `Bayar online / lihat detail: ${siteUrl()}/lacak/${r.code}`,
+              `Bayar online / lihat detail: ${detailLink}`,
             ];
 
       const message = lines.filter((line): line is string => Boolean(line)).join("\n");

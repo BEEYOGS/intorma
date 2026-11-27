@@ -1,4 +1,4 @@
-// Gateway lokal untuk in.tarma:
+// Gateway lokal untuk in.torma:
 //   1. membuka tunnel publik (cloudflared quick tunnel) ke app Next.js
 //   2. menjalankan Next.js (kalau belum jalan)
 //   3. memastikan OpenWA gateway jalan, sesi WhatsApp aktif, dan webhook
@@ -201,18 +201,25 @@ async function ensureWebhook(sessionId, webhookUrl) {
   if (!list.ok) throw new Error(`daftar webhook gagal: HTTP ${list.status}`);
   const hooks = list.json || [];
   const existing = hooks.find((h) => String(h.url).includes("/api/wa/webhook"));
+  // Header dan secret sengaja tidak dikembalikan API (write-only), jadi always
+  // PUT supaya konfigurasi auth tidak hilang setelah database OpenWA dipulihkan.
+  const config = {
+    url: webhookUrl,
+    events: ["message.received"],
+    headers: { "x-webhook-secret": secret },
+    ...(secret.length >= 16 ? { secret } : {}),
+  };
   if (existing) {
-    if (existing.url === webhookUrl) return { id: existing.id, updated: false };
     const upd = await openwaApi(`/api/sessions/${sessionId}/webhooks/${existing.id}`, {
       method: "PUT",
-      body: JSON.stringify({ url: webhookUrl, events: ["message.received"] }),
+      body: JSON.stringify(config),
     });
     if (!upd.ok) throw new Error(`update webhook gagal: HTTP ${upd.status} ${upd.text.slice(0, 200)}`);
     return { id: existing.id, updated: true };
   }
   const created = await openwaApi(`/api/sessions/${sessionId}/webhooks`, {
     method: "POST",
-    body: JSON.stringify({ url: webhookUrl, events: ["message.received"] }),
+    body: JSON.stringify(config),
   });
   if (!created.ok) throw new Error(`buat webhook gagal: HTTP ${created.status} ${created.text.slice(0, 200)}`);
   return { id: created.json?.id, updated: false };
@@ -232,7 +239,7 @@ const siteUrl = publicUrl || localApp;
 // Webhook dikirim ke app di mesin yang sama; OpenWA dijalankan dengan
 // WEBHOOK_SSRF_PROTECT=false sehingga 127.0.0.1 diizinkan. URL tunnel tidak
 // dipakai untuk webhook karena DNS quick tunnel bisa belum siap / berubah.
-const webhookUrl = `${localApp}/api/wa/webhook?s=${encodeURIComponent(secret)}`;
+const webhookUrl = `${localApp}/api/wa/webhook`;
 
 const running = await reachable(localApp);
 if (running) {
@@ -272,10 +279,10 @@ try {
   console.log(`\n${line}
   Situs lokal : ${localApp}
   Situs publik: ${publicUrl || "(tunnel tidak aktif)"}
-  Webhook WA  : ${localApp}/api/wa/webhook?s=***
+  Webhook WA  : ${localApp}/api/wa/webhook (header x-webhook-secret)
   OpenWA API  : ${openwaUrl}
   Sesi WA     : ${sessionName} (${session.id}) status ${session.status}
-  Webhook sesi: ${hook.id ?? "?"} ${hook.updated ? "(URL diperbarui)" : "(baru/ sudah benar)"}
+  Webhook sesi: ${hook.id ?? "?"} ${hook.updated ? "(auth diperbarui)" : "(baru)"}
   Worker antre: berjalan (wa_outbox)
 ${line}
   ${session.status === "ready" ? "WhatsApp sudah tertaut." : "Belum tertaut: jalankan `npm run wa:session` lalu scan QR."}

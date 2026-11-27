@@ -9,9 +9,11 @@ import type { PaymentMethodMeta } from "@/lib/payment";
 export function PaymentMethodPicker({
   code,
   methods,
+  accessToken,
 }: {
   code: string;
   methods: PaymentMethodMeta[];
+  accessToken?: string | null;
 }) {
   const [state, action, pending] = useActionState<ActionResult, FormData>(chargePayment, null);
   const [selected, setSelected] = useState(methods[0]?.id ?? "qris");
@@ -21,6 +23,7 @@ export function PaymentMethodPicker({
     <form action={action} className="mt-5">
       <input type="hidden" name="code" value={code} />
       <input type="hidden" name="method" value={selected} />
+      {accessToken ? <input type="hidden" name="accessToken" value={accessToken} /> : null}
 
       <div role="radiogroup" aria-label="Metode pembayaran" className="grid gap-2">
         {methods.map((method) => {

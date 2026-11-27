@@ -21,24 +21,47 @@ function remainingLabel(ms: number): string {
   return hours > 0 ? `${hours}j ${pad(minutes)}m` : `${pad(minutes)}:${pad(seconds)}`;
 }
 
-export function PaymentPoller({ code, expiresAt }: { code: string; expiresAt: string }) {
+export function PaymentPoller({
+  code,
+  expiresAt,
+  accessToken,
+}: {
+  code: string;
+  expiresAt: string;
+  accessToken?: string | null;
+}) {
   const router = useRouter();
+  const statusUrl = `/api/payment/status?code=${encodeURIComponent(code)}${
+    accessToken ? `&t=${encodeURIComponent(accessToken)}` : ""
+  }`;
   const [paid, setPaid] = useState(false);
   const [expired, setExpired] = useState(false);
   const [checking, setChecking] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const done = useRef(false);
+  const expiryHandled = useRef(false);
 
   useEffect(() => {
     const deadline = new Date(expiresAt).getTime();
-    const tick = () => setRemaining(Math.max(0, deadline - Date.now()));
+    const tick = () => {
+      const left = Math.max(0, deadline - Date.now());
+      setRemaining(left);
+      if (left === 0 && !expiryHandled.current) {
+        expiryHandled.current = true;
+        router.refresh();
+      }
+    };
     tick();
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [expiresAt]);
+  }, [expiresAt, router]);
 
   useEffect(() => {
     let alive = true;
+    done.current = false;
+    expiryHandled.current = false;
+    setPaid(false);
+    setExpired(false);
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     // Status PENDING dicek tiap 5 detik. Endpoint status punya cache 10 detik,
@@ -50,7 +73,7 @@ export function PaymentPoller({ code, expiresAt }: { code: string; expiresAt: st
     async function check() {
       if (done.current) return;
       try {
-        const response = await fetch(`/api/payment/status?code=${encodeURIComponent(code)}`, {
+        const response = await fetch(statusUrl, {
           cache: "no-store",
         });
         const data = (await response.json()) as StatusResponse;
@@ -76,12 +99,13 @@ export function PaymentPoller({ code, expiresAt }: { code: string; expiresAt: st
       alive = false;
       if (timer) clearTimeout(timer);
     };
-  }, [code, router]);
+  }, [statusUrl, expiresAt, router]);
 
   async function checkNow() {
+    if (done.current) return;
     setChecking(true);
     try {
-      const response = await fetch(`/api/payment/status?code=${encodeURIComponent(code)}`, {
+      const response = await fetch(statusUrl, {
         cache: "no-store",
       });
       const data = (await response.json()) as StatusResponse;

@@ -12,12 +12,14 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { CopyButton } from "@/components/CopyButton";
+import { OrderAccessGate } from "@/components/OrderAccessGate";
 import { Footer, Nav } from "@/components/Chrome";
 import { PaymentMethodPicker } from "@/components/PaymentMethodPicker";
 import { PaymentPoller } from "@/components/PaymentPoller";
 import { isValidCode, normalizeCode } from "@/lib/codes";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal, tanggalJam } from "@/lib/format";
+import { cleanAccessToken, hasOrderAccess, withAccess } from "@/lib/order-access";
 import { PAYMENT_METHODS, gatewayEnabled } from "@/lib/payment";
 import { waLink } from "@/lib/site";
 
@@ -35,6 +37,8 @@ type OrderRow = {
   payment_status: string | null;
   deadline: string | null;
   deadline_at: string | null;
+  access_token: string | null;
+  customer_id: number | null;
   service: string | null;
 };
 
@@ -42,8 +46,10 @@ type ChargeRaw = {
   method?: string;
   transactionId?: string;
   orderIdUsed?: string;
+  order_id_used?: string;
   status?: string;
   expiresAt?: string;
+  expires_at?: string;
   qrString?: string;
   qrDataUrl?: string;
   vaNumber?: string;
@@ -52,7 +58,12 @@ type ChargeRaw = {
 
 function parseRaw(value: unknown): ChargeRaw {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  return value as ChargeRaw;
+  const raw = value as ChargeRaw;
+  return {
+    ...raw,
+    orderIdUsed: raw.orderIdUsed ?? raw.order_id_used,
+    expiresAt: raw.expiresAt ?? raw.expires_at,
+  };
 }
 
 function Step({ index, label, state }: { index: number; label: string; state: "done" | "active" | "todo" }) {
@@ -79,21 +90,28 @@ export default async function PayPage({
   searchParams,
 }: {
   params: Promise<{ kode: string }>;
-  searchParams: Promise<{ ganti?: string }>;
+  searchParams: Promise<{ ganti?: string; t?: string }>;
 }) {
-  const [{ kode }, { ganti }] = await Promise.all([params, searchParams]);
+  const [{ kode }, { ganti, t }] = await Promise.all([params, searchParams]);
   const code = normalizeCode(kode);
   if (!isValidCode(code)) notFound();
 
   const order = (
     await sql`
       select o.id, o.code, o.name, o.wa, o.price, o.paid, o.status, o.payment_status,
-        o.deadline, o.deadline_at, coalesce(s.name, o.service_label) as service
+        o.deadline, o.deadline_at, o.access_token, o.customer_id,
+        coalesce(s.name, o.service_label) as service
       from orders o left join services s on s.id = o.service_id
       where o.code = ${code}
     `
   )[0] as OrderRow | undefined;
   if (!order) notFound();
+
+  const accessToken = cleanAccessToken(t);
+  if (!(await hasOrderAccess(order, accessToken))) return <OrderAccessGate code={order.code} />;
+  const trackUrl = withAccess(`/lacak/${order.code}`, accessToken);
+  const notaUrl = withAccess(`/nota/${order.code}`, accessToken);
+  const changeUrl = withAccess(`/bayar/${order.code}?ganti=1`, accessToken);
 
   const enabled = gatewayEnabled();
   const pending = order.paid
@@ -118,7 +136,7 @@ export default async function PayPage({
       <Nav />
       <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:py-12">
         <Link
-          href={`/lacak/${order.code}`}
+          href={trackUrl}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-mute transition-colors hover:text-ink"
         >
           <ArrowLeft aria-hidden className="size-3.5" />
@@ -158,11 +176,11 @@ export default async function PayPage({
                     Pesanan {order.code} sudah lunas. Kami akan menghubungi kamu lewat WhatsApp kalau ada yang perlu dikonfirmasi.
                   </p>
                   <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-                    <Link href={`/lacak/${order.code}`} className="btn btn-primary min-h-11 px-4 text-sm">
+                    <Link href={trackUrl} className="btn btn-primary min-h-11 px-4 text-sm">
                       Lihat status pesanan
                       <ArrowRight aria-hidden className="size-4" />
                     </Link>
-                    <Link href={`/nota/${order.code}`} className="btn btn-ghost min-h-11 px-4 text-sm">
+                    <Link href={notaUrl} className="btn btn-ghost min-h-11 px-4 text-sm">
                       Buka nota
                     </Link>
                   </div>
@@ -193,7 +211,7 @@ export default async function PayPage({
                   <p className="mt-2 text-sm leading-6 text-mute">
                     Nominal belum ditentukan. Kami akan mengabari lewat WhatsApp setelah pesanan diperiksa.
                   </p>
-                  <Link href={`/lacak/${order.code}`} className="btn btn-ghost mt-4 min-h-10 px-4 text-sm">
+                  <Link href={trackUrl} className="btn btn-ghost mt-4 min-h-10 px-4 text-sm">
                     Lihat status pesanan
                   </Link>
                 </div>
@@ -208,7 +226,7 @@ export default async function PayPage({
                       </h2>
                     </div>
                     <Link
-                      href={`/bayar/${order.code}?ganti=1`}
+                      href={changeUrl}
                       className="text-xs font-semibold text-mute underline decoration-line underline-offset-4 hover:text-ink"
                     >
                       Ganti metode
@@ -272,7 +290,7 @@ export default async function PayPage({
                     </div>
                   )}
 
-                  <PaymentPoller code={order.code} expiresAt={raw.expiresAt ?? new Date().toISOString()} />
+                  <PaymentPoller key={`${order.code}:${raw.orderIdUsed ?? pending.id}`} code={order.code} expiresAt={raw.expiresAt ?? new Date().toISOString()} accessToken={accessToken} />
                 </div>
               ) : (
                 <div>
@@ -280,7 +298,7 @@ export default async function PayPage({
                   <p className="mt-1 text-sm leading-6 text-mute">
                     Total <span className="font-semibold text-ink">{rupiah(order.price)}</span>. Pilih yang paling praktis untukmu.
                   </p>
-                  <PaymentMethodPicker code={order.code} methods={PAYMENT_METHODS} />
+                  <PaymentMethodPicker code={order.code} methods={PAYMENT_METHODS} accessToken={accessToken} />
                 </div>
               )}
             </section>

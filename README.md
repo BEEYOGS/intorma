@@ -115,32 +115,29 @@ dan build lokal Tauri memerlukan Windows SDK. Jangan menganggap build lokal seba
 
 ### WhatsApp
 
-Ada tiga provider. **Produksi saat ini: Fonnte** (hosted, tetap online tanpa PC). OpenWA dipakai
-untuk pengembangan lokal. Meta WhatsApp Cloud API tersedia sebagai alternatif tanpa watermark pihak
-ketiga bila kredensial Meta sudah siap.
+Ada tiga adapter. **Aktif saat ini: OpenWA** yang berjalan di mesin gateway; Vercel menulis pesan ke
+`wa_outbox`, lalu `npm run wa:agent` mengirimnya. Meta WhatsApp Cloud API tersedia tanpa watermark
+pihak ketiga, tetapi tetap dormant sampai kredensial dan `WA_PROVIDER=cloud` ditetapkan eksplisit.
+Adapter Fonnte hanya disimpan untuk kompatibilitas lama dan tidak dipakai karena menambah footer pihak ketiga.
 
 ```
-WA_PROVIDER=fonnte
-FONNTE_TOKEN=token-dari-dashboard-fonnte
-WA_WEBHOOK_SECRET=string-acak-untuk-webhook
+WA_PROVIDER=openwa
+OPENWA_URL=http://127.0.0.1:2785
+OPENWA_KEY=kunci-api-openwa
+OPENWA_SESSION=intorma
+OPENWA_WEBHOOK_SECRET=string-acak-panjang
 ADMIN_WHATSAPP_NUMBER=0895329940950
 ```
 
-1. Daftar di [fonnte.com](https://fonnte.com), buat device, lalu hubungkan WhatsApp dengan scan QR
-   sekali di dashboard Fonnte.
-2. Salin token device ke `FONNTE_TOKEN` di Vercel.
-3. Set webhook device ke `https://intorma-psi.vercel.app/api/wa/webhook?s=WA_WEBHOOK_SECRET`.
-4. Aktifkan autoread di device Fonnte.
+1. Jalankan `npm run gateway` di mesin yang terhubung WhatsApp.
+2. Skrip mendaftarkan webhook ke `/api/wa/webhook` **tanpa query secret**. Rahasia dikirim lewat
+   header `x-webhook-secret`, dan OpenWA juga menandatangani body dengan HMAC-SHA256 bila secret
+   minimal 16 karakter. Webhook lama dengan `?s=` tidak diterima lagi.
+3. Pesan masuk `status INT-DDMMYY001` dibalas hanya jika nomor pengirim cocok dengan order.
+4. Jangan mengirim WA saat tes; pakai `npm run wa:check` untuk mengecek koneksi tanpa mengirim pesan.
 
-Fonnte menyimpan sesi WhatsApp di server mereka, jadi notifikasi dan balasan `status INT-DDMMYY001`
-tetap berjalan walau PC mati. `connectOnly=false` membuat pesan tetap diantrekan Fonnte saat device
-sedang reconnect. Branding “sent via fonnte” ditentukan oleh paket/device Fonnte, bukan parameter API;
-satu-satunya cara menghapusnya adalah pindah provider atau mengaktifkan fitur branding di paket Fonnte.
-Pesan lama tidak bisa diubah watermark-nya; hanya pesan baru yang terpengaruh setelah pindah provider.
-
-Alternatif tanpa watermark — Meta WhatsApp Cloud API (belum diaktifkan di produksi).
-Provider ini hanya dipakai jika `WA_PROVIDER=cloud` ditetapkan eksplisit; keberadaan token
-saja tidak mengganti Fonnte. Webhook Cloud wajib memakai `META_WA_APP_SECRET`.
+Meta Cloud API (belum diaktifkan di produksi) hanya dipakai jika `WA_PROVIDER=cloud` ditetapkan
+eksplisit. Webhook Cloud wajib memakai `META_WA_APP_SECRET`.
 
 ```
 WA_PROVIDER=cloud

@@ -274,7 +274,8 @@ const inbox = createServer(async (req, res) => {
       return;
     }
     if (req.method === "POST" && url.pathname === "/webhook") {
-      if (!inboxSecret || url.searchParams.get("s") !== inboxSecret) {
+      const given = String(req.headers["x-webhook-secret"] ?? "");
+      if (!inboxSecret || given !== inboxSecret) {
         json(res, 401, { ok: false });
         return;
       }

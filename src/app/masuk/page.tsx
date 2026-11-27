@@ -8,8 +8,17 @@ import { getCustomer } from "@/lib/customer-auth";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Masuk ke portal" };
 
-export default async function LoginPage() {
-  if (await getCustomer()) redirect("/portal");
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+  const destination =
+    next?.startsWith("/") && !next.startsWith("//") && !next.includes("\\")
+      ? next.slice(0, 240)
+      : "/portal";
+  if (await getCustomer()) redirect(destination);
 
   return (
     <div className="animate-in">
@@ -41,7 +50,7 @@ export default async function LoginPage() {
             </Link>
           </p>
         </div>
-        <CustomerAuthForm />
+        <CustomerAuthForm next={destination} />
       </div>
     </div>
   );

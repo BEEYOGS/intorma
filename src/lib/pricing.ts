@@ -123,17 +123,8 @@ export function calculateQuote(service: Service, input: QuoteInput = {}): QuoteR
   }
 
   if (rate <= 0) {
-    return {
-      price: null,
-      subtotal: null,
-      qty,
-      unitRate: rate || null,
-      area,
-      unit,
-      lines: [],
-      options: [],
-      snapshot: null,
-    };
+    // Jangan biarkan harga kosong menjadi jalan buntu tanpa penjelasan.
+    return emptyQuote(unit, "Harga layanan belum diatur admin. Hubungi kami lewat WhatsApp sebelum memesan.");
   }
 
   const baseAmount = Math.round(rate * multiplier);

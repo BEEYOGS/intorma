@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { NotaQrCard } from "@/components/NotaQrCard";
+import { OrderAccessGate } from "@/components/OrderAccessGate";
 import { PrintButton } from "@/components/PrintButton";
 import { isAdmin } from "@/lib/auth";
+import { cleanAccessToken, hasOrderAccess, withAccess } from "@/lib/order-access";
 import { sql } from "@/lib/db";
 import { jam, rupiah, tanggal } from "@/lib/format";
 import { notaRows, type NotaOrder, type NotaSnapshot } from "@/lib/nota";
@@ -14,17 +16,29 @@ import { STATUS_META, asStatus } from "@/lib/status";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Nota pesanan" };
 
-export default async function NotaPage({ params }: { params: Promise<{ kode: string }> }) {
-  const { kode } = await params;
+export default async function NotaPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ kode: string }>;
+  searchParams: Promise<{ t?: string }>;
+}) {
+  const [{ kode }, { t }] = await Promise.all([params, searchParams]);
   const order = (
     await sql`
       select o.id, o.code, o.name, o.status, o.price, o.options, o.brief, o.created_at,
         o.qty, o.unit_rate, o.width_cm, o.height_cm, o.paid, o.deadline, o.deadline_at,
+        o.promo_code, o.discount_amount, o.access_token, o.customer_id,
         coalesce(s.name, o.service_label) as service, s.unit_label as unit_label
       from orders o left join services s on s.id = o.service_id
       where o.code = ${kode.toUpperCase()}`
   )[0];
   if (!order) notFound();
+
+  const accessToken = cleanAccessToken(t);
+  if (!(await hasOrderAccess(order, accessToken))) return <OrderAccessGate code={order.code} />;
+  const trackUrl = withAccess(`/lacak/${order.code}`, accessToken);
+  const pdfUrl = withAccess(`/api/nota/${order.code}/pdf`, accessToken);
 
   const [payment, admin] = await Promise.all([getPaymentSettings(), isAdmin()]);
   const snapshot =
@@ -38,7 +52,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
   return (
     <div className="min-h-dvh bg-[var(--bg)] py-8">
       <div className="no-print wrap mb-6 flex flex-wrap items-center justify-between gap-3">
-        <Link href={`/lacak/${order.code}`} className="btn btn-ghost min-h-10 px-3 text-sm">
+        <Link href={trackUrl} className="btn btn-ghost min-h-10 px-3 text-sm">
           <ArrowLeft aria-hidden className="size-4" /> Kembali ke lacak
         </Link>
         <div className="flex flex-wrap items-center gap-2">
@@ -47,7 +61,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
             <PrintButton />
           ) : (
             <a
-              href={`/api/nota/${order.code}/pdf`}
+              href={pdfUrl}
               download
               className="btn btn-primary min-h-10 px-4 text-sm"
             >
@@ -59,7 +73,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
 
       {!admin && (
         <div className="no-print wrap mb-6">
-          <NotaQrCard code={order.code} />
+          <NotaQrCard code={order.code} accessToken={accessToken} />
         </div>
       )}
 
@@ -72,7 +86,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
             className="mx-auto h-auto w-[160mm] max-w-full object-contain"
           />
           <p className="mt-3 text-[10px] font-light uppercase tracking-[0.35em] text-[#111]">
-            Creative without idea
+            CREATIVE WITHOUT IDEA
           </p>
           <p className="mt-2 flex flex-wrap items-center justify-center gap-x-2 text-[11px] font-light text-[#111]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -189,7 +203,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
         </section>
 
         <footer className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-[#c9c9c9] pt-3 text-[10px] uppercase tracking-[0.14em] text-[#555]">
-          <span>Creative without idea</span>
+          <span>CREATIVE WITHOUT IDEA</span>
           <span>{order.code}</span>
         </footer>
       </article>

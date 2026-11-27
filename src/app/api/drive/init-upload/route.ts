@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { guardRate } from "@/lib/api-rate-limit";
+import { getCustomer } from "@/lib/customer-auth";
 import { driveEnabled, driveInitResumable } from "@/lib/drive";
 import {
   DRIVE_CHUNK_BYTES,
@@ -25,6 +27,8 @@ function text(value: unknown, max: number): string {
 }
 
 export async function POST(req: Request) {
+  const limited = await guardRate("drive_init", 30);
+  if (limited) return limited;
   if (!driveEnabled()) {
     return NextResponse.json(
       {
@@ -36,7 +40,8 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!verifyUploadToken(req.headers.get("x-upload-token"))) {
+  const customer = await getCustomer().catch(() => null);
+  if (!verifyUploadToken(req.headers.get("x-upload-token"), customer?.id ?? null)) {
     return NextResponse.json(
       { error: "Sesi upload kedaluwarsa. Muat ulang halaman lalu coba lagi.", drive: true },
       { status: 401 },

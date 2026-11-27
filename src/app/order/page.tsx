@@ -65,7 +65,7 @@ export default async function OrderPage({
               payment={payment}
               customer={customer ? { name: customer.name, wa: customer.wa } : undefined}
               driveReady={driveEnabled()}
-              uploadToken={createUploadToken()}
+              uploadToken={createUploadToken(customer?.id ?? null)}
             />
           )}
         </div>

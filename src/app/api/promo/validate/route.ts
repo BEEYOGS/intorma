@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { guardRate } from "@/lib/api-rate-limit";
 import { sql } from "@/lib/db";
 import { clientErrorMessage } from "@/lib/error";
 
@@ -6,6 +7,8 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  const limited = await guardRate("promo_validate", 20);
+  if (limited) return limited;
   let body: unknown;
   try {
     body = await req.json();

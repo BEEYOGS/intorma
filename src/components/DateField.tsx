@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { wibToday } from "@/lib/deadline";
 
 const MONTHS = [
   "Januari",
@@ -94,8 +95,8 @@ export function DateField({
     if (open) selectedRef.current?.focus();
   }, [open]);
 
-  const today = new Date();
-  const todayISO = toISO(today.getFullYear(), today.getMonth(), today.getDate());
+  // Semua perhitungan tanggal memakai WIB supaya sama dengan validasi server.
+  const todayISO = wibToday();
   const firstDow = (new Date(view.year, view.month, 1).getDay() + 6) % 7;
   const dayCount = new Date(view.year, view.month + 1, 0).getDate();
   const cells: Array<number | null> = Array.from({ length: 42 }, (_, index) => {
@@ -152,6 +153,7 @@ export function DateField({
       {open && (
         <div
           role="dialog"
+          aria-modal="true"
           aria-label="Pilih tanggal"
           className="absolute left-0 right-0 z-30 mt-2 rounded-tag-sm border border-line bg-panel p-4 shadow-[0_18px_40px_-24px_rgba(11,11,11,0.45)]"
         >
@@ -179,7 +181,7 @@ export function DateField({
               const selected = value === iso;
               const isToday = todayISO === iso;
               const past = iso < todayISO;
-const blocked = past || (min ? iso < min : false);
+              const blocked = past || (min ? iso < min : false);
               return (
                 <button
                   key={iso}
@@ -190,9 +192,9 @@ const blocked = past || (min ? iso < min : false);
                   aria-disabled={blocked || undefined}
                   aria-pressed={selected}
                   aria-current={isToday ? "date" : undefined}
-                  aria-label={`${day} ${MONTHS[view.month]} ${view.year}${past ? " (tanggal lampau)" : ""}`}
+                  aria-label={`${day} ${MONTHS[view.month]} ${view.year}${blocked ? " (belum tersedia)" : ""}`}
                   className={`grid size-9 place-items-center rounded-tag-sm text-[13px] font-medium tabular-nums transition-colors ${
-                    past
+                    blocked
                       ? "cursor-not-allowed text-ink/25"
                       : selected
                         ? "bg-ink text-paper"
@@ -209,8 +211,12 @@ const blocked = past || (min ? iso < min : false);
             <button type="button" onClick={() => choose("")} disabled={!value} className="text-xs font-semibold text-ink/55 transition-colors hover:text-ink disabled:opacity-35">
               Hapus
             </button>
-            <button type="button" onClick={() => choose(todayISO)} className="text-xs font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink">
-              Hari ini
+            <button
+              type="button"
+              onClick={() => choose(min && min > todayISO ? min : todayISO)}
+              className="text-xs font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink"
+            >
+              {min && min > todayISO ? "Tanggal tercepat" : "Hari ini"}
             </button>
           </div>
         </div>

@@ -13,7 +13,10 @@ export type NotaSnapshot = {
 };
 
 export type NotaOrder = {
+  id?: number;
   code: string;
+  access_token?: string | null;
+  customer_id?: number | null;
   name: string;
   status: string;
   paid: boolean | number;
@@ -27,6 +30,8 @@ export type NotaOrder = {
   qty: number | string | null;
   width_cm: number | string | null;
   height_cm: number | string | null;
+  promo_code?: string | null;
+  discount_amount?: number | string | null;
 };
 
 export type NotaRow = { name: string; qty: string; amount: string };
@@ -58,6 +63,19 @@ export function notaRows(order: NotaOrder, snapshot: NotaSnapshot | null): NotaR
     qty,
     amount: line.amount == null ? "-" : rupiah(line.amount),
   }));
+
+  // Order lama belum punya baris promo di snapshot; tampilkan dari kolom order.
+  const discount = num(order.discount_amount);
+  const shownDiscount = rows.some((row) => /promo/i.test(row.name))
+    ? 0
+    : discount;
+  if (shownDiscount > 0) {
+    rows.push({
+      name: `Promo ${order.promo_code ?? ""}`.trim(),
+      qty: "-",
+      amount: `-${rupiah(shownDiscount)}`,
+    });
+  }
 
   // Baris kosong mengikuti bentuk nota asli supaya tabel tetap rapi saat dicetak.
   while (rows.length < 6) rows.push({ name: "", qty: "", amount: "" });

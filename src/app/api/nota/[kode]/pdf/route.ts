@@ -5,6 +5,7 @@ import HelveticaBold from "pdfkit/standard-fonts/HelveticaBold";
 import TimesItalic from "pdfkit/standard-fonts/TimesItalic";
 import { sql } from "@/lib/db";
 import { jam, tanggal } from "@/lib/format";
+import { cleanAccessToken, hasOrderAccess } from "@/lib/order-access";
 import { notaRows, notaTotal, type NotaOrder, type NotaSnapshot } from "@/lib/nota";
 import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, asStatus } from "@/lib/status";
@@ -17,17 +18,25 @@ registerStdFonts(Courier, Helvetica, HelveticaBold, TimesItalic);
 
 const M = 42;
 
-export async function GET(_req: Request, { params }: { params: Promise<{ kode: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ kode: string }> }) {
   const { kode } = await params;
+  const accessToken = cleanAccessToken(new URL(req.url).searchParams.get("t"));
   const order = (
     await sql`
-      select o.code, o.name, o.status, o.price, o.options, o.brief, o.created_at,
+      select o.id, o.code, o.name, o.status, o.price, o.options, o.brief, o.created_at,
         o.qty, o.width_cm, o.height_cm, o.paid, o.deadline, o.deadline_at,
+        o.promo_code, o.discount_amount, o.access_token, o.customer_id,
         coalesce(s.name, o.service_label) as service
       from orders o left join services s on s.id = o.service_id
       where o.code = ${kode.toUpperCase()}`
   )[0] as NotaOrder | undefined;
   if (!order) return new Response("Nota tidak ditemukan.", { status: 404 });
+  if (!(await hasOrderAccess(order, accessToken))) {
+    return new Response("Butuh tautan pribadi atau sesi pemilik pesanan.", {
+      status: 403,
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  }
 
   const [payment, snapshot] = await Promise.all([
     getPaymentSettings(),

@@ -23,6 +23,8 @@ const ALLOWED_MIME = new Set([
   "image/gif",
   "image/tiff",
   "image/bmp",
+  "image/heic",
+  "image/heif",
   "image/svg+xml",
   "application/postscript",
   "application/illustrator",
@@ -54,8 +56,27 @@ export const ALLOWED_EXT =
 export const ACCEPT_ATTR =
   ".pdf,.jpg,.jpeg,.png,.webp,.gif,.tif,.tiff,.bmp,.svg,.ai,.psd,.psb,.cdr,.eps,.zip,.rar,.7z,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.mp4,.mov,.webm,.heic,.heif";
 
+/**
+ * Ekstensi DAN MIME harus saling cocok. Parser file sering salah menebak MIME,
+ * jadi `application/octet-stream` dan MIME kosong diterima selama ekstensinya
+ * ada di daftar. Sebaliknya `.pdf` bertype `text/html` ditolak.
+ */
 export function isAllowedUpload(name: string, mime?: string | null): boolean {
-  return ALLOWED_EXT.test(name) || (mime ? ALLOWED_MIME.has(mime.toLowerCase()) : false);
+  if (!ALLOWED_EXT.test(name)) return false;
+  const normalized = mime?.toLowerCase().trim();
+  if (!normalized || normalized === "application/octet-stream") return true;
+  return ALLOWED_MIME.has(normalized);
+}
+
+/** SVG disajikan sebagai lampiran, bukan dokumen inline (risiko script). */
+export function isAttachment(mime?: string | null, name?: string | null): boolean {
+  const type = mime?.toLowerCase().trim() ?? "";
+  return (
+    type === "image/svg+xml" ||
+    type.startsWith("text/") ||
+    type === "application/octet-stream" ||
+    /\.svg$/i.test(name ?? "")
+  );
 }
 
 /** Nama aman untuk filesystem/header, tetap mempertahankan huruf dan ekstensi. */

@@ -3,6 +3,7 @@ import { TopBar } from "@/components/TopBar";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { IconForStatus } from "@/components/StatusIcon";
 import { STATUS_META, type Status } from "@/lib/status";
+import { CONTACT_EMAIL, SITE_NAME, TAGLINE } from "@/lib/site";
 
 export function Nav() {
   return <TopBar />;
@@ -12,11 +13,12 @@ export function Footer() {
   return (
     <footer className="border-t border-[var(--border)]">
       <div className="wrap flex flex-wrap items-center justify-between gap-4 py-8 text-xs text-[var(--text-3)]">
-        <span className="mono">in.torma — Creative without idea</span>
+        <span className="mono">{SITE_NAME} — {TAGLINE}</span>
         <div className="flex flex-wrap items-center gap-5">
           <Link href="/order" className="transition-colors hover:text-[var(--text)]">Pesan</Link>
           <Link href="/lacak" className="transition-colors hover:text-[var(--text)]">Lacak</Link>
           <Link href="/faq" className="transition-colors hover:text-[var(--text)]">FAQ</Link>
+          <a href={`mailto:${CONTACT_EMAIL}`} className="transition-colors hover:text-[var(--text)]">{CONTACT_EMAIL}</a>
           <WhatsAppLink
             text="Halo in.torma, saya mau tanya soal layanan desain dan cetak."
             className="inline-flex items-center gap-1.5 transition-colors hover:text-[var(--text)]"

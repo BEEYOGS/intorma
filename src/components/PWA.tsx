@@ -112,6 +112,8 @@ export function InstallButton() {
   const [popupKey, setPopupKey] = useState(0);
   const env = useAppEnvironment();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   const clearTimer = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -122,6 +124,7 @@ export function InstallButton() {
   const openPopup = useCallback(() => {
     if (isInstalledEnvironment() || readInstalledFlag() || dismissedRecently()) return;
     clearTimer();
+    openerRef.current = document.activeElement as HTMLElement | null;
     setShowPopup(true);
     setPopupKey((value) => value + 1);
     timer.current = setTimeout(() => setShowPopup(false), POPUP_MS);
@@ -132,6 +135,23 @@ export function InstallButton() {
     setShowPopup(false);
     rememberDismissal();
   }, [clearTimer]);
+
+  // Dialog pasif tetap harus bisa ditutup dengan keyboard dan mengembalikan fokus.
+  useEffect(() => {
+    if (!showPopup) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closePopup();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    dialogRef.current?.focus();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      openerRef.current?.focus?.();
+    };
+  }, [showPopup, closePopup]);
 
   useEffect(() => {
     const onPrompt = (event: Event) => {
@@ -199,8 +219,11 @@ export function InstallButton() {
       {showPopup && (
         <div
           key={popupKey}
+          ref={dialogRef}
           role="dialog"
+          aria-modal="true"
           aria-label="Pasang aplikasi in.torma"
+          tabIndex={-1}
           className="fixed inset-x-4 bottom-[calc(1.5rem_+_env(safe-area-inset-bottom))] z-50 w-auto overflow-hidden rounded-[var(--radius-sharp)] border border-line border-t-2 border-t-accent bg-[var(--panel-2)]/95 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] backdrop-blur-md sm:inset-x-auto sm:right-6 sm:w-[23rem]"
         >
           <div className="p-5">

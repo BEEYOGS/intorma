@@ -53,6 +53,10 @@ function CreateAccountForm() {
           className="input mt-1.5"
         />
       </label>
+      <label className="block sm:col-span-2">
+        <span className="eyebrow">Password admin saat ini</span>
+        <PasswordField name="current" required className="input mt-1.5" placeholder="Konfirmasi sebelum menambah akun" />
+      </label>
       <label className="block">
         <span className="eyebrow">Password baru</span>
         <PasswordField name="password" minLength={8} autoComplete="new-password" className="input mt-1.5" placeholder="Minimal 8 karakter" />
@@ -97,8 +101,17 @@ function AccountRow({ account }: { account: AdminAccount }) {
             <UserCog aria-hidden className="size-4" />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{account.label || account.username}</p>
-            <p className="mono mt-0.5 truncate text-xs text-mute">{account.username}</p>
+            <p className="truncate text-sm font-semibold">
+              {account.label || account.username}
+              {!account.active ? <span className="ml-2 text-xs font-medium text-danger">Nonaktif</span> : null}
+              {account.role === "owner" ? <span className="mono ml-2 text-xs text-accent">owner</span> : null}
+            </p>
+            <p className="mono mt-0.5 truncate text-xs text-mute">
+              {account.username}
+              {account.last_login_at
+                ? ` · masuk terakhir ${new Date(account.last_login_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" })} WIB`
+                : " · belum pernah masuk"}
+            </p>
           </div>
         </div>
         <button
@@ -121,7 +134,7 @@ function AccountRow({ account }: { account: AdminAccount }) {
               <input name="label" defaultValue={account.label} maxLength={60} className="input mt-1.5" />
             </label>
             <label className="block">
-              <span className="eyebrow">Password admin saat ini</span>
+              <span className="eyebrow">Password akun ini</span>
               <PasswordField name="current" required className="input mt-1.5" placeholder="Untuk konfirmasi" />
             </label>
             <label className="block">
@@ -131,6 +144,11 @@ function AccountRow({ account }: { account: AdminAccount }) {
             <label className="block">
               <span className="eyebrow">Ulangi password baru</span>
               <PasswordField name="confirm" minLength={8} autoComplete="new-password" className="input mt-1.5" placeholder="Sama seperti di atas" />
+            </label>
+            <label className="flex min-h-11 items-center gap-3 rounded-tag-sm border border-line px-3 sm:col-span-2">
+              <input type="hidden" name="activeForm" value="1" />
+              <input type="checkbox" name="active" defaultChecked={account.active} className="size-4 accent-[var(--accent)]" />
+              <span className="text-xs text-mute">Akun aktif (nonaktif langsung mencabut sesi)</span>
             </label>
             <div className="sm:col-span-2">
               <FormError error={editState?.error ?? undefined} />
@@ -151,7 +169,7 @@ function AccountRow({ account }: { account: AdminAccount }) {
           >
             <input type="hidden" name="id" value={account.id} />
             <label className="block min-w-0 flex-1">
-              <span className="eyebrow">Password admin saat ini</span>
+              <span className="eyebrow">Password akun ini</span>
               <PasswordField name="current" required className="input mt-1.5" placeholder="Untuk konfirmasi hapus" />
             </label>
             <div>

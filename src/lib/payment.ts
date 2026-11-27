@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 import QRCode from "qrcode";
 
 export type GatewayOrder = {
@@ -35,6 +35,8 @@ export type CoreCharge = {
   expiresAt: string;
   qrString?: string;
   qrDataUrl?: string;
+  /** QR sudah dibuat Midtrans tapi gambarnya belum bisa diambil; halaman bisa memuat ulang. */
+  qrPending?: boolean;
   vaNumber?: string;
   bank?: string;
 };
@@ -64,11 +66,17 @@ function authHeader(): string {
 }
 
 /**
- * Order ID Midtrans harus unik untuk setiap percobaan. Kode pesanan tetap
- * dikenali webhook karena sufiks `-P...` dibuang lagi saat lookup.
+ * Order ID & Idempotency-Key deterministik untuk kombinasi order+metode+nominal
+ *+attempt. Retry jaringan dengan parameter sama tidak membuat tagihan baru.
+ * Kode pesanan tetap dikenali webhook karena sufiks `-P...` dibuang saat lookup.
  */
-function uniqueOrderId(code: string): string {
-  return `${code}-P${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+export function uniqueOrderId(code: string, method: string, price: number, attempt = 1): string {
+  const digest = createHash("sha256")
+    .update(`${code}|${method}|${Math.round(price)}|${attempt}`)
+    .digest("hex")
+    .slice(0, 8)
+    .toUpperCase();
+  return `${code}-P${attempt}${digest}`;
 }
 
 /** `INT-261126001-PMABC123` -> `INT-261126001`; kode lama tanpa sufiks tetap utuh. */
@@ -97,6 +105,7 @@ type ChargeResponse = {
   gross_amount?: string;
   payment_type?: string;
   transaction_status?: string;
+  fraud_status?: string;
   expiry_time?: string;
   qr_string?: string;
   va_numbers?: { bank?: string; va_number?: string }[];
@@ -105,14 +114,18 @@ type ChargeResponse = {
   error_messages?: string[];
 };
 
-export async function createCoreCharge(order: GatewayOrder, method: PaymentMethod): Promise<CoreCharge> {
+export async function createCoreCharge(
+  order: GatewayOrder,
+  method: PaymentMethod,
+  attempt = 1,
+): Promise<CoreCharge> {
   const key = serverKey();
   if (!key) throw new Error("Payment gateway belum dikonfigurasi.");
 
   const meta = PAYMENT_METHODS.find((item) => item.id === method);
   if (!meta) throw new Error("Metode pembayaran tidak dikenal.");
 
-  const orderIdUsed = uniqueOrderId(order.code);
+  const orderIdUsed = uniqueOrderId(order.code, method, order.price, attempt);
   const body: Record<string, unknown> = {
     payment_type: meta.kind === "qris" ? "qris" : "bank_transfer",
     transaction_details: { order_id: orderIdUsed, gross_amount: Math.round(order.price) },
@@ -180,10 +193,6 @@ export async function createCoreCharge(order: GatewayOrder, method: PaymentMetho
     }
   }
 
-  if (method === "qris" && !qrDataUrl) {
-    throw new Error("QRIS berhasil dibuat, tetapi gambar QR gagal diambil. Coba lagi atau pilih Virtual Account.");
-  }
-
   const va = data.va_numbers?.[0];
 
   return {
@@ -194,6 +203,7 @@ export async function createCoreCharge(order: GatewayOrder, method: PaymentMetho
     expiresAt: expiryIso(data.expiry_time),
     qrString,
     qrDataUrl,
+    qrPending: method === "qris" && !qrDataUrl,
     vaNumber: va?.va_number ?? data.permata_va_number,
     bank: meta.bank ?? va?.bank?.toUpperCase(),
   };
@@ -213,16 +223,68 @@ export async function getCoreStatus(orderIdUsed: string): Promise<CoreStatus | n
   if (!data?.transaction_status || !data.gross_amount) return null;
   return {
     transactionStatus: data.transaction_status,
-    fraudStatus: undefined,
+    fraudStatus: data.fraud_status,
     grossAmount: data.gross_amount,
     transactionId: data.transaction_id,
     paymentType: data.payment_type,
   };
 }
 
-export function midtransSignature(orderId: string, statusCode: string, grossAmount: string): string {
-  const key = serverKey();
+/** Bangun ulang QR dari qr_string yang sudah tersimpan, tanpa charge baru. */
+export async function qrFromString(qrString: string): Promise<string | null> {
+  try {
+    return await QRCode.toDataURL(qrString, {
+      margin: 1,
+      width: 640,
+      errorCorrectionLevel: "M",
+      color: { dark: "#09090b", light: "#ffffff" },
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** Batalkan tagihan lama sebelum membuat yang baru pasca expiry. */
+export async function cancelCoreCharge(orderIdUsed: string): Promise<void> {
+  if (!serverKey()) return;
+  try {
+    await fetch(`${baseUrl()}/v2/${encodeURIComponent(orderIdUsed)}/cancel`, {
+      method: "POST",
+      headers: { accept: "application/json", authorization: authHeader() },
+      signal: AbortSignal.timeout(12_000),
+      cache: "no-store",
+    });
+  } catch {
+    // Midtrans akan membatalkan sendiri saat expiry; jangan menggagalkan charge baru.
+  }
+}
+
+function signatureWith(key: string, orderId: string, statusCode: string, grossAmount: string): string {
   return createHash("sha512").update(`${orderId}${statusCode}${grossAmount}${key}`).digest("hex");
+}
+
+/** Midtrans memisahkan Signature Secret Key sejak 28 Okt 2026. */
+export function midtransSignature(orderId: string, statusCode: string, grossAmount: string): string {
+  const key = process.env.MIDTRANS_SIGNATURE_SECRET_KEY?.trim() || serverKey();
+  return signatureWith(key, orderId, statusCode, grossAmount);
+}
+
+/** Terima keduanya saat rotasi key, dengan perbandingan timing-safe. */
+export function verifyMidtransSignature(
+  orderId: string,
+  statusCode: string,
+  grossAmount: string,
+  given: string,
+): boolean {
+  if (!/^[0-9a-f]{128}$/i.test(given)) return false;
+  const actual = Buffer.from(given, "hex");
+  const keys = [process.env.MIDTRANS_SIGNATURE_SECRET_KEY?.trim(), serverKey()].filter(
+    (value): value is string => Boolean(value),
+  );
+  return keys.some((key) => {
+    const expected = Buffer.from(signatureWith(key, orderId, statusCode, grossAmount), "hex");
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
+  });
 }
 
 export function isSettlement(status: string): boolean {

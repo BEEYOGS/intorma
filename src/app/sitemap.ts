@@ -12,7 +12,6 @@ const ROUTES = [
   "/contact",
   "/privacy",
   "/terms",
-  "/masuk",
   "/faq",
 ];
 

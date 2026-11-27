@@ -1,7 +1,8 @@
 import { normalizeWA } from "./format";
 
 export const SITE_NAME = "in.torma";
-export const TAGLINE = "Creative without idea";
+export const TAGLINE = "CREATIVE WITHOUT IDEA";
+export const CONTACT_EMAIL = "lucky77ag@gmail.com";
 
 /**
  * Nomor WhatsApp studio. Bisa diubah lewat NEXT_PUBLIC_WA_NUMBER tanpa

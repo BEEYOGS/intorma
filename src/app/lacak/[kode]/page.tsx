@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav, StatusBadge } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
+import { OrderAccessGate } from "@/components/OrderAccessGate";
 import { ShareStatusButton } from "@/components/ShareStatusButton";
 import { ReviewForm } from "@/components/ReviewForm";
 import { NotaQrCard } from "@/components/NotaQrCard";
@@ -15,6 +16,7 @@ import { IconForStatus } from "@/components/StatusIcon";
 import { ArrowLeft } from "lucide-react";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal, tanggalJam } from "@/lib/format";
+import { cleanAccessToken, hasOrderAccess, withAccess } from "@/lib/order-access";
 import { priceBreakdown } from "@/lib/pricing";
 import { gatewayEnabled } from "@/lib/payment";
 import { getPaymentSettings } from "@/lib/settings";
@@ -28,19 +30,22 @@ export default async function TrackPage({
   searchParams,
 }: {
   params: Promise<{ kode: string }>;
-  searchParams: Promise<{ baru?: string }>;
+  searchParams: Promise<{ baru?: string; t?: string }>;
 }) {
-  const [{ kode }, { baru }] = await Promise.all([params, searchParams]);
+  const [{ kode }, { baru, t }] = await Promise.all([params, searchParams]);
   const order = (
     await sql`
       select o.id, o.code, o.name, o.status, o.price, o.note, o.paid, o.deadline, o.deadline_at, o.brief,
         o.created_at, o.qty, o.unit_rate, o.width_cm, o.height_cm, o.options, o.subtotal,
-        o.file_url, o.payment_status, o.payment_method,
+        o.file_url, o.payment_status, o.payment_method, o.access_token, o.customer_id,
         coalesce(s.name, o.service_label) as service, s.unit_label as unit_label
       from orders o left join services s on s.id = o.service_id
       where o.code = ${kode.toUpperCase()}`
   )[0];
   if (!order) notFound();
+
+  const accessToken = cleanAccessToken(t);
+  if (!(await hasOrderAccess(order, accessToken))) return <OrderAccessGate code={order.code} />;
 
   type SnapshotLine = { label: string; detail?: string; amount: number };
   type SnapshotOption = { group_label: string; label: string };
@@ -215,7 +220,7 @@ export default async function TrackPage({
           </div>
 
           <aside className="grid gap-5 lg:sticky lg:top-24">
-            <NotaQrCard code={order.code} />
+            <NotaQrCard code={order.code} accessToken={accessToken} />
             {order.price ? (
               <section aria-label="Pembayaran" className="card p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
@@ -267,7 +272,7 @@ export default async function TrackPage({
                     {gateway && (
                       <div className="mt-5 border-t border-line pt-4">
                         <p className="eyebrow mb-2">Bayar online</p>
-                        <PayButton code={order.code} />
+                        <PayButton code={order.code} accessToken={accessToken} />
                         <p className="mt-2 text-xs leading-5 text-mute">
                           Setelah pembayaran berhasil, status otomatis berubah menjadi lunas.
                         </p>
@@ -386,7 +391,7 @@ export default async function TrackPage({
                 <h2 className="mt-2 text-lg font-semibold tracking-tight">Bagaimana hasilnya?</h2>
                 <p className="mt-1 text-sm text-mute">Bantu kami tumbuh dengan ulasan singkat. Akan tampil setelah disetujui admin.</p>
                 <div className="mt-4">
-                  <ReviewForm code={order.code} name={order.name} />
+                  <ReviewForm code={order.code} name={order.name} accessToken={accessToken} />
                 </div>
               </section>
             )}

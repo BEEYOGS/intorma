@@ -8,6 +8,7 @@ import { DateField } from "@/components/DateField";
 import type { Service, ServiceOptionGroup } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { calculateQuote, formatQty, optionPriceLabel, priceLabel } from "@/lib/pricing";
+import { minDeadlineDate as minDeadlineDateWIB } from "@/lib/deadline";
 import { searchServices } from "@/lib/catalog-search";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
@@ -160,6 +161,12 @@ export function OrderForm({
   }, [interacted, selectedId, qty, width, height, selection]);
 
   const [submitted, setSubmitted] = useState(false);
+  // Idempotency submit: double klik/retry jaringan tidak membuat dua pesanan.
+  const [requestId] = useState(() =>
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : "",
+  );
 
   // Bersihkan draf setelah pesanan berhasil dibuat; pertahankan bila ada error.
   useEffect(() => {
@@ -222,12 +229,8 @@ export function OrderForm({
   const chosen = services.find((service) => service.id === selectedId);
   const isArea = chosen?.pricing_model === "area";
   const isPerUnit = chosen?.pricing_model === "per_unit";
-  const minDeadlineDate = chosen
-    ? new Date(Date.now() + (chosen.days ?? 3) * 86400000)
-    : null;
-  const minDeadlineISO = minDeadlineDate
-    ? `${minDeadlineDate.getFullYear()}-${String(minDeadlineDate.getMonth() + 1).padStart(2, "0")}-${String(minDeadlineDate.getDate()).padStart(2, "0")}`
-    : undefined;
+  // Sama persis dengan aturan di server: hari kalender WIB, bukan 24 jam berjalan.
+  const minDeadlineISO = chosen ? minDeadlineDateWIB(chosen.days ?? 3) : undefined;
   const unit = chosen?.unit_label || (isArea ? "m²" : "unit");
   const quote = chosen
     ? calculateQuote(chosen, { qty, widthCm: width, heightCm: height, selected: selection })
@@ -436,6 +439,7 @@ export function OrderForm({
           <input type="hidden" name="height" value={isArea ? height : ""} />
           <input type="hidden" name="selection" value={JSON.stringify(selection)} />
           <input type="hidden" name="promo" value={promoCode} />
+          <input type="hidden" name="requestId" value={requestId} />
 
           <ol className="flex flex-wrap items-center gap-2 border-b border-line pb-5 text-[12px]">
             {[

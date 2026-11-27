@@ -1,13 +1,21 @@
 import QRCode from "qrcode";
 import { Download, QrCode } from "lucide-react";
+import { withAccess } from "@/lib/order-access";
 import { siteUrl } from "@/lib/wa";
 
 /**
  * Konsumen tidak mencetak nota lewat browser. Mereka memindai QR atau menekan
  * unduh untuk menyimpan berkas PDF yang dibuat server.
  */
-export async function NotaQrCard({ code }: { code: string }) {
-  const pdfUrl = `${siteUrl()}/api/nota/${encodeURIComponent(code)}/pdf`;
+export async function NotaQrCard({
+  code,
+  accessToken,
+}: {
+  code: string;
+  accessToken?: string | null;
+}) {
+  const pdfPath = withAccess(`/api/nota/${encodeURIComponent(code)}/pdf`, accessToken);
+  const pdfUrl = siteUrl() + pdfPath;
   const svg = await QRCode.toString(pdfUrl, {
     type: "svg",
     margin: 1,

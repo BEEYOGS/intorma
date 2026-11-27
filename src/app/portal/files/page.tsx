@@ -65,7 +65,7 @@ export default async function FilesPage() {
           <FileLibrary
             files={files}
             driveReady={driveEnabled()}
-            uploadToken={createUploadToken()}
+            uploadToken={createUploadToken(customer.id)}
             customerName={customer.name}
           />
         </div>

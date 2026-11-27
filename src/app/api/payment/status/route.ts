@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { guardRate } from "@/lib/api-rate-limit";
 import { isValidCode, normalizeCode } from "@/lib/codes";
+import { cleanAccessToken, hasOrderAccess } from "@/lib/order-access";
 import { sql } from "@/lib/db";
 import { getCoreStatus, isSettlement } from "@/lib/payment";
 import { settleMidtransPayment } from "@/lib/payment-settle";
@@ -18,10 +20,9 @@ async function coreStatusCached(orderId: string) {
   if (hit && now - hit.at < STATUS_TTL_MS) return hit.value;
   const value = await getCoreStatus(orderId).catch(() => null);
   statusCache.set(orderId, { at: now, value });
-  if (statusCache.size > 500) {
-    for (const [key, entry] of statusCache) {
-      if (now - entry.at > STATUS_TTL_MS) statusCache.delete(key);
-    }
+  // Bersihkan entri kedaluwarsa tanpa menunggu ukuran map mencapai batas.
+  for (const [key, entry] of statusCache) {
+    if (now - entry.at > STATUS_TTL_MS) statusCache.delete(key);
   }
   return value;
 }
@@ -31,22 +32,38 @@ async function coreStatusCached(orderId: string) {
  * ikut menanyakan status ke Midtrans lalu menyelesaikan pesanan.
  */
 export async function GET(req: Request) {
-  const code = normalizeCode(new URL(req.url).searchParams.get("code") ?? "");
+  const limited = await guardRate("payment_status", 40);
+  if (limited) return limited;
+  const url = new URL(req.url);
+  const code = normalizeCode(url.searchParams.get("code") ?? "");
+  const accessToken = cleanAccessToken(url.searchParams.get("t"));
   if (!isValidCode(code)) {
     return NextResponse.json({ ok: false, error: "Kode tidak valid." }, { status: 400 });
   }
 
   const order = (await sql`
-    select id, code, paid, status, price from orders where code = ${code}
+    select id, code, paid, status, price, access_token, customer_id from orders where code = ${code}
   `)[0] as
-    | { id: number; code: string; paid: boolean; status: string; price: number | null }
+    | {
+        id: number;
+        code: string;
+        paid: boolean;
+        status: string;
+        price: number | null;
+        access_token: string | null;
+        customer_id: number | null;
+      }
     | undefined;
   if (!order) return NextResponse.json({ ok: false, error: "Pesanan tidak ditemukan." }, { status: 404 });
+  if (!(await hasOrderAccess(order, accessToken))) {
+    return NextResponse.json({ ok: false, error: "Butuh tautan pribadi pesanan." }, { status: 403 });
+  }
   if (order.paid) return NextResponse.json({ ok: true, paid: true, orderStatus: order.status });
 
   const pending = (await sql`
-    select id, method, raw->>'order_id_used' as order_id_used,
-      raw->>'expires_at' as expires_at, created_at
+    select id, method,
+      coalesce(raw->>'order_id_used', raw->>'orderIdUsed') as order_id_used,
+      coalesce(raw->>'expires_at', raw->>'expiresAt') as expires_at, created_at
     from payments
     where order_id = ${order.id} and provider = 'midtrans' and status = 'pending'
     order by created_at desc
@@ -92,12 +109,28 @@ export async function GET(req: Request) {
     });
   }
 
-  if (["expire", "cancel", "deny", "failure"].includes(status.transactionStatus)) {
-    await sql`update payments set status = 'failed' where id = ${pending.id} and status = 'pending'`;
+  if (["expire", "cancel", "deny", "chargeback", "refund", "failure"].includes(status.transactionStatus)) {
+    // Jalur yang sama dengan webhook: menandai failed dan membatalkan reversal
+    // bila order sempat lunas.
+    const settled = await settleMidtransPayment({
+      orderId: pending.order_id_used,
+      transactionStatus: status.transactionStatus,
+      fraudStatus: status.fraudStatus,
+      grossAmount: status.grossAmount,
+      transactionId: status.transactionId,
+      paymentType: status.paymentType,
+      raw: status,
+    });
+    if (settled.reason !== "reversed") {
+      await sql`update payments set status = 'failed' where id = ${pending.id} and status = 'pending'`;
+    }
+    const fresh = (await sql`select paid, status from orders where id = ${order.id}`)[0] as
+      | { paid: boolean; status: string }
+      | undefined;
     return NextResponse.json({
       ok: true,
-      paid: false,
-      orderStatus: order.status,
+      paid: Boolean(fresh?.paid),
+      orderStatus: fresh?.status ?? order.status,
       pending: false,
       expired: true,
       transactionStatus: status.transactionStatus,

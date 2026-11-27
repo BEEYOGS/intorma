@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { guardRate } from "@/lib/api-rate-limit";
 import { getCustomer } from "@/lib/customer-auth";
 import { sql } from "@/lib/db";
 import { driveEnabled, driveFileMeta, driveFolderId } from "@/lib/drive";
@@ -15,10 +16,13 @@ function uploadCode(): string {
 }
 
 export async function POST(req: Request) {
+  const limited = await guardRate("drive_finalize", 30);
+  if (limited) return limited;
   if (!driveEnabled()) {
     return NextResponse.json({ error: "Google Drive belum aktif.", drive: false }, { status: 503 });
   }
-  if (!verifyUploadToken(req.headers.get("x-upload-token"))) {
+  const customer = await getCustomer().catch(() => null);
+  if (!verifyUploadToken(req.headers.get("x-upload-token"), customer?.id ?? null)) {
     return NextResponse.json(
       { error: "Sesi upload kedaluwarsa. Muat ulang halaman lalu coba lagi." },
       { status: 401 },
@@ -76,7 +80,6 @@ export async function POST(req: Request) {
     });
   }
 
-  const customer = await getCustomer();
   const code = uploadCode();
   const safeName = sanitizeFileName(meta.name, 200);
   const size = Math.max(0, Math.floor(meta.size));

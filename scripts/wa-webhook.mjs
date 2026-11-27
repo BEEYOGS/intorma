@@ -4,7 +4,7 @@
 // Pakai: npm run wa:webhook
 //
 // Opsi:
-//   WA_WEBHOOK_URL   timpa URL tujuan (mis. https://.../api/wa/webhook?s=...)
+//   WA_WEBHOOK_URL   timpa URL tujuan (mis. https://.../api/wa/webhook)
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,8 +37,9 @@ if (!secret) {
   process.exit(1);
 }
 
-const webhookUrl =
-  String(env.WA_WEBHOOK_URL || `http://127.0.0.1:${inboxPort}/webhook?s=${encodeURIComponent(secret)}`).trim();
+const webhookUrl = String(
+  env.WA_WEBHOOK_URL || `http://127.0.0.1:${inboxPort}/webhook`,
+).trim();
 
 async function api(path, init = {}) {
   const res = await fetch(`${base}${path}`, {
@@ -75,9 +76,14 @@ if (!hooks.ok) {
 
 const all = hooks.json || [];
 const existing = all.find(
-  (hook) => String(hook.url).includes("/api/wa/webhook") || String(hook.url).includes("/webhook?"),
+  (hook) => String(hook.url).includes("/api/wa/webhook") || String(hook.url).includes("/webhook"),
 );
-const payload = { url: webhookUrl, events: ["message.received"] };
+const payload = {
+  url: webhookUrl,
+  events: ["message.received"],
+  headers: { "x-webhook-secret": secret },
+  ...(secret.length >= 16 ? { secret } : {}),
+};
 
 if (existing) {
   const updated = await api(`/api/sessions/${session.id}/webhooks/${existing.id}`, {
@@ -88,7 +94,7 @@ if (existing) {
     console.error(`[wa-webhook] update gagal: HTTP ${updated.status} ${updated.text.slice(0, 200)}`);
     process.exit(1);
   }
-  console.log(`[wa-webhook] diperbarui: ${webhookUrl.replace(/\?s=.*/, "?s=***")}`);
+  console.log(`[wa-webhook] diperbarui: ${webhookUrl} (header x-webhook-secret)`);
 } else {
   const created = await api(`/api/sessions/${session.id}/webhooks`, {
     method: "POST",
@@ -98,7 +104,7 @@ if (existing) {
     console.error(`[wa-webhook] buat gagal: HTTP ${created.status} ${created.text.slice(0, 200)}`);
     process.exit(1);
   }
-  console.log(`[wa-webhook] terdaftar: ${webhookUrl.replace(/\?s=.*/, "?s=***")}`);
+  console.log(`[wa-webhook] terdaftar: ${webhookUrl} (header x-webhook-secret)`);
 }
 
 console.log(`[wa-webhook] sesi ${sessionName} (${session.status}) · event message.received`);

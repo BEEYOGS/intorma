@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import { driveDownloadResponse } from "@/lib/drive";
+import { isAttachment } from "@/lib/upload-rules";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,9 +34,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
     return new Response("File lama belum tersedia di Google Drive. Hubungi admin.", { status: 410 });
   }
 
+  const forceAttachment = isAttachment(file.mime, file.file_name);
   const baseHeaders: Record<string, string> = {
-    "Content-Disposition": contentDisposition(file.file_name, download),
-    "Cache-Control": "private, no-transform, max-age=3600",
+    "Content-Disposition": contentDisposition(file.file_name, download || forceAttachment),
+    "Cache-Control": "private, no-transform, no-store",
     "X-Content-Type-Options": "nosniff",
     // Kirim byte asli: tanpa transform/compress oleh proxy.
     "Content-Encoding": "identity",

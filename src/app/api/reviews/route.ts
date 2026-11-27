@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { guardRate } from "@/lib/api-rate-limit";
 import { getCustomer } from "@/lib/customer-auth";
 import { sql } from "@/lib/db";
 import { normalizeCode } from "@/lib/codes";
+import { cleanAccessToken, hasOrderAccess } from "@/lib/order-access";
 import { clientErrorMessage } from "@/lib/error";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +31,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const limited = await guardRate("reviews", 5);
+  if (limited) return limited;
   let body: unknown;
   try {
     body = await req.json();
@@ -52,18 +56,33 @@ export async function POST(req: Request) {
 
   const customer = await getCustomer().catch(() => null);
 
-  let order: { id: number; name: string; customer_id: number | null } | undefined;
+  let order:
+    | { id: number; name: string; customer_id: number | null; access_token: string | null }
+    | undefined;
   if (code) {
     const rows = (await sql`
-      select id, name, customer_id from orders where code = ${code}
-    `) as Array<{ id: number; name: string; customer_id: number | null }>;
+      select id, name, customer_id, access_token from orders where code = ${code}
+    `) as Array<{
+      id: number;
+      name: string;
+      customer_id: number | null;
+      access_token: string | null;
+    }>;
     order = rows[0];
     if (!order) {
       return NextResponse.json({ error: "Kode pesanan tidak ditemukan." }, { status: 404 });
     }
+    // Kode pesanan saja bukan bukti kepemilikan. Tautan pribadi dari WhatsApp,
+    // sesi admin, atau akun klien yang memang memiliki order yang diterima.
+    if (!(await hasOrderAccess(order, cleanAccessToken(data.accessToken)))) {
+      return NextResponse.json(
+        { error: "Buka pesanan memakai tautan pribadi atau masuk ke akunmu dulu." },
+        { status: 401 },
+      );
+    }
   }
 
-  const name = nameInput || order?.name || customer?.name || "";
+  const name = nameInput || customer?.name || "";
   if (name.length < 2 || name.length > 80) {
     return NextResponse.json({ error: "Nama wajib diisi (2–80 karakter)." }, { status: 400 });
   }
@@ -81,7 +100,7 @@ export async function POST(req: Request) {
       insert into reviews (order_id, customer_id, name, rating, comment, approved)
       values (
         ${order?.id ?? null},
-        ${customer?.id ?? order?.customer_id ?? null},
+        ${customer?.id ?? null},
         ${name},
         ${rating},
         ${comment},

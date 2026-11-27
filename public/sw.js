@@ -1,5 +1,5 @@
-/* in.torma service worker — only public pages are cached. */
-const CACHE = "intorma-v7";
+/* in.torma service worker — hanya aset publik dan halaman publik yang di-cache. */
+const CACHE = "intorma-v8";
 const SHELL = [
   "/",
   "/order",
@@ -13,6 +13,20 @@ const SHELL = [
   "/logos/permata.svg",
   "/manifest.webmanifest?v=4",
 ];
+
+// Halaman yang memuat data pelanggan tidak boleh tersimpan di Cache Storage,
+// termasuk setelah logout atau saat perangkat dipakai bersama.
+const PUBLIC_PAGES = new Set([
+  "/",
+  "/order",
+  "/lacak",
+  "/offline.html",
+  "/tentang",
+  "/kontak",
+  "/contact",
+  "/privacy",
+  "/faq",
+]);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -32,6 +46,12 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data === "clear-cache") {
+    event.waitUntil(caches.delete(CACHE));
+  }
+});
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -39,21 +59,32 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Jangan pernah cache area admin atau endpoint API/webhook.
-  if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/api/")) return;
+  // Jangan pernah cache area admin, portal, pembayaran, nota, atau endpoint API.
+  if (
+    url.pathname.startsWith("/admin") ||
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/portal") ||
+    url.pathname.startsWith("/bayar") ||
+    url.pathname.startsWith("/nota") ||
+    url.pathname.startsWith("/masuk") ||
+    /(^|\/)(lacak|nota|bayar)\/[^/]+/.test(url.pathname)
+  ) {
+    return;
+  }
 
   if (req.mode === "navigate") {
+    const cacheable = PUBLIC_PAGES.has(url.pathname);
     event.respondWith(
       fetch(req)
         .then((res) => {
-          if (res.ok) {
+          if (cacheable && res.ok) {
             const copy = res.clone();
             caches.open(CACHE).then((cache) => cache.put(req, copy));
           }
           return res;
         })
         .catch(async () => {
-          const cached = await caches.match(req);
+          const cached = cacheable ? await caches.match(req) : null;
           if (cached) return cached;
           const offline = await caches.match("/offline.html");
           return offline || Response.error();

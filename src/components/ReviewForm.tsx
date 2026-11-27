@@ -4,7 +4,15 @@ import { useState } from "react";
 import { Star } from "lucide-react";
 import { toast } from "@/components/Toast";
 
-export function ReviewForm({ code, name }: { code: string; name: string }) {
+export function ReviewForm({
+  code,
+  name,
+  accessToken,
+}: {
+  code: string;
+  name: string;
+  accessToken?: string | null;
+}) {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [pending, setPending] = useState(false);
@@ -21,7 +29,7 @@ export function ReviewForm({ code, name }: { code: string; name: string }) {
       const response = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, name, rating, comment: comment.trim() }),
+        body: JSON.stringify({ code, name, rating, comment: comment.trim(), accessToken }),
       });
       const data = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) {

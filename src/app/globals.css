@@ -253,6 +253,13 @@ body::after {
   .input {
     font-size: 16px;
   }
+  /* Target sentuh minimum 48px di mobile, mengikuti panduan platform. */
+  .btn {
+    min-height: 48px;
+  }
+  .field {
+    min-height: 48px;
+  }
 }
 
 .time-picker-scroll {

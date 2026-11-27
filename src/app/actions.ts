@@ -1,12 +1,21 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getServiceWithOptions, sql } from "@/lib/db";
-import { isAdmin, login, logout, verifyAdminCredential } from "@/lib/auth";
+import { currentAdmin, isAdmin, login, logout, verifyAdminCredential } from "@/lib/auth";
+import { clientKey, rateLimit, rateLimitMessage } from "@/lib/rate-limit";
 import { normalizeWA, rupiah, tanggalJam } from "@/lib/format";
 import { isValidCode, makeCode, normalizeCode } from "@/lib/codes";
 import { calculateQuote, type QuoteSelection } from "@/lib/pricing";
+import { minDeadlineDate, deadlineToUtc } from "@/lib/deadline";
+import {
+  cleanAccessToken,
+  hasOrderAccess,
+  newOrderAccessToken,
+  withAccess,
+} from "@/lib/order-access";
 import { STATUS_META, isStatus, type Status } from "@/lib/status";
 import { getPaymentSettings, paymentLines, savePaymentSettings } from "@/lib/settings";
 import {
@@ -15,12 +24,15 @@ import {
   getCustomer,
   hashPassword,
   setCustomerSession,
-  verifyPassword,
+  verifyPasswordAsync,
 } from "@/lib/customer-auth";
 import {
+  cancelCoreCharge,
   createCoreCharge,
   gatewayEnabled,
   PAYMENT_METHODS,
+  qrFromString,
+  uniqueOrderId,
   type PaymentMethod,
 } from "@/lib/payment";
 import { siteUrl } from "@/lib/wa";
@@ -48,6 +60,13 @@ const digits = (f: FormData, k: string) => str(f, k).replace(/\D/g, "");
 /** Hanya terima path admin internal supaya redirect tidak bisa dipakai untuk open redirect. */
 function adminReturn(value: string): string {
   return value.startsWith("/admin") && !value.startsWith("//") ? value : "/admin";
+}
+
+/** Tautan lanjutan setelah login klien hanya boleh Path lokal di aplikasi ini. */
+function customerNext(f: FormData): string {
+  const value = str(f, "next");
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return "/portal";
+  return value.slice(0, 240);
 }
 
 function withQuery(path: string, values: Record<string, string>): string {
@@ -93,6 +112,12 @@ async function syncManualPayment(
     await sql`update payments set proof_url = ${proofUrl || null} where order_id = ${id} and provider = 'manual'`;
   }
   if (paid && paidAt) {
+    // Order yang lunas via Midtrans tidak boleh mendapat baris manual "paid".
+    const gatewayPaid = (await sql`
+      select 1 from payments
+      where order_id = ${id} and provider <> 'manual' and status = 'paid'
+      limit 1`)[0];
+    if (gatewayPaid) return;
     const updated = await sql`
       update payments set status = 'paid', paid_at = ${paidAt}
       where order_id = ${id} and provider = 'manual' and status in ('pending', 'paid')
@@ -124,9 +149,25 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     selection: str(f, "selection"),
     file: str(f, "file"),
     promo: str(f, "promo"),
+    requestId: str(f, "requestId"),
   };
+  const limited = await rateLimit(await clientKey("create_order"), 8, 60_000).catch(() => null);
+  if (limited && !limited.ok) return { error: rateLimitMessage(limited), values };
   const wa = normalizeWA(values.wa);
   const customer = await getCustomer();
+
+  // Idempotency submit: retry jaringan/double klik mengembalikan order yang sama.
+  const requestId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    values.requestId,
+  )
+    ? values.requestId
+    : null;
+  if (requestId) {
+    const prior = (await sql`select code, access_token from orders where client_request_id = ${requestId} limit 1`)[0] as
+      | { code: string; access_token: string | null }
+      | undefined;
+    if (prior) redirect(withAccess(`/lacak/${prior.code}?baru=1`, prior.access_token));
+  }
 
   if (values.name.length < 2) return { error: "Isi nama kamu dulu.", values };
   if (!wa) return { error: "Nomor WhatsApp belum valid. Contoh: 0812 3456 7890.", values };
@@ -148,15 +189,18 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     return { error: "Jam deadline belum valid. Pilih jam antara 00:00 sampai 23:59.", values };
   }
   const deadlineTime = values.deadlineTime;
-  // Input dari browser adalah waktu WIB; ubah ke UTC agar konsisten di server.
-  const deadlineAt = new Date(`${values.deadline}T${deadlineTime}:00+07:00`);
+  // Aturan yang sama dipakai datepicker: hari kalender WIB, bukan 24 jam berjalan.
+  const deadlineAt = deadlineToUtc(values.deadline, deadlineTime);
   if (Number.isNaN(deadlineAt.getTime())) return { error: "Tanggal atau jam deadline belum valid.", values };
-  if (deadlineAt.getTime() < Date.now() - 30_000) {
+  if (deadlineAt.getTime() <= Date.now()) {
     return { error: "Deadline tidak boleh di masa lalu.", values };
   }
-  const minLeadTime = (svc.days ?? 0) * 86400000;
-  if (minLeadTime > 0 && deadlineAt.getTime() < Date.now() + minLeadTime - 30_000) {
-    return { error: `Deadline minimal ${svc.days} hari dari sekarang untuk layanan ini.`, values };
+  const earliest = minDeadlineDate(svc.days ?? 0);
+  if (values.deadline < earliest) {
+    return {
+      error: `Deadline minimal ${svc.days} hari dari sekarang (${earliest}) untuk layanan ini.`,
+      values,
+    };
   }
   if (svc.requires_file && !values.file) {
     return { error: "Tempel link file siap cetak dulu (Google Drive/WeTransfer).", values };
@@ -183,25 +227,25 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
 
   let promoCode: string | null = null;
   let discountAmount = 0;
+  let promoClaimed = false;
+  const basePrice = quote.price ?? 0;
   if (values.promo) {
     const code = values.promo.toUpperCase();
+    // Klaim kuota bersifat atomik: dua submit paralel tidak bisa sama-sama
+    // memakai potongan terakhir.
     const rows = (await sql`
-      select code, type, value, min_order, max_discount, usage_limit, used_count, active, expires_at
-      from promo_codes where code = ${code}
+      update promo_codes
+      set used_count = used_count + 1
+      where code = ${code}
+        and active = true
+        and (expires_at is null or expires_at > now())
+        and (usage_limit is null or used_count < usage_limit)
+        and min_order <= ${basePrice}
+      returning code, type, value, max_discount
     `) as Array<Record<string, unknown>>;
     const promo = rows[0];
-    if (!promo) return { error: "Kode promo tidak ditemukan.", values };
-    if (!promo.active) return { error: "Kode promo tidak aktif.", values };
-    if (promo.expires_at && new Date(String(promo.expires_at)) < new Date()) {
-      return { error: "Kode promo sudah kedaluwarsa.", values };
-    }
-    if (promo.usage_limit != null && Number(promo.used_count) >= Number(promo.usage_limit)) {
-      return { error: "Kuota kode promo habis.", values };
-    }
-    const basePrice = quote.price ?? 0;
-    if (basePrice < Number(promo.min_order ?? 0)) {
-      return { error: `Minimal pesanan Rp${Number(promo.min_order).toLocaleString("id-ID")} untuk kode ini.`, values };
-    }
+    if (!promo) return { error: "Kode promo tidak tersedia / kuota habis.", values };
+    promoClaimed = true;
     if (promo.type === "percent") {
       discountAmount = Math.round((basePrice * Number(promo.value)) / 100);
       if (promo.max_discount != null) discountAmount = Math.min(discountAmount, Number(promo.max_discount));
@@ -212,41 +256,70 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     promoCode = String(promo.code);
   }
 
-  const snapshot = quote.snapshot ? JSON.stringify(quote.snapshot) : null;
-  const paymentStatus = quote.price != null ? "unpaid" : "waiting";
+  const snapshotValue = quote.snapshot
+    ? {
+        ...quote.snapshot,
+        lines: promoCode
+          ? [
+              ...quote.snapshot.lines,
+              { label: `Promo ${promoCode}`, detail: "Diskon", amount: -discountAmount },
+            ]
+          : quote.snapshot.lines,
+      }
+    : null;
+  const snapshot = snapshotValue ? JSON.stringify(snapshotValue) : null;
+  const finalPrice = quote.price != null ? quote.price - discountAmount : null;
+  const paymentStatus = finalPrice != null ? "unpaid" : "waiting";
   const widthCm = quote.snapshot?.width_cm ?? null;
   const heightCm = quote.snapshot?.height_cm ?? null;
 
-  let order: { id: number; code: string } | undefined;
-  for (let i = 0; i < 5 && !order; i++) {
-    const rows = await sql`
-      insert into orders (
-        code, name, wa, service_id, service_label, customer_id, brief, ref_link, deadline, deadline_at,
-        qty, unit_rate, price, width_cm, height_cm, options, subtotal,
-        file_url, payment_method, payment_status, promo_code, discount_amount
-      )
-      values (
-        ${await makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${svc.name}, ${customer?.id ?? null}, ${values.brief},
-        ${values.ref || null}, ${values.deadline}, ${deadlineAt},
-        ${quote.qty}, ${quote.unitRate}, ${quote.price != null ? quote.price - discountAmount : null},
-        ${widthCm}, ${heightCm}, ${snapshot}::jsonb, ${quote.subtotal},
-        ${fileUrl}, 'transfer', ${paymentStatus}, ${promoCode}, ${discountAmount}
-      )
-      on conflict (code) do nothing
-      returning id, code`;
-    order = rows[0] as { id: number; code: string } | undefined;
+  let order: { id: number; code: string; access_token: string } | undefined;
+  const accessToken = newOrderAccessToken();
+  try {
+    for (let i = 0; i < 5 && !order; i++) {
+      const rows = await sql`
+        insert into orders (
+          code, name, wa, service_id, service_label, customer_id, brief, ref_link, deadline, deadline_at,
+          qty, unit_rate, price, width_cm, height_cm, options, subtotal,
+          file_url, payment_method, payment_status, promo_code, discount_amount, client_request_id,
+          access_token
+        )
+        values (
+          ${await makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${svc.name}, ${customer?.id ?? null}, ${values.brief},
+          ${values.ref || null}, ${values.deadline}, ${deadlineAt},
+          ${quote.qty}, ${quote.unitRate}, ${finalPrice},
+          ${widthCm}, ${heightCm}, ${snapshot}::jsonb, ${quote.subtotal},
+          ${fileUrl}, 'transfer', ${paymentStatus}, ${promoCode}, ${discountAmount}, ${requestId}::uuid,
+          ${accessToken}
+        )
+        on conflict (code) do nothing
+        returning id, code, access_token`;
+      order = rows[0] as { id: number; code: string; access_token: string } | undefined;
+    }
+  } catch (error) {
+    // Duplicate client_request_id berarti request yang sama sudah berhasil.
+    if (requestId) {
+      const prior = (await sql`select code, access_token from orders where client_request_id = ${requestId} limit 1`)[0] as
+        | { code: string; access_token: string | null }
+        | undefined;
+      if (prior) redirect(withAccess(`/lacak/${prior.code}?baru=1`, prior.access_token));
+    }
+    console.error("createOrder insert failed", error);
   }
-  if (!order) return { error: "Gagal menyimpan pesanan. Coba kirim lagi.", values };
-
-  if (promoCode) {
-    await sql`update promo_codes set used_count = used_count + 1 where code = ${promoCode}`;
+  if (!order) {
+    if (promoClaimed && promoCode) {
+      await sql`update promo_codes set used_count = greatest(0, used_count - 1) where code = ${promoCode}`.catch(
+        () => undefined,
+      );
+    }
+    return { error: "Gagal menyimpan pesanan. Coba kirim lagi.", values };
   }
 
   await sql`insert into order_events (order_id, status, note) values (${order.id}, 'menunggu', 'Pesanan diterima')`;
-  if (quote.price != null) {
+  if (finalPrice != null) {
     await sql`
       insert into payments (order_id, provider, method, amount, status)
-      values (${order.id}, 'manual', 'transfer', ${quote.price}, 'pending')`;
+      values (${order.id}, 'manual', 'transfer', ${finalPrice}, 'pending')`;
   }
   let driveLink: string | null = null;
   if (uploadCode) {
@@ -266,9 +339,9 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
         : null);
   }
 
-  const link = `${siteUrl()}/lacak/${order.code}`;
+  const link = `${siteUrl()}${withAccess(`/lacak/${order.code}`, order.access_token)}`;
   const serviceSummary = quote.snapshot?.summary ?? svc.name;
-  const total = quote.price != null ? quote.price - discountAmount : null;
+  const total = finalPrice;
 
   // Kalau trigger database aktif, trigger sudah mengantrekan pesan pelanggan
   // dan admin. Jangan kirim lagi dari sini supaya tidak dobel.
@@ -309,11 +382,13 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   await audit("create", "order", order.code, {
     name: values.name,
     service: svc.name,
-    price: quote.price,
+    price: finalPrice,
+    promo: promoCode,
+    discount: discountAmount,
     wa: values.wa,
   }, adminCreating ? "admin" : "customer");
 
-  redirect(`/lacak/${order.code}?baru=1`);
+  redirect(withAccess(`/lacak/${order.code}?baru=1`, order.access_token));
 }
 
 export async function approveReview(f: FormData): Promise<void> {
@@ -377,6 +452,8 @@ export async function togglePromo(f: FormData): Promise<void> {
 }
 
 export async function lookupOrder(_prev: { error?: string } | null, f: FormData) {
+  const limited = await rateLimit(await clientKey("lookup_order"), 12, 60_000).catch(() => null);
+  if (limited && !limited.ok) return { error: rateLimitMessage(limited) };
   const full = normalizeCode(str(f, "kode"));
   const found = (await sql`select code from orders where code = ${full}`)[0];
   if (!found) return { error: "Kode tidak ditemukan. Cek lagi pesan WhatsApp yang kamu terima." };
@@ -384,7 +461,12 @@ export async function lookupOrder(_prev: { error?: string } | null, f: FormData)
 }
 
 export async function adminLogin(_prev: { error?: string } | null, f: FormData) {
-  if (!(await login(str(f, "password")))) return { error: "Password salah. Coba lagi." };
+  if (!(await login(str(f, "password")))) {
+    const limited = await rateLimit(await clientKey("admin_login_view"), 6, 60_000).catch(() => null);
+    return {
+      error: limited && !limited.ok ? rateLimitMessage(limited) : "Password salah. Coba lagi.",
+    };
+  }
   redirect("/admin");
 }
 
@@ -406,8 +488,35 @@ function newAdminPassword(f: FormData): { value: string } | { error: string } {
   return { value: password };
 }
 
-export async function createAdminAccount(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+async function adminMutationGuard(): Promise<
+  | { error: string }
+  | { actor: NonNullable<Awaited<ReturnType<typeof currentAdmin>>> }
+> {
   if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+  const limited = await rateLimit(await clientKey("admin_account"), 10, 60_000).catch(() => null);
+  if (limited && !limited.ok) return { error: rateLimitMessage(limited) };
+  const actor = await currentAdmin();
+  if (!actor) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+  return { actor };
+}
+
+async function verifyOwnAccountPassword(
+  id: number,
+  password: string,
+): Promise<boolean> {
+  const rows = (await sql`select password_hash from admin_accounts where id = ${id}`) as Array<{
+    password_hash: string;
+  }>;
+  return rows[0] ? verifyPasswordAsync(password, String(rows[0].password_hash)) : false;
+}
+
+export async function createAdminAccount(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  const guard = await adminMutationGuard();
+  if ("error" in guard) return { error: guard.error };
+  if (guard.actor.role !== "owner") return { error: "Hanya owner yang bisa menambah akun." };
+  if (!(await verifyAdminCredential(str(f, "current")))) {
+    return { error: "Password admin saat ini salah." };
+  }
 
   const username = normalizeAdminUsername(str(f, "username"));
   const label = str(f, "label").slice(0, 60) || username;
@@ -417,64 +526,88 @@ export async function createAdminAccount(_prev: ActionResult, f: FormData): Prom
   const password = newAdminPassword(f);
   if ("error" in password) return { error: password.error };
 
-  const exists = (await sql`select 1 from admin_accounts where username = ${username}`)[0];
-  if (exists) return { error: "Username itu sudah dipakai." };
+  const rows = await sql`
+    insert into admin_accounts (username, label, password_hash, role)
+    values (${username}, ${label}, ${hashPassword(password.value)}, 'operator')
+    on conflict (username) do nothing
+    returning id`;
+  if (!rows[0]) return { error: "Username itu sudah dipakai." };
 
-  await sql`
-    insert into admin_accounts (username, label, password_hash)
-    values (${username}, ${label}, ${hashPassword(password.value)})
-  `;
-  await audit("create", "admin_account", username, { label });
+  await audit("create", "admin_account", username, { label, actor: guard.actor.username });
   revalidatePath("/admin/akun");
   return { ok: true };
 }
 
 export async function updateAdminAccount(_prev: ActionResult, f: FormData): Promise<ActionResult> {
-  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+  const guard = await adminMutationGuard();
+  if ("error" in guard) return { error: guard.error };
 
   const id = Number(f.get("id"));
   if (!id) return { error: "Akun tidak ditemukan." };
-  if (!(await verifyAdminCredential(str(f, "current")))) {
-    return { error: "Password admin saat ini salah." };
-  }
-  const row = (await sql`select username from admin_accounts where id = ${id}`)[0];
+  const row = (await sql`
+    select id, username, role, active from admin_accounts where id = ${id}
+  `)[0] as { id: number; username: string; role: string; active: boolean } | undefined;
   if (!row) return { error: "Akun tidak ditemukan." };
+  const isSelf = guard.actor.id === id;
+  if (!isSelf && guard.actor.role !== "owner") {
+    return { error: "Hanya owner yang bisa mengelola akun lain." };
+  }
+  // Konfirmasi memakai password akun yang disunting, bukan password sembarang admin.
+  if (!(await verifyOwnAccountPassword(id, str(f, "current")))) {
+    return { error: "Password akun yang disunting tidak cocok." };
+  }
 
-  const label = str(f, "label").slice(0, 60);
+  const label = str(f, "label").slice(0, 60) || row.username;
+  const active = f.get("activeForm") === "1" ? f.get("active") === "on" : Boolean(row.active);
+  if (isSelf && !active) return { error: "Tidak bisa menonaktifkan akun sendiri." };
   const passwordRaw = String(f.get("password") ?? "");
+  let hashSet = "";
   if (passwordRaw) {
     const password = newAdminPassword(f);
     if ("error" in password) return { error: password.error };
-    await sql`
-      update admin_accounts set label = ${label}, password_hash = ${hashPassword(password.value)}
-      where id = ${id}
-    `;
-  } else {
-    await sql`update admin_accounts set label = ${label} where id = ${id}`;
+    hashSet = hashPassword(password.value);
   }
 
-  await audit("update", "admin_account", String(row.username), { label, passwordChanged: Boolean(passwordRaw) });
+  await sql`
+    update admin_accounts
+    set label = ${label}, active = ${active}, updated_at = now(),
+      password_hash = case when ${hashSet} = '' then password_hash else ${hashSet} end,
+      token_version = case when ${hashSet} = '' then token_version else token_version + 1 end
+    where id = ${id}`;
+
+  await audit("update", "admin_account", row.username, {
+    label,
+    active,
+    passwordChanged: Boolean(passwordRaw),
+    actor: guard.actor.username,
+  });
   revalidatePath("/admin/akun");
   return { ok: true };
 }
 
 export async function deleteAdminAccount(f: FormData): Promise<ActionResult> {
-  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+  const guard = await adminMutationGuard();
+  if ("error" in guard) return { error: guard.error };
+  if (guard.actor.role !== "owner") return { error: "Hanya owner yang bisa menghapus akun." };
 
   const id = Number(f.get("id"));
   if (!id) return { error: "Akun tidak ditemukan." };
-  if (!(await verifyAdminCredential(str(f, "current")))) {
-    return { error: "Password admin saat ini salah." };
-  }
-  const rows = (await sql`select id, username from admin_accounts`) as Array<{ id: number; username: string }>;
-  const target = rows.find((row) => Number(row.id) === id);
-  if (!target) return { error: "Akun tidak ditemukan." };
-  if (rows.length === 1 && !process.env.ADMIN_PASSWORD) {
-    return { error: "Tidak bisa menghapus akun terakhir sebelum cadangan ADMIN_PASSWORD aktif." };
+  if (guard.actor.id === id) return { error: "Gunakan akun owner lain untuk menghapus akun sendiri." };
+  const row = (await sql`select username from admin_accounts where id = ${id}`)[0] as
+    | { username: string }
+    | undefined;
+  if (!row) return { error: "Akun tidak ditemukan." };
+  if (!(await verifyOwnAccountPassword(id, str(f, "current")))) {
+    return { error: "Password akun yang dihapus tidak cocok." };
   }
 
-  await sql`delete from admin_accounts where id = ${id}`;
-  await audit("delete", "admin_account", target.username);
+  try {
+    await sql`delete from admin_accounts where id = ${id}`;
+  } catch (error) {
+    console.error("deleteAdminAccount failed", error);
+    return { error: "Gagal menghapus akun. Pastikan masih ada akun admin lain." };
+  }
+  await audit("delete", "admin_account", row.username, { actor: guard.actor.username });
   revalidatePath("/admin/akun");
   return { ok: true };
 }
@@ -491,6 +624,9 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
   const price = priceRaw ? Number(priceRaw) : null;
   const paid = f.get("paid") === "on";
   if (!id || !isStatus(status)) return { error: "Status pesanan tidak valid." };
+  if (paid && price === null) {
+    return { error: "Isi nominal harga sebelum menandai pembayaran lunas." };
+  }
 
   const prev = (await sql`
     select status, note, internal_note, price, paid, paid_at from orders where id = ${id}`)[0];
@@ -502,7 +638,7 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
     update orders set status = ${status}, price = ${price}, note = ${note || null},
       internal_note = ${internalNote || null}, paid = ${paid}, paid_at = ${paidAt},
       payment_status = ${paymentStatus}, updated_at = now()
-    where id = ${id} returning code, name, wa`;
+    where id = ${id} returning code, name, wa, access_token`;
   const order = rows[0];
   if (!order) return { error: "Pesanan tidak ditemukan." };
 
@@ -531,6 +667,7 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
         note: note || null,
         paid,
         paymentLines: paymentLinesList,
+        accessToken: order.access_token,
       }),
     );
   }
@@ -584,7 +721,10 @@ export async function quickUpdateOrder(input: {
     if (!isStatus(next)) return { error: "Status tidak valid." };
     status = next;
   } else {
-    paid = Boolean(input.value);
+    if (typeof input.value === "boolean") paid = input.value;
+    else if (input.value === "true" || input.value === "1") paid = true;
+    else if (input.value === "false" || input.value === "0") paid = false;
+    else return { error: "Nilai pembayaran tidak valid." };
     if (paid && price === null) return { error: "Harga belum disepakati, belum bisa ditandai lunas." };
   }
 
@@ -874,21 +1014,33 @@ export async function deleteOption(_prev: ActionResult, f: FormData): Promise<Ac
 
 export async function startPayment(_prev: ActionResult, f: FormData): Promise<ActionResult> {
   const code = normalizeCode(str(f, "code"));
+  const accessToken = cleanAccessToken(f.get("accessToken"));
   if (!isValidCode(code)) return { error: "Kode pesanan tidak valid." };
   if (!gatewayEnabled()) return { error: "Payment gateway belum dikonfigurasi. Gunakan transfer manual." };
 
   const order = (await sql`
-    select id, code, paid, price, status from orders where code = ${code}
+    select id, code, paid, price, status, access_token, customer_id from orders where code = ${code}
   `)[0] as
-    | { id: number; code: string; paid: boolean; price: number | null; status: string }
+    | {
+        id: number;
+        code: string;
+        paid: boolean;
+        price: number | null;
+        status: string;
+        access_token: string | null;
+        customer_id: number | null;
+      }
     | undefined;
 
   if (!order) return { error: "Pesanan tidak ditemukan." };
+  if (!(await hasOrderAccess(order, accessToken))) {
+    return { error: "Buka pesanan memakai tautan pribadi yang kami kirim lewat WhatsApp." };
+  }
   if (order.paid) return { error: "Pesanan ini sudah lunas." };
   if (order.status === "batal") return { error: "Pesanan ini sudah dibatalkan." };
   if (order.price == null || order.price <= 0) return { error: "Harga pesanan belum ditentukan." };
 
-  redirect(`/bayar/${order.code}`);
+  redirect(withAccess(`/bayar/${order.code}`, accessToken));
 }
 
 /**
@@ -896,8 +1048,12 @@ export async function startPayment(_prev: ActionResult, f: FormData): Promise<Ac
  * halaman pembayaran bisa menampilkan QR/nomor VA yang sama saat dimuat ulang.
  */
 export async function chargePayment(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  const limited = await rateLimit(await clientKey("charge_payment"), 12, 60_000).catch(() => null);
+  if (limited && !limited.ok) return { error: rateLimitMessage(limited) };
+
   const code = normalizeCode(str(f, "code"));
   const method = str(f, "method") as PaymentMethod;
+  const accessToken = cleanAccessToken(f.get("accessToken"));
   if (!isValidCode(code)) return { error: "Kode pesanan tidak valid." };
   if (!PAYMENT_METHODS.some((item) => item.id === method)) {
     return { error: "Pilih metode pembayaran dulu." };
@@ -905,7 +1061,7 @@ export async function chargePayment(_prev: ActionResult, f: FormData): Promise<A
   if (!gatewayEnabled()) return { error: "Payment gateway belum dikonfigurasi. Gunakan transfer manual." };
 
   const order = (await sql`
-    select id, code, name, wa, price, paid, status from orders where code = ${code}
+    select id, code, name, wa, price, paid, status, access_token, customer_id from orders where code = ${code}
   `)[0] as
     | {
         id: number;
@@ -915,32 +1071,92 @@ export async function chargePayment(_prev: ActionResult, f: FormData): Promise<A
         price: number | null;
         paid: boolean;
         status: string;
+        access_token: string | null;
+        customer_id: number | null;
       }
     | undefined;
 
   if (!order) return { error: "Pesanan tidak ditemukan." };
+  if (!(await hasOrderAccess(order, accessToken))) {
+    return { error: "Buka pesanan memakai tautan pribadi yang kami kirim lewat WhatsApp." };
+  }
   if (order.paid) return { error: "Pesanan ini sudah lunas." };
   if (order.status === "batal") return { error: "Pesanan ini sudah dibatalkan." };
   if (order.price == null || order.price <= 0) return { error: "Harga pesanan belum ditentukan." };
 
+  const price = Number(order.price);
+  const totalAttempts = Number(
+    (
+      await sql`select count(*)::int as n from payments where order_id = ${order.id} and provider = 'midtrans'`
+    )[0]?.n ?? 0,
+  );
+  const attempt = totalAttempts + 1;
+  const expectedOrderId = uniqueOrderId(order.code, method, price, attempt);
+
+  // Tagihan aktif yang belum kedaluwarsa dipakai ulang, bukan dibuat baru.
+  const pending = (await sql`
+    select id, method, raw,
+      coalesce(raw->>'order_id_used', raw->>'orderIdUsed') as order_id_used,
+      coalesce(raw->>'expires_at', raw->>'expiresAt') as expires_at
+    from payments
+    where order_id = ${order.id} and provider = 'midtrans' and status = 'pending'
+    order by id desc limit 1
+  `)[0] as
+    | { id: number; method: string; raw: Record<string, string>; order_id_used: string | null; expires_at: string | null }
+    | undefined;
+
+  if (pending?.order_id_used) {
+    const stillValid = pending.expires_at ? new Date(pending.expires_at).getTime() > Date.now() + 5_000 : true;
+    if (stillValid) {
+      if (pending.method === method) {
+        // Perbaiki QR bila pengambilan gambar gagal saat charge pertama.
+        const qrString = String(pending.raw?.qrString ?? "");
+        if (pending.raw?.qrPending && qrString) {
+          const dataUrl = await qrFromString(qrString);
+          if (dataUrl) {
+            await sql`
+              update payments set raw = raw || ${JSON.stringify({ qrDataUrl: dataUrl, qrPending: false })}::jsonb
+              where id = ${pending.id}`;
+          }
+        }
+        revalidatePath(`/bayar/${order.code}`);
+        return { ok: true };
+      }
+      return { error: "Tagihan lain masih aktif. Batalkan/muat ulang halaman sebelum ganti metode." };
+    }
+    await cancelCoreCharge(pending.order_id_used);
+    await sql`update payments set status = 'failed' where id = ${pending.id} and status = 'pending'`;
+  }
+
   let charge;
   try {
     charge = await createCoreCharge(
-      { code: order.code, price: Number(order.price), name: order.name, wa: String(order.wa ?? "") },
+      { code: order.code, price, name: order.name, wa: String(order.wa ?? "") },
       method,
+      attempt,
     );
   } catch (error) {
     console.error("chargePayment failed", error);
     return { error: clientErrorMessage(error, "Gagal membuat pembayaran. Coba lagi.") };
   }
 
-  await sql`
-    update payments set status = 'failed'
-    where order_id = ${order.id} and provider = 'midtrans' and status = 'pending'`;
-  await sql`
-    insert into payments (order_id, provider, method, amount, status, reference, raw)
-    values (${order.id}, 'midtrans', ${method}, ${order.price}, 'pending', ${charge.transactionId},
-      ${JSON.stringify(charge)}::jsonb)`;
+  try {
+    await sql`
+      insert into payments (order_id, provider, method, amount, status, reference, raw)
+      values (${order.id}, 'midtrans', ${method}, ${price}, 'pending', ${charge.transactionId},
+        ${JSON.stringify({
+          ...charge,
+          order_id_used: charge.orderIdUsed,
+          expires_at: charge.expiresAt,
+          expected_order_id: expectedOrderId,
+        })}::jsonb)`;
+  } catch (error) {
+    // Charge sudah dibuat di Midtrans dengan ID deterministik. Percobaan
+    // berikutnya memakai ID/Idempotency-Key yang sama, bukan tagihan baru.
+    console.error("chargePayment save failed", error);
+    await audit("payment_charge_unsaved", "order", order.code, { order_id: charge.orderIdUsed });
+    return { error: "Tagihan sedang diproses. Muat ulang halaman pembayaran." };
+  }
 
   revalidatePath(`/bayar/${order.code}`);
   return { ok: true };
@@ -949,6 +1165,8 @@ export async function chargePayment(_prev: ActionResult, f: FormData): Promise<A
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function registerCustomer(_prev: CustomerState, f: FormData): Promise<CustomerState> {
+  const limited = await rateLimit(await clientKey("customer_register"), 5, 60_000).catch(() => null);
+  if (limited && !limited.ok) return { error: rateLimitMessage(limited) };
   const name = str(f, "name");
   const wa = normalizeWA(str(f, "wa"));
   const email = str(f, "email").toLowerCase();
@@ -958,6 +1176,7 @@ export async function registerCustomer(_prev: CustomerState, f: FormData): Promi
   if (!wa) return { error: "Nomor WhatsApp belum valid. Contoh: 0812 3456 7890." };
   if (!EMAIL_RE.test(email)) return { error: "Alamat email belum valid." };
   if (password.length < 8) return { error: "Password minimal 8 karakter." };
+  if (password.length > 128) return { error: "Password terlalu panjang." };
 
   const existing = (await sql`select 1 from customers where email = ${email}`)[0];
   if (existing) return { error: "Email ini sudah terdaftar. Silakan masuk." };
@@ -969,12 +1188,15 @@ export async function registerCustomer(_prev: CustomerState, f: FormData): Promi
   const id = Number(rows[0]?.id ?? 0);
   if (!id) return { error: "Gagal membuat akun. Coba lagi." };
 
-  await claimOrders(id, wa);
+  // Klaim pesanan lama hanya bila diminta eksplisit, bukan otomatis dari nomor WA.
+  if (f.get("claim") === "on") await claimOrders(id, wa);
   await setCustomerSession(id);
-  redirect("/portal");
+  redirect(customerNext(f));
 }
 
 export async function loginCustomer(_prev: CustomerState, f: FormData): Promise<CustomerState> {
+  const limited = await rateLimit(await clientKey("customer_login"), 6, 60_000).catch(() => null);
+  if (limited && !limited.ok) return { error: rateLimitMessage(limited) };
   const email = str(f, "email").toLowerCase();
   const password = String(f.get("password") ?? "");
   if (!EMAIL_RE.test(email)) return { error: "Alamat email belum valid." };
@@ -983,13 +1205,13 @@ export async function loginCustomer(_prev: CustomerState, f: FormData): Promise<
     select id, wa, password_hash from customers where email = ${email}
   `) as Array<{ id: number; wa: string; password_hash: string }>;
   const customer = rows[0];
-  if (!customer || !verifyPassword(password, customer.password_hash)) {
+  if (!customer || !(await verifyPasswordAsync(password, String(customer.password_hash)))) {
     return { error: "Email atau password salah." };
   }
 
-  await claimOrders(Number(customer.id), String(customer.wa));
+  if (f.get("claim") === "on") await claimOrders(Number(customer.id), String(customer.wa));
   await setCustomerSession(Number(customer.id));
-  redirect("/portal");
+  redirect(customerNext(f));
 }
 
 export async function logoutCustomer() {
@@ -1045,7 +1267,8 @@ export async function bulkUpdateOrders(_prev: ActionResult, f: FormData): Promis
     const orderPrice = o.price == null ? null : Number(o.price);
     const orderPaid = Boolean(o.paid);
     const paidAt = orderPaid ? (o.paid_at ? new Date(o.paid_at) : new Date()) : null;
-    await syncManualPayment(Number(o.id), orderPrice, orderPaid, paidAt);
+    // Aksi massah hanya mengubah status: jangan menyentuh pembayaran.
+    if (setPaid) await syncManualPayment(Number(o.id), orderPrice, orderPaid, paidAt);
     if (hasStatus) {
       await sql`insert into order_events (order_id, status, note) values (${o.id}, ${o.status}, null)`;
     }
@@ -1098,7 +1321,7 @@ export async function saveCustomerProfile(_prev: ActionResult, f: FormData): Pro
 
   await sql`
     update customers set name = ${name}, wa = ${wa}, email = ${email} where id = ${customer.id}`;
-  await claimOrders(customer.id, wa);
+  // Profil tidak pernah memindahkan pesanan dari nomor WhatsApp lain.
   revalidatePath("/portal");
   return { ok: true };
 }

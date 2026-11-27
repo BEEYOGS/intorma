@@ -330,7 +330,7 @@ export default async function ProductPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-[var(--text)]">in.torma</p>
-              <p className="text-xs text-[var(--text-3)] mt-1">Studio desain & cetak independen. Creative without idea.</p>
+              <p className="text-xs text-[var(--text-3)] mt-1">Studio desain & cetak independen. CREATIVE WITHOUT IDEA.</p>
             </div>
             <div className="flex items-center gap-6 text-xs text-[var(--text-3)]">
               <Link href="/order" className="hover:text-[var(--text-2)] transition-colors">Pesan</Link>
