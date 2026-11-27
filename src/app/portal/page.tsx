@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { logoutCustomer } from "@/app/actions";
 import { ProfileForm } from "@/components/ProfileForm";
+import { ReorderButton } from "@/components/ReorderButton";
 import { TopBar } from "@/components/TopBar";
 import { StatusBadge } from "@/components/Chrome";
 import { getCustomer } from "@/lib/customer-auth";
@@ -21,14 +22,23 @@ type PortalOrder = {
   created_at: string | Date;
   service_id: string | null;
   service: string | null;
+  qty: number | null;
+  width_cm: number | null;
+  height_cm: number | null;
 };
 
-export default async function PortalPage() {
+export default async function PortalPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string }>;
+}) {
+  const { q, status } = await searchParams;
   const customer = await getCustomer();
   if (!customer) redirect("/masuk");
 
   const orders = (await sql`
     select o.id, o.code, o.status, o.price, o.paid, o.created_at, o.service_id,
+      o.qty, o.width_cm, o.height_cm,
       coalesce(s.name, o.service_label) as service
     from orders o left join services s on s.id = o.service_id
     where o.customer_id = ${customer.id}
@@ -38,6 +48,19 @@ export default async function PortalPage() {
 
   const unpaid = orders.filter((o) => o.price != null && !o.paid).length;
   const done = orders.filter((o) => o.status === "selesai").length;
+
+  const filteredOrders = orders.filter((order) => {
+    const matchStatus =
+      !status ||
+      status === "all" ||
+      (status === "unpaid" && order.price != null && !order.paid) ||
+      (status === "done" && order.status === "selesai") ||
+      (status === "pending" && order.status === "menunggu");
+    const matchQuery =
+      !q ||
+      `${order.code} ${order.service ?? ""}`.toLowerCase().includes(q.trim().toLowerCase());
+    return matchStatus && matchQuery;
+  });
 
   return (
     <div className="animate-in">
@@ -72,20 +95,49 @@ export default async function PortalPage() {
           ))}
         </div>
 
+        <form method="GET" className="mt-6 flex flex-wrap items-end gap-3">
+          <label className="min-w-[12rem] flex-1">
+            <span className="label">Cari pesanan</span>
+            <input name="q" defaultValue={q ?? ""} placeholder="Kode atau nama layanan…" className="field" />
+          </label>
+          <label className="w-full sm:w-auto">
+            <span className="label">Status</span>
+            <select name="status" defaultValue={status ?? "all"} className="field cursor-pointer">
+              <option value="all">Semua</option>
+              <option value="unpaid">Belum dibayar</option>
+              <option value="done">Selesai</option>
+              <option value="pending">Menunggu</option>
+            </select>
+          </label>
+          <button type="submit" className="btn btn-ghost min-h-10 px-4 text-sm">Filter</button>
+          {(q || (status && status !== "all")) && (
+            <a href="/portal" className="btn btn-ghost min-h-10 px-4 text-sm">Reset</a>
+          )}
+        </form>
+
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
           <section className="card overflow-hidden">
             <div className="border-b border-[var(--border)] px-5 py-4">
               <p className="eyebrow">Riwayat</p>
               <h2 className="mt-1 text-[15px] font-medium text-[var(--text)]">Pesanan kamu</h2>
             </div>
-            {orders.length === 0 ? (
+            {filteredOrders.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-sm text-mute">Belum ada pesanan yang terhubung ke akun ini.</p>
-                <Link href="/order" className="btn btn-primary mt-5 !h-10 text-xs">Buat pesanan pertama</Link>
+                {orders.length === 0 ? (
+                  <>
+                    <p className="text-sm text-mute">Belum ada pesanan yang terhubung ke akun ini.</p>
+                    <Link href="/order" className="btn btn-primary mt-5 !h-10 text-xs">Buat pesanan pertama</Link>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-mute">Tidak ada pesanan yang cocok dengan filter.</p>
+                    <a href="/portal" className="btn btn-ghost mt-5 !h-10 text-xs">Reset filter</a>
+                  </>
+                )}
               </div>
             ) : (
               <ul className="divide-y divide-[var(--border)]">
-                {orders.map((order) => {
+                {filteredOrders.map((order) => {
                   const st = (isStatus(order.status) ? order.status : "menunggu") as Status;
                   return (
                     <li key={order.id} className="flex flex-wrap items-center justify-between gap-4 p-4 transition-colors hover:bg-white/[0.02]">
@@ -100,18 +152,30 @@ export default async function PortalPage() {
                           {order.service ?? "Layanan"} · {tanggal(order.created_at)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-wrap items-center gap-2">
                         <div className="text-right">
                           <p className="mono text-sm font-medium text-[var(--text)]">
                             {order.price != null ? rupiah(Number(order.price)) : "—"}
                           </p>
                           <p className="text-xs text-mute">{order.paid ? "Lunas" : order.price != null ? "Belum dibayar" : "Menunggu harga"}</p>
                         </div>
-                        {order.service_id && (
-                          <Link href={`/order?layanan=${order.service_id}`} className="btn btn-ghost !h-10 !px-3 text-xs">
-                            Pesan lagi
+                        {order.price != null && !order.paid && (
+                          <Link href={`/bayar/${order.code}`} className="btn btn-primary !h-10 !px-3 text-xs">
+                            Bayar
                           </Link>
                         )}
+                        <ReorderButton serviceId={order.service_id} qty={order.qty} widthCm={order.width_cm} heightCm={order.height_cm} />
+                        <Link href={`/lacak/${order.code}`} className="btn btn-ghost !h-10 !px-3 text-xs">
+                          Lacak
+                        </Link>
+                        <a
+                          href={`/api/nota/${order.code}/pdf`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-ghost !h-10 !px-3 text-xs"
+                        >
+                          Nota PDF
+                        </a>
                       </div>
                     </li>
                   );
