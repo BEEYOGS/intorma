@@ -107,7 +107,7 @@ menyisipkan watermark pihak ketiga.
 WA_PROVIDER=cloud
 META_WA_TOKEN=system-user-token-dari-meta
 META_WA_PHONE_ID=phone-number-id-dari-meta
-META_WA_VERSION=v26.0
+META_WA_VERSION=v25.0
 META_WA_VERIFY_TOKEN=string-acak-untuk-verifikasi-webhook
 META_WA_APP_SECRET=app-secret-untuk-tanda-tangan-webhook (opsional)
 ADMIN_WHATSAPP_NUMBER=0895329940950

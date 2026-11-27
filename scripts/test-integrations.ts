@@ -163,7 +163,7 @@ async function main() {
       "  GOOGLE_DRIVE_FOLDER_ID",
       "  WA_PROVIDER (cloud | fonnte | openwa)",
       "  META_WA_TOKEN dan META_WA_PHONE_ID (wajib kalau WA_PROVIDER=cloud)",
-      "  META_WA_VERSION (opsional, default v26.0)",
+      "  META_WA_VERSION (opsional, default v25.0)",
       "  META_WA_VERIFY_TOKEN dan META_WA_APP_SECRET (opsional, untuk webhook Meta)",
       "  FONNTE_TOKEN (wajib kalau WA_PROVIDER=fonnte)",
       "  WA_WEBHOOK_SECRET",

@@ -41,7 +41,7 @@ function metaPhoneId(): string {
 }
 
 function metaVersion(): string {
-  return (process.env.META_WA_VERSION || "v26.0").trim();
+  return (process.env.META_WA_VERSION || "v25.0").trim();
 }
 
 function cloudConfigured(): boolean {
