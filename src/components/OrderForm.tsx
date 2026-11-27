@@ -222,6 +222,12 @@ export function OrderForm({
   const chosen = services.find((service) => service.id === selectedId);
   const isArea = chosen?.pricing_model === "area";
   const isPerUnit = chosen?.pricing_model === "per_unit";
+  const minDeadlineDate = chosen
+    ? new Date(Date.now() + (chosen.days ?? 3) * 86400000)
+    : null;
+  const minDeadlineISO = minDeadlineDate
+    ? `${minDeadlineDate.getFullYear()}-${String(minDeadlineDate.getMonth() + 1).padStart(2, "0")}-${String(minDeadlineDate.getDate()).padStart(2, "0")}`
+    : undefined;
   const unit = chosen?.unit_label || (isArea ? "m²" : "unit");
   const quote = chosen
     ? calculateQuote(chosen, { qty, widthCm: width, heightCm: height, selected: selection })
@@ -931,7 +937,7 @@ setInteracted(true);
                 <span className="label">
                   Tanggal <span className="text-[var(--quiet)]">*</span>
                 </span>
-                <DateField name="deadline" defaultValue={v.deadline} placeholder="Pilih tanggal deadline" />
+                <DateField name="deadline" defaultValue={v.deadline} placeholder="Pilih tanggal deadline" min={minDeadlineISO} />
               </label>
               <label className="block">
                 <span className="label">

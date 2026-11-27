@@ -56,14 +56,16 @@ export function DateField({
   name,
   defaultValue = "",
   placeholder = "Pilih tanggal",
+  min,
 }: {
   name: string;
   defaultValue?: string;
   placeholder?: string;
+  min?: string;
 }) {
   const [value, setValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);
-  const start = parseISO(defaultValue) ?? new Date();
+  const start = parseISO(defaultValue) ?? (min ? parseISO(min) : null) ?? new Date();
   const [view, setView] = useState({ year: start.getFullYear(), month: start.getMonth() });
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -177,14 +179,15 @@ export function DateField({
               const selected = value === iso;
               const isToday = todayISO === iso;
               const past = iso < todayISO;
+const blocked = past || (min ? iso < min : false);
               return (
                 <button
                   key={iso}
                   ref={selected ? selectedRef : undefined}
                   type="button"
-                  onClick={() => !past && choose(iso)}
-                  disabled={past}
-                  aria-disabled={past || undefined}
+                  onClick={() => !blocked && choose(iso)}
+                  disabled={blocked}
+                  aria-disabled={blocked || undefined}
                   aria-pressed={selected}
                   aria-current={isToday ? "date" : undefined}
                   aria-label={`${day} ${MONTHS[view.month]} ${view.year}${past ? " (tanggal lampau)" : ""}`}

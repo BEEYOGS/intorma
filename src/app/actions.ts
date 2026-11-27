@@ -147,6 +147,10 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   if (deadlineAt.getTime() < Date.now() - 30_000) {
     return { error: "Deadline tidak boleh di masa lalu.", values };
   }
+  const minLeadTime = (svc.days ?? 0) * 86400000;
+  if (minLeadTime > 0 && deadlineAt.getTime() < Date.now() + minLeadTime - 30_000) {
+    return { error: `Deadline minimal ${svc.days} hari dari sekarang untuk layanan ini.`, values };
+  }
   if (svc.requires_file && !values.file) {
     return { error: "Tempel link file siap cetak dulu (Google Drive/WeTransfer).", values };
   }
