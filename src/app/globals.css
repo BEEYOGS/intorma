@@ -372,6 +372,23 @@ kbd {
   animation: fade-in 0.3s ease-out;
 }
 
+/* Progress popup install: menyusut selama 15 detik, sinkron dengan timer. */
+@keyframes install-timer {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+.install-timer {
+  transform-origin: left center;
+  animation: install-timer 15s linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install-timer {
+    animation: none;
+  }
+}
+
 /* Garis alur: gradasi warna status mengalir halus dari atas ke bawah. */
 @keyframes flow-line {
   from { background-position: 0% 0%; }

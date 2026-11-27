@@ -1,11 +1,11 @@
 /* in.torma service worker — only public pages are cached. */
-const CACHE = "intorma-v3";
+const CACHE = "intorma-v4";
 const SHELL = [
   "/",
   "/order",
   "/lacak",
   "/offline.html",
-  "/icon.svg",
+  "/icon.svg?v=2",
   "/bca.svg",
   "/manifest.webmanifest",
 ];

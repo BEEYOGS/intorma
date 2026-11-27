@@ -40,11 +40,14 @@ export default async function InstallPage() {
             </ol>
           </div>
           <div className="card p-5">
-            <p className="font-semibold mb-2">Catatan native (.exe / .apk)</p>
-            <p className="text-sm text-[var(--text-2)]">
-              Untuk file installer native (.exe/.app/.apk) perlu pipeline build terpisah (Tauri/Capacitor).
-              Jika diinginkan, saya bisa siapkan konfigurasinya; proses build membutuhkan SDK platform.
+            <p className="font-semibold mb-2">Installer native (.exe / .msi / .apk)</p>
+            <p className="mb-4 text-sm leading-6 text-[var(--text-2)]">
+              Butuh aplikasi desktop atau Android? Installer dibangun otomatis dari tag rilis dan tersedia
+              di halaman download.
             </p>
+            <a href="/download" className="btn btn-primary min-h-10 px-4 text-sm">
+              Buka halaman download
+            </a>
           </div>
         </div>
       </main>

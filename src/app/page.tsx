@@ -294,6 +294,7 @@ export default async function ProductPage() {
             <div className="flex items-center gap-6 text-xs text-[var(--text-3)]">
               <Link href="/order" className="hover:text-[var(--text-2)] transition-colors">Pesan</Link>
               <Link href="/lacak" className="hover:text-[var(--text-2)] transition-colors">Lacak</Link>
+              <Link href="/download" className="hover:text-[var(--text-2)] transition-colors">Aplikasi</Link>
               <WhatsAppLink text="Halo in.torma, saya mau tanya soal layanan desain dan cetak." className="inline-flex items-center gap-1.5 hover:text-[var(--text-2)] transition-colors">
                 <WhatsAppIcon aria-hidden className="size-3.5" /> WhatsApp
               </WhatsAppLink>

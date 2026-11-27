@@ -25,6 +25,7 @@ export function InstallButton() {
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [installed, setInstalled] = useState(false);
+  const [platform, setPlatform] = useState<"ios" | "android" | "desktop">("desktop");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function startTimer() {
@@ -54,6 +55,8 @@ export function InstallButton() {
     window.addEventListener("appinstalled", onInstalled);
 
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
+    const android = /android/i.test(navigator.userAgent);
+    setPlatform(ios ? "ios" : android ? "android" : "desktop");
     const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone;
     if (!standalone) {
       const t = setTimeout(() => {
@@ -113,7 +116,7 @@ export function InstallButton() {
 
             <div className="flex items-start gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon.svg" alt="" className="size-12 shrink-0 rounded-[var(--radius)_var(--radius)_var(--radius)_0] bg-[var(--panel-2)] p-1" />
+              <img src="/icon.svg?v=2" alt="" className="size-12 shrink-0 rounded-[var(--radius)_var(--radius)_var(--radius)_0] bg-[var(--panel-2)] p-1" />
               <div className="min-w-0">
                 <p className="eyebrow">Lebih mudah lewat aplikasi</p>
                 <h2 className="mt-1.5 text-lg font-semibold tracking-tight">Pasang in.torma</h2>
@@ -133,10 +136,29 @@ export function InstallButton() {
                 </button>
               </div>
             ) : (
-              <p className="mt-4 text-[12px] leading-5 text-mute">
-                Di iPhone/iPad: ketuk <span className="font-semibold text-ink">Share</span> lalu pilih{" "}
-                <span className="font-semibold text-ink">Add to Home Screen</span>.
-              </p>
+              <div className="mt-4 space-y-3">
+                <p className="text-[12px] leading-5 text-mute">
+                  {platform === "ios" ? (
+                    <>
+                      Di iPhone/iPad: ketuk <span className="font-semibold text-ink">Share</span> lalu pilih{" "}
+                      <span className="font-semibold text-ink">Add to Home Screen</span>.
+                    </>
+                  ) : platform === "android" ? (
+                    <>
+                      Di Chrome Android: ketuk menu <span className="font-semibold text-ink">⋮</span> lalu pilih{" "}
+                      <span className="font-semibold text-ink">Install app</span>.
+                    </>
+                  ) : (
+                    <>
+                      Di Chrome/Edge desktop: klik ikon install di address bar, atau menu{" "}
+                      <span className="font-semibold text-ink">Install in.torma</span>.
+                    </>
+                  )}
+                </p>
+                <a href="/install" className="btn btn-ghost min-h-10 px-4 text-sm">
+                  Lihat panduan pasang
+                </a>
+              </div>
             )}
           </div>
 
