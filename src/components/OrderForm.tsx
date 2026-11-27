@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useRef, useState, type ChangeEvent } from "react";
+import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { createOrder, type OrderState } from "@/app/actions";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { DateField } from "@/components/DateField";
 import type { Service, ServiceOptionGroup } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { calculateQuote, formatQty, optionPriceLabel, priceLabel } from "@/lib/pricing";
+import { searchServices } from "@/lib/catalog-search";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
 import { ServiceIcon } from "@/components/ServiceIcon";
@@ -23,6 +24,17 @@ type PaymentInfo = {
 };
 
 type Selection = Record<string, string[]>;
+
+type OrderDraft = {
+  serviceId: string;
+  qty: string;
+  width: string;
+  height: string;
+  selection: Selection;
+  at: number;
+};
+
+const DRAFT_KEY = "intorma-order-draft";
 
 function defaultSelection(service: Service | undefined): Selection {
   const out: Selection = {};
@@ -83,6 +95,111 @@ export function OrderForm({
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "design" | "print" | "other">("all");
+  const [draft, setDraft] = useState<OrderDraft | null>(null);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [interacted, setInteracted] = useState(false);
+
+  // Pulihkan draf spesifikasi yang tersimpan (tanpa data pribadi).
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as OrderDraft;
+        const fresh = !parsed?.at || Date.now() - parsed.at <= 24 * 60 * 60 * 1000;
+        if (fresh && parsed?.serviceId && services.some((service) => service.id === parsed.serviceId)) {
+          setDraft(parsed);
+        } else if (!fresh) {
+          window.localStorage.removeItem(DRAFT_KEY);
+        }
+      }
+    } catch {
+      // Abaikan penyimpanan yang rusak.
+    }
+    setDraftHydrated(true);
+  }, [services]);
+
+  // Simpan draf otomatis setelah pengguna mulai mengubah spesifikasi.
+  useEffect(() => {
+    if (!interacted || !selectedId) return;
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({
+            serviceId: selectedId,
+            qty,
+            width,
+            height,
+            selection,
+            at: Date.now(),
+          } satisfies OrderDraft),
+        );
+      } catch {
+        // Private mode / quota penuh; abaikan.
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [interacted, selectedId, qty, width, height, selection]);
+
+  const [submitted, setSubmitted] = useState(false);
+
+  // Bersihkan draf setelah pesanan berhasil dibuat; pertahankan bila ada error.
+  useEffect(() => {
+    if (!submitted) return;
+    if (state?.error) {
+      setSubmitted(false);
+      return;
+    }
+    if (!pending) {
+      try {
+        window.localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // Abaikan.
+      }
+      setDraft(null);
+      setSubmitted(false);
+    }
+  }, [submitted, state, pending]);
+
+  // Kedaluwarsa draf lama.
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as OrderDraft;
+        if (parsed?.at && Date.now() - parsed.at > 24 * 60 * 60 * 1000) {
+          window.localStorage.removeItem(DRAFT_KEY);
+        }
+      }
+    } catch {
+      // Abaikan.
+    }
+  }, []);
+
+  function restoreDraft() {
+    if (!draft) return;
+    const next = services.find((service) => service.id === draft.serviceId);
+    if (!next) {
+      ignoreDraft();
+      return;
+    }
+    setSelectedId(draft.serviceId);
+    setQty(draft.qty || String(next.min_qty ?? 1));
+    setWidth(draft.width);
+    setHeight(draft.height);
+    setSelection(draft.selection ?? defaultSelection(next));
+    setInteracted(true);
+    setDraft(null);
+  }
+
+  function ignoreDraft() {
+    try {
+      window.localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // Abaikan.
+    }
+    setDraft(null);
+  }
 
   const chosen = services.find((service) => service.id === selectedId);
   const isArea = chosen?.pricing_model === "area";
@@ -97,13 +214,9 @@ export function OrderForm({
   const briefMin = chosen?.category === "print" ? 10 : 15;
 
   const normalizedQuery = query.trim().toLowerCase();
-  const visible = services.filter((service) => {
-    const matchFilter =
-      filter === "all" || service.category === filter;
-    const matchQuery =
-      !normalizedQuery ||
-      `${service.name} ${service.blurb} ${service.id}`.toLowerCase().includes(normalizedQuery);
-    return matchFilter && matchQuery;
+  const visible = searchServices(services, query).filter((service) => {
+    const matchFilter = filter === "all" || service.category === filter;
+    return matchFilter;
   });
   const serviceGroups = [
     { key: "design", label: "Desain & branding", items: visible.filter((service) => service.category === "design") },
@@ -118,6 +231,7 @@ export function OrderForm({
     setWidth("");
     setHeight("");
     setSelection(defaultSelection(next));
+    setInteracted(true);
   }
 
   function stepQty(delta: number) {
@@ -126,9 +240,11 @@ export function OrderForm({
     const max = chosen?.max_qty ?? 10000;
     const next = Math.min(max, Math.max(min, current + delta));
     setQty(String(next));
+    setInteracted(true);
   }
 
   function toggleOption(group: ServiceOptionGroup, code: string) {
+    setInteracted(true);
     setSelection((previous) => {
       const current = previous[group.code] ?? [];
       if (group.select_type === "single") {
@@ -222,10 +338,31 @@ export function OrderForm({
     );
   }
 
+  const draftService = draft ? services.find((service) => service.id === draft.serviceId) : null;
+
   return (
     <>
+      {draftHydrated && draft && draftService && !interacted && (
+        <div className="mb-6 flex flex-col gap-3 rounded-tag-sm border border-accent/30 bg-accent/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Lanjutkan spesifikasi terakhir?</p>
+            <p className="mt-1 text-xs text-mute">
+              {draftService.name} · {draft.qty || "1"} {draftService.unit_label || "unit"}
+              {draft.width && draft.height ? ` · ${draft.width}×${draft.height} cm` : ""}
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <button type="button" onClick={restoreDraft} className="btn btn-primary min-h-10 px-4 text-sm">
+              Pulihkan
+            </button>
+            <button type="button" onClick={ignoreDraft} className="btn btn-ghost min-h-10 px-4 text-sm">
+              Abaikan
+            </button>
+          </div>
+        </div>
+      )}
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-14">
-        <form ref={formRef} action={action} className="space-y-10">
+        <form ref={formRef} action={action} onSubmit={() => setSubmitted(true)} className="space-y-10">
           <input type="hidden" name="service" value={selectedId} />
           <input type="hidden" name="qty" value={isPerUnit ? qty : ""} />
           <input type="hidden" name="width" value={isArea ? width : ""} />
@@ -396,7 +533,7 @@ export function OrderForm({
                           max="2000"
                           step="any"
                           value={width}
-                          onChange={(event) => setWidth(event.target.value)}
+                          onChange={(event) => { setWidth(event.target.value); setInteracted(true); }}
                           placeholder="300"
                           className="field min-h-12 text-lg font-semibold tabular-nums"
                         />
@@ -410,7 +547,7 @@ export function OrderForm({
                           max="2000"
                           step="any"
                           value={height}
-                          onChange={(event) => setHeight(event.target.value)}
+                          onChange={(event) => { setHeight(event.target.value); setInteracted(true); }}
                           placeholder="100"
                           className="field min-h-12 text-lg font-semibold tabular-nums"
                         />
@@ -430,6 +567,7 @@ export function OrderForm({
                           onClick={() => {
                             setWidth(String(w));
                             setHeight(String(h));
+setInteracted(true);
                           }}
                           className="rounded-tag-sm border border-line px-2.5 py-1 text-xs font-semibold text-ink/65 transition-colors hover:border-accent/40 hover:text-accent"
                         >
@@ -464,7 +602,7 @@ export function OrderForm({
                         min={chosen.min_qty}
                         max={chosen.max_qty}
                         value={qty}
-                        onChange={(event) => setQty(event.target.value)}
+                        onChange={(event) => { setQty(event.target.value); setInteracted(true); }}
                         className="field min-h-12 flex-1 text-center text-lg font-semibold tabular-nums"
                       />
                       <button

@@ -7,6 +7,7 @@ import { toast } from "@/components/Toast";
 import { ProductIllustration } from "@/components/ProductIllustration";
 import type { Service } from "@/lib/db";
 import { priceLabel } from "@/lib/pricing";
+import { highlightTerms, searchServices, searchSuggestions } from "@/lib/catalog-search";
 
 const CATEGORIES = [
   { key: "all", label: "Semua" },
@@ -29,7 +30,24 @@ const CATEGORY_LABEL: Record<string, string> = {
   other: "Lainnya",
 };
 
-function ProductCard({ service }: { service: Service }) {
+function Highlight({ text, query }: { text: string; query: string }) {
+  const parts = highlightTerms(text, query);
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.match ? (
+          <mark key={index} className="rounded-sm bg-accent/25 px-0.5 text-inherit">
+            {part.text}
+          </mark>
+        ) : (
+          <span key={index}>{part.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+function ProductCard({ service, query }: { service: Service; query: string }) {
   return (
     <Link
       href={`/order?layanan=${service.id}`}
@@ -50,8 +68,12 @@ function ProductCard({ service }: { service: Service }) {
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-3)]">
           {CATEGORY_LABEL[service.category] ?? "Layanan"}
         </p>
-        <h2 className="text-[15px] font-medium leading-snug text-[var(--text)]">{service.name}</h2>
-        <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-3)]">{service.blurb}</p>
+        <h2 className="text-[15px] font-medium leading-snug text-[var(--text)]">
+          <Highlight text={service.name} query={query} />
+        </h2>
+        <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-3)]">
+          <Highlight text={service.blurb} query={query} />
+        </p>
         <div className="mt-auto flex items-end justify-between gap-3 pt-5">
           <div>
             <p className="mono text-sm text-[var(--accent-2)]">{priceLabel(service)}</p>
@@ -137,22 +159,25 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     return out;
   }, [services]);
 
+  const searched = useMemo(() => (query.trim() ? searchServices(services, query) : services), [services, query]);
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const list = services.filter((service) => {
-      const matchCategory = category === "all" || service.category === category;
-      const matchQuery =
-        !q || `${service.name} ${service.blurb} ${service.id}`.toLowerCase().includes(q);
-      return matchCategory && matchQuery;
-    });
-    list.sort((a, b) => {
-      if (sort === "price-asc") return a.price_from - b.price_from || a.name.localeCompare(b.name, "id");
-      if (sort === "price-desc") return b.price_from - a.price_from || a.name.localeCompare(b.name, "id");
-      if (sort === "name") return a.name.localeCompare(b.name, "id");
-      return a.sort - b.sort || a.name.localeCompare(b.name, "id");
-    });
+    const list = searched.filter((service) => category === "all" || service.category === category);
+    if (sort !== "recommended") {
+      list.sort((a, b) => {
+        if (sort === "price-asc") return a.price_from - b.price_from || a.name.localeCompare(b.name, "id");
+        if (sort === "price-desc") return b.price_from - a.price_from || a.name.localeCompare(b.name, "id");
+        if (sort === "name") return a.name.localeCompare(b.name, "id");
+        return a.sort - b.sort || a.name.localeCompare(b.name, "id");
+      });
+    } else if (!query.trim()) {
+      list.sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name, "id"));
+    }
     return list;
-  }, [services, query, category, sort]);
+  }, [searched, category, sort, query]);
+  const suggestions = useMemo(
+    () => (query.trim() && visible.length === 0 ? searchSuggestions(query) : []),
+    [query, visible.length],
+  );
 
   function reset() {
     setQuery("");
@@ -268,6 +293,21 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
         <div className="rounded-tag-lg border border-dashed border-line bg-panel/40 p-10 text-center">
           <p className="text-sm font-medium">Tidak ada layanan yang cocok.</p>
           <p className="mt-1 text-xs text-[var(--text-3)]">Coba kata kunci lain atau reset filter.</p>
+          {suggestions.length > 0 && (
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              <span className="text-xs text-mute">Mungkin maksudmu:</span>
+              {suggestions.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setQuery(item)}
+                  className="inline-flex min-h-9 items-center rounded-tag-sm border border-accent/30 bg-accent/10 px-3 text-xs font-medium text-ink transition-colors hover:bg-accent/20"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          )}
           <button type="button" onClick={reset} className="btn btn-ghost mt-5 min-h-10 px-4 text-sm">
             Tampilkan semua layanan
           </button>
@@ -275,7 +315,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((service) => (
-            <ProductCard key={service.id} service={service} />
+            <ProductCard key={service.id} service={service} query={query} />
           ))}
         </div>
       )}

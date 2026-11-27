@@ -66,6 +66,38 @@ export default async function TrackPage({
 
   const st = (isStatus(order.status) ? order.status : "menunggu") as Status;
   const meta = STATUS_META[st];
+
+  const deadlineDate = order.deadline_at
+    ? new Date(order.deadline_at)
+    : order.deadline
+      ? new Date(order.deadline)
+      : null;
+  const createdDate = new Date(order.created_at);
+  const now = new Date();
+  const isFinal = st === "selesai" || st === "batal";
+  let progressPct = 0;
+  let timeLabel = "Fleksibel";
+  let late = false;
+  if (deadlineDate) {
+    const total = deadlineDate.getTime() - createdDate.getTime();
+    const elapsed = now.getTime() - createdDate.getTime();
+    progressPct = total > 0 ? Math.min(100, Math.max(0, (elapsed / total) * 100)) : 100;
+    const diff = deadlineDate.getTime() - now.getTime();
+    if (isFinal) {
+      progressPct = 100;
+      timeLabel = st === "selesai" ? "Selesai tepat waktu" : "Dibatalkan";
+    } else if (diff > 0) {
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      timeLabel = days > 0 ? `Sisa ${days} hari ${hours} jam` : `Sisa ${hours} jam`;
+    } else {
+      late = true;
+      const overdue = -diff;
+      const days = Math.floor(overdue / 86400000);
+      const hours = Math.floor((overdue % 86400000) / 3600000);
+      timeLabel = days > 0 ? `Terlambat ${days} hari ${hours} jam` : `Terlambat ${hours} jam`;
+    }
+  }
   const breakdown = priceBreakdown(
     order.price == null ? null : Number(order.price),
     order.qty == null ? null : Number(order.qty),
@@ -327,6 +359,20 @@ export default async function TrackPage({
                   <dd className="text-right font-medium">{tanggal(order.created_at)}</dd>
                 </div>
               </dl>
+              {deadlineDate && (
+                <div className="mt-4 rounded-tag-sm border border-line bg-panel/30 p-3">
+                  <div className="flex items-center justify-between gap-3 text-xs">
+                    <span className="text-mute">Progres waktu</span>
+                    <span className={`font-semibold ${late ? "text-danger" : "text-mute"}`}>{timeLabel}</span>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div
+                      className={`h-full transition-all ${late ? "bg-danger" : "bg-accent"}`}
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                </div>
+              )}
               <details className="mt-5 border-t border-line pt-4">
                 <summary className="cursor-pointer text-sm font-semibold">Lihat brief asli</summary>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mute">{order.brief}</p>
