@@ -7,6 +7,7 @@ import { OrderEditor } from "@/components/OrderEditor";
 import { ProductionBoard } from "@/components/ProductionBoard";
 import { BulkOrderForm } from "@/components/BulkOrderForm";
 import { QuickActions } from "@/components/QuickActions";
+import { CopySpecButton, SyncPaymentButton } from "@/components/AdminOrderActions";
 import { ChevronRight, ClipboardCheck, Clock, Eye, MessageCircle, Printer, RotateCcw, Search, Wallet, X, type LucideIcon } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
@@ -504,6 +505,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       </dl>
 
                       <div className="flex flex-wrap gap-2 pt-1">
+                        <CopySpecButton text={[o.brief, snapshotSummary(o.options)].filter(Boolean).join("\\n\\n")} />
+                        <SyncPaymentButton code={o.code} />
                         {normalizeWA(String(o.wa ?? "")) ? (
                           <a
                             href={`https://wa.me/${normalizeWA(String(o.wa ?? ""))}`}
