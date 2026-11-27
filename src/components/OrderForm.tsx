@@ -74,6 +74,7 @@ export function OrderForm({
   customer,
   driveReady = false,
   uploadToken = "",
+  initialPromo = "",
 }: {
   services: Service[];
   preselect?: string;
@@ -81,6 +82,7 @@ export function OrderForm({
   customer?: { name: string; wa: string };
   driveReady?: boolean;
   uploadToken?: string;
+  initialPromo?: string;
 }) {
   const [state, action, pending] = useActionState<OrderState, FormData>(createOrder, null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -100,7 +102,7 @@ export function OrderForm({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "design" | "print" | "other">("all");
   const [brief, setBrief] = useState(v.brief || "");
-  const [promoCode, setPromoCode] = useState("");
+  const [promoCode, setPromoCode] = useState(initialPromo);
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoMessage, setPromoMessage] = useState("");
   const [promoPending, setPromoPending] = useState(false);

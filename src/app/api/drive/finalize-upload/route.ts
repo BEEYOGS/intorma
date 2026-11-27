@@ -66,6 +66,9 @@ export async function POST(req: Request) {
   const existing = (await sql`
     select id, code, file_name, mime, size from uploads
     where drive_file_id = ${driveFileId}
+      and created_at >= now() - interval '6 hours'
+      and ${customer?.id ?? null} is not null
+      and customer_id = ${customer?.id ?? null}
     limit 1`) as Array<{ id: number; code: string; file_name: string; mime: string; size: string | number }>;
   if (existing[0]) {
     const row = existing[0];

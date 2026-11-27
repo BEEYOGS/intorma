@@ -14,6 +14,7 @@
     "db:catalog": "node --env-file=.env.local scripts/seed-catalog.mjs",
     "db:catalog:all": "npm run db:catalog && npm run db:self-service",
     "db:wa-trigger": "node --env-file=.env.local scripts/migrate-wa-trigger.mjs",
+    "db:admin-owner": "node --env-file=.env.local scripts/seed-admin-owner.mjs",
     "gateway": "node scripts/gateway.mjs",
     "openwa": "node scripts/openwa.mjs",
     "wa:session": "node scripts/wa-session.mjs",

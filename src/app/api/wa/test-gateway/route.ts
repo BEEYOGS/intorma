@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { guardRate } from "@/lib/api-rate-limit";
 import { isAdmin } from "@/lib/auth";
 import { adminWhatsApp, waDiagnostics, waSendTest } from "@/lib/wa";
 
@@ -17,6 +18,8 @@ async function authorized(req: Request): Promise<boolean> {
 }
 
 export async function GET(req: Request) {
+  const limited = await guardRate("wa_test_gateway_read", 20);
+  if (limited) return limited;
   if (!(await authorized(req))) {
     return NextResponse.json({ error: "Butuh login admin atau header x-admin-secret." }, { status: 401 });
   }
@@ -31,6 +34,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const limited = await guardRate("wa_test_gateway_send", 3);
+  if (limited) return limited;
   if (!(await authorized(req))) {
     return NextResponse.json({ error: "Butuh login admin atau header x-admin-secret." }, { status: 401 });
   }

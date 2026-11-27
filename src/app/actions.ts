@@ -19,7 +19,6 @@ import {
 import { STATUS_META, isStatus, type Status } from "@/lib/status";
 import { getPaymentSettings, paymentLines, savePaymentSettings } from "@/lib/settings";
 import {
-  claimOrders,
   clearCustomerSession,
   getCustomer,
   hashPassword,
@@ -58,6 +57,21 @@ const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const digits = (f: FormData, k: string) => str(f, k).replace(/\D/g, "");
 
 /** Hanya terima path admin internal supaya redirect tidak bisa dipakai untuk open redirect. */
+/** Server action wajib fail-closed: DB rate-limit error tidak boleh mematikan pembatasan. */
+async function actionRate(
+  scope: string,
+  limit: number,
+  windowMs = 60_000,
+): Promise<{ error: string } | null> {
+  try {
+    const result = await rateLimit(await clientKey(scope), limit, windowMs);
+    return result.ok ? null : { error: rateLimitMessage(result) };
+  } catch (error) {
+    console.error(`rate limit failed for ${scope}`, error);
+    return { error: "Layanan sedang sibuk. Coba lagi sebentar." };
+  }
+}
+
 function adminReturn(value: string): string {
   return value.startsWith("/admin") && !value.startsWith("//") ? value : "/admin";
 }
@@ -151,8 +165,8 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     promo: str(f, "promo"),
     requestId: str(f, "requestId"),
   };
-  const limited = await rateLimit(await clientKey("create_order"), 8, 60_000).catch(() => null);
-  if (limited && !limited.ok) return { error: rateLimitMessage(limited), values };
+  const limited = await actionRate("create_order", 8);
+  if (limited) return { error: limited.error, values };
   const wa = normalizeWA(values.wa);
   const customer = await getCustomer();
 
@@ -302,7 +316,15 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
       const prior = (await sql`select code, access_token from orders where client_request_id = ${requestId} limit 1`)[0] as
         | { code: string; access_token: string | null }
         | undefined;
-      if (prior) redirect(withAccess(`/lacak/${prior.code}?baru=1`, prior.access_token));
+      if (prior) {
+      // Kuota sudah diklaim sebelum insert; kembalikan sebelum redirect.
+      if (promoClaimed && promoCode) {
+        await sql`update promo_codes set used_count = greatest(0, used_count - 1) where code = ${promoCode}`.catch(
+          () => undefined,
+        );
+      }
+      redirect(withAccess(`/lacak/${prior.code}?baru=1`, prior.access_token));
+    }
     }
     console.error("createOrder insert failed", error);
   }
@@ -452,8 +474,8 @@ export async function togglePromo(f: FormData): Promise<void> {
 }
 
 export async function lookupOrder(_prev: { error?: string } | null, f: FormData) {
-  const limited = await rateLimit(await clientKey("lookup_order"), 12, 60_000).catch(() => null);
-  if (limited && !limited.ok) return { error: rateLimitMessage(limited) };
+  const limited = await actionRate("lookup_order", 12);
+  if (limited) return { error: limited.error };
   const full = normalizeCode(str(f, "kode"));
   const found = (await sql`select code from orders where code = ${full}`)[0];
   if (!found) return { error: "Kode tidak ditemukan. Cek lagi pesan WhatsApp yang kamu terima." };
@@ -462,10 +484,8 @@ export async function lookupOrder(_prev: { error?: string } | null, f: FormData)
 
 export async function adminLogin(_prev: { error?: string } | null, f: FormData) {
   if (!(await login(str(f, "password")))) {
-    const limited = await rateLimit(await clientKey("admin_login_view"), 6, 60_000).catch(() => null);
-    return {
-      error: limited && !limited.ok ? rateLimitMessage(limited) : "Password salah. Coba lagi.",
-    };
+    const limited = await actionRate("admin_login_view", 6);
+    return { error: limited?.error ?? "Password salah. Coba lagi." };
   }
   redirect("/admin");
 }
@@ -493,8 +513,8 @@ async function adminMutationGuard(): Promise<
   | { actor: NonNullable<Awaited<ReturnType<typeof currentAdmin>>> }
 > {
   if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
-  const limited = await rateLimit(await clientKey("admin_account"), 10, 60_000).catch(() => null);
-  if (limited && !limited.ok) return { error: rateLimitMessage(limited) };
+  const limited = await actionRate("admin_account", 10);
+  if (limited) return { error: limited.error };
   const actor = await currentAdmin();
   if (!actor) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
   return { actor };
@@ -552,9 +572,17 @@ export async function updateAdminAccount(_prev: ActionResult, f: FormData): Prom
   if (!isSelf && guard.actor.role !== "owner") {
     return { error: "Hanya owner yang bisa mengelola akun lain." };
   }
-  // Konfirmasi memakai password akun yang disunting, bukan password sembarang admin.
-  if (!(await verifyOwnAccountPassword(id, str(f, "current")))) {
-    return { error: "Password akun yang disunting tidak cocok." };
+  // Owner mengubah akun lain memakai password owner yang sedang login,
+  // bukan password akun target (yang bisa saja ia tidak tahu).
+  const confirmation = isSelf
+    ? await verifyOwnAccountPassword(id, str(f, "current"))
+    : await verifyAdminCredential(str(f, "current"));
+  if (!confirmation) {
+    return {
+      error: isSelf
+        ? "Password akun sendiri tidak cocok."
+        : "Password owner saat ini tidak cocok.",
+    };
   }
 
   const label = str(f, "label").slice(0, 60) || row.username;
@@ -568,11 +596,12 @@ export async function updateAdminAccount(_prev: ActionResult, f: FormData): Prom
     hashSet = hashPassword(password.value);
   }
 
+  const revoke = Boolean(passwordRaw) || active !== Boolean(row.active);
   await sql`
     update admin_accounts
     set label = ${label}, active = ${active}, updated_at = now(),
       password_hash = case when ${hashSet} = '' then password_hash else ${hashSet} end,
-      token_version = case when ${hashSet} = '' then token_version else token_version + 1 end
+      token_version = case when ${revoke} then token_version + 1 else token_version end
     where id = ${id}`;
 
   await audit("update", "admin_account", row.username, {
@@ -597,8 +626,8 @@ export async function deleteAdminAccount(f: FormData): Promise<ActionResult> {
     | { username: string }
     | undefined;
   if (!row) return { error: "Akun tidak ditemukan." };
-  if (!(await verifyOwnAccountPassword(id, str(f, "current")))) {
-    return { error: "Password akun yang dihapus tidak cocok." };
+  if (!(await verifyAdminCredential(str(f, "current")))) {
+    return { error: "Password owner saat ini tidak cocok." };
   }
 
   try {
@@ -1048,8 +1077,8 @@ export async function startPayment(_prev: ActionResult, f: FormData): Promise<Ac
  * halaman pembayaran bisa menampilkan QR/nomor VA yang sama saat dimuat ulang.
  */
 export async function chargePayment(_prev: ActionResult, f: FormData): Promise<ActionResult> {
-  const limited = await rateLimit(await clientKey("charge_payment"), 12, 60_000).catch(() => null);
-  if (limited && !limited.ok) return { error: rateLimitMessage(limited) };
+  const limited = await actionRate("charge_payment", 12);
+  if (limited) return { error: limited.error };
 
   const code = normalizeCode(str(f, "code"));
   const method = str(f, "method") as PaymentMethod;
@@ -1119,6 +1148,12 @@ export async function chargePayment(_prev: ActionResult, f: FormData): Promise<A
               where id = ${pending.id}`;
           }
         }
+        const usable =
+          Boolean(pending.raw?.qrDataUrl) ||
+          (qrString ? Boolean(await qrFromString(qrString)) : false);
+        if (!usable) {
+          return { error: "QR tagihan tidak dapat dibuat. Muat ulang atau pilih metode VA." };
+        }
         revalidatePath(`/bayar/${order.code}`);
         return { ok: true };
       }
@@ -1138,6 +1173,11 @@ export async function chargePayment(_prev: ActionResult, f: FormData): Promise<A
   } catch (error) {
     console.error("chargePayment failed", error);
     return { error: clientErrorMessage(error, "Gagal membuat pembayaran. Coba lagi.") };
+  }
+
+  if (method === "qris" && !charge.qrString && !charge.qrDataUrl) {
+    await cancelCoreCharge(charge.orderIdUsed);
+    return { error: "QR tidak tersedia dari gateway. Pilih metode virtual account." };
   }
 
   try {
@@ -1165,8 +1205,8 @@ export async function chargePayment(_prev: ActionResult, f: FormData): Promise<A
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function registerCustomer(_prev: CustomerState, f: FormData): Promise<CustomerState> {
-  const limited = await rateLimit(await clientKey("customer_register"), 5, 60_000).catch(() => null);
-  if (limited && !limited.ok) return { error: rateLimitMessage(limited) };
+  const limited = await actionRate("customer_register", 5);
+  if (limited) return { error: limited.error };
   const name = str(f, "name");
   const wa = normalizeWA(str(f, "wa"));
   const email = str(f, "email").toLowerCase();
@@ -1188,15 +1228,15 @@ export async function registerCustomer(_prev: CustomerState, f: FormData): Promi
   const id = Number(rows[0]?.id ?? 0);
   if (!id) return { error: "Gagal membuat akun. Coba lagi." };
 
-  // Klaim pesanan lama hanya bila diminta eksplisit, bukan otomatis dari nomor WA.
-  if (f.get("claim") === "on") await claimOrders(id, wa);
+  // Klaim otomatis dari nomor WA dinonaktifkan: nomor saja bukan bukti
+  // kepemilikan. Pesanan lama diakses lewat tautan pribadi atau digabung admin.
   await setCustomerSession(id);
   redirect(customerNext(f));
 }
 
 export async function loginCustomer(_prev: CustomerState, f: FormData): Promise<CustomerState> {
-  const limited = await rateLimit(await clientKey("customer_login"), 6, 60_000).catch(() => null);
-  if (limited && !limited.ok) return { error: rateLimitMessage(limited) };
+  const limited = await actionRate("customer_login", 6);
+  if (limited) return { error: limited.error };
   const email = str(f, "email").toLowerCase();
   const password = String(f.get("password") ?? "");
   if (!EMAIL_RE.test(email)) return { error: "Alamat email belum valid." };
@@ -1209,7 +1249,6 @@ export async function loginCustomer(_prev: CustomerState, f: FormData): Promise<
     return { error: "Email atau password salah." };
   }
 
-  if (f.get("claim") === "on") await claimOrders(Number(customer.id), String(customer.wa));
   await setCustomerSession(Number(customer.id));
   redirect(customerNext(f));
 }

@@ -1,3 +1,4 @@
+import { guardRate } from "@/lib/api-rate-limit";
 import { getCustomer } from "@/lib/customer-auth";
 import { sql } from "@/lib/db";
 import { driveDownload } from "@/lib/drive";
@@ -14,6 +15,8 @@ type UploadRow = {
 };
 
 export async function GET(req: Request) {
+  const limited = await guardRate("files_zip", 6);
+  if (limited) return limited;
   const customer = await getCustomer();
   if (!customer) return new Response("Silakan masuk dulu.", { status: 401 });
 

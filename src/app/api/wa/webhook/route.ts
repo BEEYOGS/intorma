@@ -143,10 +143,20 @@ async function forwardInbound(from: string, body: string, media: boolean): Promi
     on conflict (idempotency_key) where idempotency_key is not null do nothing`;
 }
 
+/** WebhookWA juga fail-closed supaya DB error tidak membuka brute-force. */
+async function webhookRate(scope: string, limit: number): Promise<boolean> {
+  try {
+    const result = await rateLimit(await clientKey(scope), limit, 60_000);
+    return result.ok;
+  } catch (error) {
+    console.error(`rate limit failed for ${scope}`, error);
+    return false;
+  }
+}
+
 async function processMessage(from: string, body: string, media: boolean): Promise<void> {
   const sender = from.replace(/@.*/, "");
-  const limited = await rateLimit(await clientKey(`wa_inbound:${sender}`), 6, 60_000).catch(() => null);
-  if (limited && !limited.ok) return;
+  if (!(await webhookRate(`wa_inbound:${sender}`, 6))) return;
 
   const reply = await statusReply(body, sender).catch((error) => {
     console.error("wa status reply failed", error);
@@ -162,9 +172,8 @@ async function processMessage(from: string, body: string, media: boolean): Promi
 }
 
 export async function POST(req: Request) {
-  const limited = await rateLimit(await clientKey("wa_webhook"), 40, 60_000).catch(() => null);
-  if (limited && !limited.ok) {
-    return NextResponse.json({ ok: false }, { status: 429 });
+  if (!(await webhookRate("wa_webhook", 40))) {
+    return NextResponse.json({ ok: false }, { status: 503 });
   }
 
   const raw = await req.text().catch(() => "");

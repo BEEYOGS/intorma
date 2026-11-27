@@ -179,9 +179,14 @@ insert into app_settings (key, value) values
   ('bank_account', '8171700213'),
   ('bank_holder', 'Yogi'),
   ('payment_note', 'Transfer sesuai total, lalu konfirmasi lewat WhatsApp.'),
-  ('reminder_enabled', '0'),
+  ('reminder_enabled', '1'),
   ('admin_digest_enabled', '1')
 on conflict (key) do nothing;
+
+-- Kampanye repeat order otomatis untuk pelanggan yang pesanannya sudah selesai.
+insert into promo_codes (code, type, value, min_order, max_discount, usage_limit)
+values ('REORDER10', 'percent', 10, 100000, 100000, 500)
+on conflict (code) do nothing;
 
 insert into services (id, name, blurb, price_from, days, sort, pricing_mode, unit_label, min_qty, max_qty) values
   ('logo', 'Logo dan identitas', 'Logo, palet warna, dan panduan pemakaian dasar.', 350000, 5, 1, 'flat', '', 1, 10000),

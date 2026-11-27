@@ -64,6 +64,7 @@ export async function GET(req: Request) {
   let candidates = 0;
   let sent = 0;
   let skipped = 0;
+  let reorderSent = 0;
 
   if (remindersEnabled) {
     // Kandidat: deadline dalam 2 hari/lewat, atau belum dibayar sejak 2 hari lalu.
@@ -143,6 +144,51 @@ export async function GET(req: Request) {
     }
   }
 
+  // Repeat order: satu penawaran per pesanan yang sudah selesai >30 hari.
+  // Kupon REORDER10 memberi alasan nyata untuk kembali, bukan sekadar pengingat.
+  const reorderRow = (await sql`select value from app_settings where key = 'reorder_enabled'`)[0];
+  const reorderEnabled = String(reorderRow?.value ?? "1") !== "0";
+  if (reorderEnabled) {
+    const rows = (await sql`
+      select o.id, o.code, o.name, o.wa, o.price, o.access_token,
+        coalesce(s.name, o.service_label) as service,
+        max(e.created_at) as completed_at
+      from orders o
+      join order_events e on e.order_id = o.id and e.status = 'selesai'
+      left join services s on s.id = o.service_id
+      where o.status = 'selesai' and e.created_at <= now() - interval '30 days'
+      group by o.id, s.id
+      order by completed_at asc
+      limit 20
+    `) as Array<{
+      code: string;
+      name: string;
+      wa: string;
+      price: string | number | null;
+      service: string | null;
+      access_token: string | null;
+    }>;
+
+    for (const r of rows) {
+      const key = `reorder-${r.code}`;
+      const seen = await sql`select id from wa_outbox where idempotency_key = ${key} limit 1`;
+      if (seen.length) continue;
+      const to = normalizeWA(String(r.wa ?? ""));
+      if (!to) continue;
+
+      const message = [
+        `Halo ${r.name}, pesanan ${r.code}${r.service ? ` (${r.service})` : ""} sudah selesai.`,
+        "Butuh cetak ulang atau tambah pesanan?",
+        "Pakai kupon REORDER10 untuk diskon 10% (maksimal Rp100.000, minimal Rp100.000).",
+        `Pesan lagi: ${siteUrl()}/order?promo=REORDER10`,
+        `Lihat pesanan lama: ${siteUrl()}${withAccess(`/lacak/${r.code}`, r.access_token)}`,
+      ].join("\n");
+      const ok = await sendWA(to, message, key);
+      await recordMessage(to, message, key, ok);
+      if (ok) reorderSent += 1;
+    }
+  }
+
   // Rangkuman admin sekali sehari. Tetap jalan walau pengingat klien dimatikan.
   let digest: "sent" | "skipped" | "disabled" | "empty" = "skipped";
   const digestRow = (await sql`select value from app_settings where key = 'admin_digest_enabled'`)[0];
@@ -197,8 +243,10 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: true,
     remindersEnabled,
+    reorderEnabled,
     candidates,
     sent,
+    reorderSent,
     skipped,
     digest,
   });

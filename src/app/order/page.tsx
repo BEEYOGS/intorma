@@ -13,14 +13,19 @@ export const metadata = { title: "Pesan desain & cetak" };
 export default async function OrderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ layanan?: string }>;
+  searchParams: Promise<{ layanan?: string; promo?: string }>;
 }) {
-  const [services, payment, { layanan }, customer] = await Promise.all([
+  const [services, payment, params, customer] = await Promise.all([
     getServicesWithOptions(),
     getPaymentSettings(),
     searchParams,
     getCustomer(),
   ]);
+  const { layanan, promo } = params;
+  const initialPromo = String(promo ?? "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, "")
+    .slice(0, 32);
 
   return (
     <>
@@ -66,6 +71,7 @@ export default async function OrderPage({
               customer={customer ? { name: customer.name, wa: customer.wa } : undefined}
               driveReady={driveEnabled()}
               uploadToken={createUploadToken(customer?.id ?? null)}
+              initialPromo={initialPromo}
             />
           )}
         </div>

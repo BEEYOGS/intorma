@@ -148,20 +148,15 @@ export async function settleMidtransPayment(
       if (payment && payment.status === "pending") {
         await sql`update payments set status = 'failed' where id = ${payment.id}`;
       }
-      // Reversal setelah lunas: batalkan lagi supaya tidak masuk produksi.
+      // Notifikasi gagal yang usang tidak boleh membalik order yang sudah lunas.
+      // Tandai untuk review admin; pembatalan final lah yang memutuskan status.
       if (order.paid && ["deny", "chargeback", "refund", "partial_refund", "failure"].includes(payload.transactionStatus)) {
-        await sql`
-          update orders set paid = false, paid_at = null, payment_status = 'unpaid', updated_at = now()
-          where id = ${order.id}`;
-        await sql`update payments set status = 'failed' where order_id = ${order.id} and provider = 'midtrans'`;
-        await sql`
-          insert into order_events (order_id, status, note)
-          values (${order.id}, ${order.status}, 'Pembayaran dibatalkan: ' || ${payload.transactionStatus})`;
-        await audit("payment_reversed", "order", code, { status: payload.transactionStatus });
-        revalidatePath(`/lacak/${code}`);
-        revalidatePath(`/bayar/${code}`);
-        revalidatePath("/admin");
-        return { ok: true, code, reason: "reversed" };
+        await audit("payment_reversal_review", "order", code, {
+          status: payload.transactionStatus,
+          transaction: payload.transactionId ?? null,
+        });
+        revalidatePath(`/admin`);
+        return { ok: true, code, reason: "reversal_review" };
       }
     }
     return { ok: true, code, reason: "not_settled" };
