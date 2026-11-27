@@ -343,7 +343,7 @@ export function OrderForm({
   return (
     <>
       {draftHydrated && draft && draftService && !interacted && (
-        <div className="mb-6 flex flex-col gap-3 rounded-tag-sm border border-accent/30 bg-accent/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div role="status" aria-live="polite" className="mb-6 flex flex-col gap-3 rounded-tag-sm border border-accent/30 bg-accent/[0.06] p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="text-sm font-semibold">Lanjutkan spesifikasi terakhir?</p>
             <p className="mt-1 text-xs text-mute">

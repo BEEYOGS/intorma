@@ -196,7 +196,7 @@ export function InstallButton() {
             <div className="flex items-start gap-3">
               <div className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-accent/30 bg-accent/[0.06] p-1.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/icon.svg?v=4" alt="" className="size-full" />
+                <img src="/icon.svg?v=4" alt="" aria-hidden="true" className="size-full" />
               </div>
               <div className="min-w-0 pt-0.5">
                 <p className="eyebrow">PWA · in.torma</p>

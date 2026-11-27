@@ -24,9 +24,17 @@ import { ScrollProgress } from "@/components/ScrollProgress";
 import { ServiceWorkerRegister, InstallButton } from "@/components/PWA";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://intorma-psi.vercel.app"),
   title: { default: "in.torma — Studio desain & cetak", template: "%s — in.torma" },
   applicationName: "in.torma",
   manifest: "/manifest.webmanifest?v=4",
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: "in.torma",
+    title: "in.torma — Studio desain & cetak",
+    description: "Logo, poster, konten sosial, kemasan, sampai spanduk dan kartu nama. Brief singkat, harga jelas, progres bisa dipantau.",
+  },
   icons: {
     icon: [
       { url: "/icons/icon-192.png?v=4", sizes: "192x192", type: "image/png" },

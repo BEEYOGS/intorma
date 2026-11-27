@@ -303,7 +303,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
                   onClick={() => setQuery(item)}
                   className="inline-flex min-h-9 items-center rounded-tag-sm border border-accent/30 bg-accent/10 px-3 text-xs font-medium text-ink transition-colors hover:bg-accent/20"
                 >
-                  {item}
+                  {item.charAt(0).toUpperCase() + item.slice(1)}
                 </button>
               ))}
             </div>
