@@ -105,7 +105,7 @@ Dengan Drive aktif:
 
 Halaman `/download` mengarah ke aset rilis GitHub yang dibangun oleh
 `.github/workflows/build-native.yml` (`.exe`, `.msi`, `.apk` v1.0.2). PWA dipasang lewat
-`manifest.webmanifest` + `sw.js` (cache `intorma-v6`). Tombol **Install aplikasi** di header/menu
+`manifest.webmanifest` + `sw.js` (cache `intorma-v7`). Tombol **Install aplikasi** di header/menu
 membuka prompt PWA bila browser mendukung; jika tidak, popup menampilkan panduan per platform.
 Penolakan popup disimpan per sesi agar tidak muncul berulang saat berpindah halaman.
 

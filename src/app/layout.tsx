@@ -26,14 +26,14 @@ import { ServiceWorkerRegister, InstallButton } from "@/components/PWA";
 export const metadata: Metadata = {
   title: { default: "in.torma — Studio desain & cetak", template: "%s — in.torma" },
   applicationName: "in.torma",
-  manifest: "/manifest.webmanifest?v=3",
+  manifest: "/manifest.webmanifest?v=4",
   icons: {
     icon: [
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon.svg?v=3", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png?v=4", sizes: "192x192", type: "image/png" },
+      { url: "/icon.svg?v=4", type: "image/svg+xml" },
     ],
-    shortcut: "/icons/icon-192.png",
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/icons/icon-192.png?v=4",
+    apple: [{ url: "/icons/apple-touch-icon.png?v=4", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
