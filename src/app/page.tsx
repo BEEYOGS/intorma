@@ -9,15 +9,25 @@ import { STATUS_META, asStatus } from "@/lib/status";
 import { isAdmin } from "@/lib/auth";
 import { getLatestJobs, getProductStats } from "@/lib/data";
 import { getServices } from "@/lib/db";
+import { sql } from "@/lib/db";
 import { tanggal } from "@/lib/format";
 import { priceLabel } from "@/lib/pricing";
 
 export default async function ProductPage() {
-  const [stats, jobs, admin, services] = await Promise.all([
+  const [stats, jobs, admin, services, reviews] = await Promise.all([
     getProductStats(),
     getLatestJobs(),
     isAdmin(),
     getServices(),
+    sql`
+      select r.name, r.rating, r.comment, r.created_at, coalesce(s.name, o.service_label) as service
+      from reviews r
+      left join orders o on o.id = r.order_id
+      left join services s on s.id = o.service_id
+      where r.approved = true
+      order by r.created_at desc
+      limit 6
+    `.then((rows) => rows as Array<{ name: string; rating: number; comment: string; created_at: string | Date; service: string | null }>),
   ]);
   const featuredServices = services.slice(0, 9);
 
@@ -224,6 +234,36 @@ export default async function ProductPage() {
           </div>
         </div>
       </section>
+
+      {reviews.length > 0 && (
+        <section className="section-sm border-t border-[var(--border)]">
+          <div className="wrap">
+            <p className="eyebrow mb-2">Ulasan klien</p>
+            <h2 className="display text-2xl sm:text-3xl mb-8">Apa kata mereka.</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {reviews.map((review, index) => (
+                <article key={index} className="card p-5">
+                  <div className="flex items-center gap-1" role="img" aria-label={`${review.rating} dari 5`}>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span
+                        key={i}
+                        aria-hidden
+                        className="text-sm"
+                        style={{ color: i < review.rating ? "#facc15" : "var(--text-3)" }}
+                      >
+                        ★
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-[var(--text-2)]">“{review.comment}”</p>
+                  <p className="mt-4 text-xs font-semibold text-[var(--text)]">{review.name}</p>
+                  {review.service && <p className="text-xs text-[var(--text-3)]">{review.service}</p>}
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="section-sm border-t border-[var(--border)]">

@@ -266,6 +266,24 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   redirect(`/lacak/${order.code}?baru=1`);
 }
 
+export async function approveReview(f: FormData): Promise<void> {
+  if (!(await isAdmin())) return;
+  const id = Number(f.get("id"));
+  if (!id) return;
+  await sql`update reviews set approved = true where id = ${id}`;
+  revalidatePath("/admin/ulasan");
+  revalidatePath("/");
+}
+
+export async function deleteReview(f: FormData): Promise<void> {
+  if (!(await isAdmin())) return;
+  const id = Number(f.get("id"));
+  if (!id) return;
+  await sql`delete from reviews where id = ${id}`;
+  revalidatePath("/admin/ulasan");
+  revalidatePath("/");
+}
+
 export async function lookupOrder(_prev: { error?: string } | null, f: FormData) {
   const full = normalizeCode(str(f, "kode"));
   const found = (await sql`select code from orders where code = ${full}`)[0];

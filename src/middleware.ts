@@ -37,6 +37,7 @@ const RATE_LIMITS: Array<{ test: (path: string, method: string) => boolean; limi
   { test: (path) => path.startsWith("/api/drive/"), limit: 30, windowMs: 60_000 },
   { test: (path) => path.startsWith("/api/admin/"), limit: 60, windowMs: 60_000 },
   { test: (path) => path === "/api/wa/test-gateway", limit: 10, windowMs: 60_000 },
+  { test: (path, method) => path === "/api/reviews" && method === "POST", limit: 5, windowMs: 60_000 },
 ];
 
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();

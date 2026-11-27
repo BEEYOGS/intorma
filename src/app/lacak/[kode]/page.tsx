@@ -4,6 +4,7 @@ import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav, StatusBadge } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
 import { ShareStatusButton } from "@/components/ShareStatusButton";
+import { ReviewForm } from "@/components/ReviewForm";
 import { NotaQrCard } from "@/components/NotaQrCard";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { PayButton } from "@/components/PayButton";
@@ -378,6 +379,17 @@ export default async function TrackPage({
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mute">{order.brief}</p>
               </details>
             </section>
+
+            {st === "selesai" && (
+              <section className="card p-5 sm:p-6">
+                <p className="eyebrow">Ulasan</p>
+                <h2 className="mt-2 text-lg font-semibold tracking-tight">Bagaimana hasilnya?</h2>
+                <p className="mt-1 text-sm text-mute">Bantu kami tumbuh dengan ulasan singkat. Akan tampil setelah disetujui admin.</p>
+                <div className="mt-4">
+                  <ReviewForm code={order.code} name={order.name} />
+                </div>
+              </section>
+            )}
 
             <p className="text-sm leading-6 text-mute">
               Ada yang ingin diubah?{" "}

@@ -241,6 +241,19 @@ create index if not exists uploads_customer_idx on uploads(customer_id, created_
 create unique index if not exists uploads_drive_file_unique
   on uploads(drive_file_id) where drive_file_id is not null;
 
+-- Ulasan klien. Dikirim dari halaman lacak saat pesanan selesai, dimoderasi admin.
+create table if not exists reviews (
+  id serial primary key,
+  order_id int references orders(id) on delete set null,
+  customer_id int references customers(id) on delete set null,
+  name text not null,
+  rating int not null check (rating between 1 and 5),
+  comment text not null,
+  approved boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists reviews_approved_idx on reviews (approved, created_at desc);
+
 -- Jejak aksi admin. audit() menulis ke tabel ini; halaman /admin/audit membacanya.
 create table if not exists audit_log (
   id bigserial primary key,
