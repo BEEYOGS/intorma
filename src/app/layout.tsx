@@ -24,7 +24,6 @@ import { ServiceWorkerRegister, InstallButton } from "@/components/PWA";
 
 export const metadata: Metadata = {
   title: { default: "in.torma — Studio desain & cetak", template: "%s — in.torma" },
-  description: "Logo, poster, konten sosial, kemasan, sampai spanduk dan kartu nama. Brief singkat, harga jelas, progres bisa dipantau.",
   applicationName: "in.torma",
   manifest: "/manifest.webmanifest?v=2",
   icons: {
@@ -52,6 +51,12 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className={`${fontSans.variable} ${fontSerifItalic.variable}`}>
+      <head>
+        <meta
+          name="description"
+          content="Logo, poster, konten sosial, kemasan, sampai spanduk dan kartu nama. Brief singkat, harga jelas, progres bisa dipantau."
+        />
+      </head>
       <body className="min-h-dvh bg-[var(--bg)] text-[var(--text)]">
         <a href="#konten" className="skip-link">Lewati ke konten</a>
         <PageFade>

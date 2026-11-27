@@ -108,12 +108,12 @@ export default async function ProductPage() {
                     }}
                   />
                   <ProductIllustration service={svc} className="relative h-24 w-full max-w-[220px]" />
-                  <ArrowUpRight aria-hidden className="absolute right-3 top-3 size-4 text-[var(--text-3)] transition-colors group-hover:text-[var(--gold)]" />
+                  <ArrowUpRight aria-hidden className="absolute right-3 top-3 size-4 text-[var(--text-3)] transition-colors group-hover:text-[var(--gold-2)]" />
                 </div>
                 <h3 className="text-[15px] font-medium text-[var(--text)] mb-1">{svc.name}</h3>
                 <p className="text-xs text-[var(--text-3)] leading-relaxed min-h-[2.5rem]">{svc.blurb}</p>
                 <div className="flex items-center justify-between mt-4">
-                  <span className="mono text-sm text-[var(--gold)]">{priceLabel(svc)}</span>
+                  <span className="mono text-sm text-[var(--gold-2)]">{priceLabel(svc)}</span>
                   <span className="text-xs text-[var(--text-3)]">± {svc.days} hari</span>
                 </div>
               </Link>
@@ -165,15 +165,15 @@ export default async function ProductPage() {
               </p>
               <ul className="mt-6 space-y-2 text-sm text-[var(--text-2)]">
                 <li className="flex items-start gap-2">
-                  <span className="text-[var(--gold)] mt-0.5">—</span>
+                  <span className="text-[var(--gold-2)] mt-0.5">—</span>
                   Nominal sesuai total di halaman pesanan.
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[var(--gold)] mt-0.5">—</span>
+                  <span className="text-[var(--gold-2)] mt-0.5">—</span>
                   Status pembayaran ditandai lunas oleh admin.
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[var(--gold)] mt-0.5">—</span>
+                  <span className="text-[var(--gold-2)] mt-0.5">—</span>
                   Bukti transfer bisa dikirim langsung di WhatsApp.
                 </li>
               </ul>

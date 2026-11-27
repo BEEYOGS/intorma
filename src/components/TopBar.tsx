@@ -62,7 +62,7 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
           </Link>
         )}
         {isAdmin && (
-          <Link href="/dashboard" className={`${linkClass} ml-2 !text-[var(--gold)] hover:!text-[var(--gold-2)]`}>
+          <Link href="/dashboard" className={`${linkClass} ml-2 !text-[var(--gold-2)]`}>
             <LayoutDashboard aria-hidden className={iconClass} /> Dashboard
           </Link>
         )}

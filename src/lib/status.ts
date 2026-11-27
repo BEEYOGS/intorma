@@ -26,7 +26,7 @@ export const STATUS_META: Record<
   dikerjakan: {
     label: "Sedang dikerjakan",
     short: "Dikerjakan",
-    color: "#0070f3",
+    color: "#3291ff",
     soft: "rgba(0, 112, 243, 0.14)",
     icon: "brush",
     wa: (c, n) => `Halo ${n}, pesanan ${c} sekarang sedang dikerjakan.`,

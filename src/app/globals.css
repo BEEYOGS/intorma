@@ -85,12 +85,22 @@ body::after {
 
 
 
-/* Teks gradasi seperti hero Next.js/Vercel. */
+/* Teks gradasi seperti hero Next.js/Vercel. Warna solid tetap dibaca pembaca layar
+   dan audit kontras; isi hurufnya diganti transparan supaya gradasi terlihat. */
 .gradient-text {
   background: linear-gradient(110deg, #ffffff 0%, #a1a1aa 45%, #0070f3 100%);
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
+  color: #fafafa;
+  -webkit-text-fill-color: transparent;
+}
+
+/* #0070f3 tetap jadi aksen bidang/border. Untuk teks kecil di atas panel gelap,
+   pakai turunan lebih terang agar kontras memenuhi 4.5:1. */
+@layer utilities {
+  .text-accent {
+    color: #3291ff;
+  }
 }
 
 .wrap {
