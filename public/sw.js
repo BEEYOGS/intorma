@@ -1,17 +1,17 @@
 /* in.torma service worker — only public pages are cached. */
-const CACHE = "intorma-v5";
+const CACHE = "intorma-v6";
 const SHELL = [
   "/",
   "/order",
   "/lacak",
   "/offline.html",
-  "/icon.svg?v=2",
+  "/icon.svg?v=3",
   "/logos/qris.svg",
   "/logos/bca.svg",
   "/logos/bni.svg",
   "/logos/bri.svg",
   "/logos/permata.svg",
-  "/manifest.webmanifest",
+  "/manifest.webmanifest?v=3",
 ];
 
 self.addEventListener("install", (event) => {
