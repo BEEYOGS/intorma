@@ -1,5 +1,6 @@
 import { Footer, Nav } from "@/components/Chrome";
 import { LacakForm } from "@/components/LacakForm";
+import { RecentOrders } from "@/components/RecentOrders";
 import { WhatsAppLink } from "@/components/WhatsApp";
 
 export const metadata = { title: "Lacak pesanan" };
@@ -19,6 +20,8 @@ export default function LacakPage() {
             </p>
           </div>
         </div>
+
+        <RecentOrders />
 
         <div className="wrap grid gap-10 py-10 sm:py-14 lg:grid-cols-[.9fr_1.1fr] lg:items-start lg:gap-16">
           <div>

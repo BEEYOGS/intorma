@@ -9,6 +9,7 @@ import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { PayButton } from "@/components/PayButton";
 import { StatusTree } from "@/components/StatusTree";
 import { LiveRefresh } from "@/components/LiveRefresh";
+import { RememberOrder } from "@/components/RememberOrder";
 import { IconForStatus } from "@/components/StatusIcon";
 import { ArrowLeft } from "lucide-react";
 import { sql } from "@/lib/db";
@@ -88,6 +89,7 @@ export default async function TrackPage({
     <>
       <Nav />
       <main id="konten">
+        <RememberOrder code={order.code} label={order.service ?? "Pesanan"} />
         <div className="border-b border-line bg-sand/40">
           <div className="wrap pb-10 pt-8 sm:pb-12 sm:pt-10">
             {baru && (

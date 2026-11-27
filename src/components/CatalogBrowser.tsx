@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Clock3, Search, X } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Clock3, Link2, Search, X } from "lucide-react";
+import { toast } from "@/components/Toast";
 import { ProductIllustration } from "@/components/ProductIllustration";
 import type { Service } from "@/lib/db";
 import { priceLabel } from "@/lib/pricing";
@@ -16,6 +17,11 @@ const CATEGORIES = [
 
 type Category = (typeof CATEGORIES)[number]["key"];
 type SortKey = "recommended" | "price-asc" | "price-desc" | "name";
+
+const SORTS: SortKey[] = ["recommended", "price-asc", "price-desc", "name"];
+const isCategory = (value: string | null): value is Category =>
+  !!value && CATEGORIES.some((item) => item.key === value);
+const isSort = (value: string | null): value is SortKey => !!value && SORTS.includes(value as SortKey);
 
 const CATEGORY_LABEL: Record<string, string> = {
   design: "Desain",
@@ -66,6 +72,60 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category>("all");
   const [sort, setSort] = useState<SortKey>("recommended");
+  const [hydrated, setHydrated] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Pulihkan filter dari URL supaya tautan bisa dibagikan dan tombol kembali bekerja.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
+    const kat = params.get("kat");
+    const urut = params.get("urut");
+    if (q) setQuery(q.slice(0, 120));
+    if (isCategory(kat)) setCategory(kat);
+    if (isSort(urut)) setSort(urut);
+    setHydrated(true);
+  }, []);
+
+  // Tulis filter ke URL tanpa menambah entri riwayat.
+  useEffect(() => {
+    if (!hydrated) return;
+    const params = new URLSearchParams(window.location.search);
+    const patch = (key: string, value: string, empty: string) => {
+      if (value === empty) params.delete(key);
+      else params.set(key, value);
+    };
+    patch("q", query.trim(), "");
+    patch("kat", category, "all");
+    patch("urut", sort, "recommended");
+    const search = params.toString();
+    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
+    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(window.history.state, "", next);
+    }
+  }, [query, category, sort, hydrated]);
+
+  // Tekan "/" untuk fokus cari, Esc untuk mengosongkan saat kolom aktif.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable;
+      if (event.key === "/" && !typing && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        inputRef.current?.focus();
+      }
+      if (event.key === "Escape" && target === inputRef.current) {
+        setQuery("");
+        inputRef.current?.blur();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const counts = useMemo(() => {
     const out: Record<Category, number> = { all: services.length, design: 0, print: 0, other: 0 };
@@ -100,19 +160,37 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     setSort("recommended");
   }
 
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast("Tautan filter katalog disalin.", "ok");
+    } catch {
+      toast("Tautan tidak bisa disalin otomatis.", "error");
+    }
+  }
+
+  const filtered = query.trim() !== "" || category !== "all" || sort !== "recommended";
+
   return (
     <div>
       <div className="card mb-8 p-5">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_13rem] md:items-end">
           <label className="block">
-            <span className="label">Cari layanan</span>
+            <span className="label flex items-center justify-between gap-2">
+              <span>Cari layanan</span>
+              <kbd className="mono rounded-tag-sm border border-line px-1.5 py-0.5 text-xs font-normal text-mute">
+                /
+              </kbd>
+            </span>
             <span className="relative block">
               <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[var(--text-3)]" />
               <input
+                ref={inputRef}
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Misalnya spanduk, kartu nama, atau kemasan…"
+                aria-keyshortcuts="/"
                 className="field !pl-10 !pr-10"
               />
               {query && (
@@ -166,14 +244,23 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
           Menampilkan <span className="mono text-[var(--text)]">{visible.length}</span> dari{" "}
           <span className="mono text-[var(--text)]">{services.length}</span> layanan
         </p>
-        {(query || category !== "all" || sort !== "recommended") && (
-          <button
-            type="button"
-            onClick={reset}
-            className="text-xs font-medium text-[var(--accent-2)] underline underline-offset-4 hover:text-[var(--text)]"
-          >
-            Reset filter
-          </button>
+        {filtered && (
+          <div className="flex shrink-0 items-center gap-4">
+            <button
+              type="button"
+              onClick={copyLink}
+              className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-mute transition-colors hover:text-ink"
+            >
+              <Link2 aria-hidden className="size-3.5" /> Salin tautan
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex min-h-10 items-center text-xs font-medium text-[var(--accent-2)] underline underline-offset-4 hover:text-[var(--text)]"
+            >
+              Reset filter
+            </button>
+          </div>
         )}
       </div>
 
