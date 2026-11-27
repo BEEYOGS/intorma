@@ -2,7 +2,7 @@ import { TopBar } from "@/components/TopBar";
 import { CheckCircle2, Clock3, Download, ExternalLink, Monitor, Smartphone } from "lucide-react";
 
 export const metadata = { title: "Download aplikasi", robots: { index: false } };
-export const revalidate = 300;
+export const revalidate = 120;
 
 const RELEASES_URL = "https://github.com/BEEYOGS/intorma/releases";
 const RELEASES_API = "https://api.github.com/repos/BEEYOGS/intorma/releases?per_page=20";
@@ -34,7 +34,7 @@ async function getLatestRelease(): Promise<Release | null> {
         Accept: "application/vnd.github+json",
         "User-Agent": "in.torma-download-page",
       },
-      next: { revalidate: 300 },
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     const releases = (await res.json()) as Release[];
