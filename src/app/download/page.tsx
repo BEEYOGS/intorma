@@ -34,7 +34,7 @@ async function getLatestRelease(): Promise<Release | null> {
         Accept: "application/vnd.github+json",
         "User-Agent": "in.torma-download-page",
       },
-      next: { revalidate: 60 },
+      next: { revalidate: 120 },
     });
     if (!res.ok) return null;
     const releases = (await res.json()) as Release[];
