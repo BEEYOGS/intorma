@@ -7,7 +7,7 @@ import { normalizeCode } from "@/lib/codes";
 import { withAccess } from "@/lib/order-access";
 import { getPaymentSettings, paymentLines } from "@/lib/settings";
 import { STATUS_META, isStatus, type Status } from "@/lib/status";
-import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
+import { adminWhatsApp, sendWA, siteUrl, waTemplate } from "@/lib/wa";
 
 function webhookSecret() {
   return (process.env.WA_WEBHOOK_SECRET || process.env.OPENWA_WEBHOOK_SECRET || "").trim();
@@ -135,7 +135,12 @@ async function forwardInbound(from: string, body: string, media: boolean): Promi
     "",
     `Balas: https://wa.me/${fromNumber}`,
   ].join("\n");
-  const ok = await sendWA(admin, message);
+  const ok = await sendWA(
+    admin,
+    message,
+    key,
+    waTemplate("admin", [`Pesan baru ${order.code}`, message]),
+  );
   await sql`
     insert into wa_outbox (to_number, content, status, attempts, last_error, idempotency_key, sent_at)
     values (${adminNumber || admin}, ${message}, ${ok ? "sent" : "failed"}, 1,

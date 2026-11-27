@@ -115,83 +115,70 @@ dan build lokal Tauri memerlukan Windows SDK. Jangan menganggap build lokal seba
 
 ### WhatsApp
 
-Ada tiga adapter. **Aktif saat ini: OpenWA** yang berjalan di mesin gateway; Vercel menulis pesan ke
-`wa_outbox`, lalu `npm run wa:agent` mengirimnya. Meta WhatsApp Cloud API tersedia tanpa watermark
-pihak ketiga, tetapi tetap dormant sampai kredensial dan `WA_PROVIDER=cloud` ditetapkan eksplisit.
-Adapter Fonnte hanya disimpan untuk kompatibilitas lama dan tidak dipakai karena menambah footer pihak ketiga.
+**Jalur utama: Meta WhatsApp Cloud API.** Tidak butuh PC, gateway lokal, atau `wa-agent`; pesan
+dikirim langsung dari Vercel. Adapter OpenWA tetap ada sebagai fallback self-hosted, dan Fonnte hanya
+kompatibilitas lama (footernya tidak bisa dihapus lewat API).
 
-```
-WA_PROVIDER=openwa
-OPENWA_URL=http://127.0.0.1:2785
-OPENWA_KEY=kunci-api-openwa
-OPENWA_SESSION=intorma
-OPENWA_WEBHOOK_SECRET=string-acak-panjang
-ADMIN_WHATSAPP_NUMBER=0895329940950
-```
-
-1. Jalankan `npm run gateway` di mesin yang terhubung WhatsApp.
-2. Skrip mendaftarkan webhook ke `/api/wa/webhook` **tanpa query secret**. Rahasia dikirim lewat
-   header `x-webhook-secret`, dan OpenWA juga menandatangani body dengan HMAC-SHA256 bila secret
-   minimal 16 karakter. Webhook lama dengan `?s=` tidak diterima lagi.
-3. Pesan masuk `status INT-DDMMYY001` dibalas hanya jika nomor pengirim cocok dengan order.
-4. Jangan mengirim WA saat tes; pakai `npm run wa:check` untuk mengecek koneksi tanpa mengirim pesan.
-
-Meta Cloud API (belum diaktifkan di produksi) hanya dipakai jika `WA_PROVIDER=cloud` ditetapkan
-eksplisit. Webhook Cloud wajib memakai `META_WA_APP_SECRET`.
-
-```
+```env
 WA_PROVIDER=cloud
 META_WA_TOKEN=system-user-token-dari-meta
 META_WA_PHONE_ID=phone-number-id-dari-meta
 META_WA_VERSION=v25.0
 META_WA_VERIFY_TOKEN=string-acak-untuk-verifikasi-webhook
-META_WA_APP_SECRET=app-secret-untuk-tanda-tangan-webhook (wajib jika cloud)
-ADMIN_WHATSAPP_NUMBER=0895329940950
+META_WA_APP_SECRET=app-secret-untuk-tanda-tangan-webhook
+META_TPL_LANGUAGE=id
+ADMIN_WHATSAPP_NUMBER=089617607952
 ```
+
+Langkah Meta:
 
 1. Buat Meta App dengan use case WhatsApp, lalu daftarkan nomor bisnis (bukan nomor pribadi).
 2. Pakai **system user token** permanen, bukan token sementara dari App Dashboard.
 3. Daftarkan webhook `https://intorma-psi.vercel.app/api/wa/webhook` dengan verify token yang sama
    dengan `META_WA_VERIFY_TOKEN`, lalu subscribe field `messages`.
-4. Ajukan template pesan yang disetujui Meta untuk notifikasi di luar jendela 24 jam. Di dalam
-   jendela 24 jam setelah pelanggan membalas, aplikasi mengirim teks biasa.
+4. Buat dan ajukan enam template body berikut. Nama default bisa diganti lewat env
+   `META_TPL_ORDER`, `META_TPL_ADMIN`, `META_TPL_STATUS`, `META_TPL_PAYMENT`,
+   `META_TPL_REMINDER`, `META_TPL_REORDER`.
 
-Pesan teks di luar jendela 24 jam ditolak Meta dengan kode `131047`; aplikasi akan menampilkan
-pesan error tersebut di diagnostik. Nomor pengirim berubah dari nomor lama, jadi beri tahu pelanggan.
+| Nama template | Isi body |
+| --- | --- |
+| `order_created` | `Halo {{1}}, pesanan {{2}} sudah kami terima. {{3}} Total: {{4}} Target selesai: {{5}} Pantau & bayar: {{6}}` |
+| `admin_notice` | `{{1}} {{2}}` |
+| `order_status` | `Halo {{1}}, pesanan {{2}}: {{3}} Pantau di: {{4}}` |
+| `payment_received` | `Halo {{1}}, pembayaran {{2}} sebesar {{3}} sudah kami terima. Terima kasih! Pantau: {{4}}` |
+| `payment_reminder` | `Halo {{1}}, pesanan {{2}} masih menunggu pembayaran. Total: {{3}} Target selesai: {{4}} Bayar & detail: {{5}}` |
+| `reorder_offer` | `Halo {{1}}, pesanan {{2}} sudah selesai. Butuh cetak ulang? Pakai {{3}} untuk diskon. Pesan lagi: {{4}}` |
 
-OpenWA tetap didukung untuk self-hosted:
+Balasan `status INT-DDMMYY001` memakai teks biasa karena terjadi dalam jendela 24 jam setelah
+pelanggan membalas. Notifikasi keluar memakai template agar tidak ditolak dengan kode `131047`.
+Nomor pengirim berubah dari nomor lama, jadi beri tahu pelanggan.
 
+Saat pindah ke Cloud, matikan trigger database agar tidak ada pesan yang mengendap di `wa_outbox`:
+
+```sql
+update app_settings set value = '0' where key = 'wa_trigger_enabled';
 ```
+
+Fallback OpenWA (self-hosted) tetap didukung:
+
+```env
 WA_PROVIDER=openwa
 OPENWA_BASE_URL=https://gateway-publik-stabil.example.com
 OPENWA_API_KEY=...
 OPENWA_SESSION=intorma
+OPENWA_WEBHOOK_SECRET=string-acak-panjang
 ```
 
 `OPENWA_BASE_URL` produksi **tidak boleh** memakai `127.0.0.1` atau quick tunnel
-`trycloudflare.com`, karena URL itu mati saat PC/tunnel berhenti. Untuk OpenWA always-on, jalankan
-gateway di VPS dengan domain HTTPS stabil dan persistent volume.
+`trycloudflare.com`. Kalau gateway tidak bisa dijangkau dari Vercel, pesan masuk `wa_outbox` dan
+dikirim oleh `npm run wa:agent`. Alias lama `OPENWA_URL`, `OPENWA_KEY`, dan `ADMIN_WA` masih dibaca.
 
-Kalau gateway tidak bisa dijangkau dari Vercel, pesan otomatis masuk `wa_outbox` dan dikirim oleh
-`npm run wa:agent`. Alias lama `OPENWA_URL`, `OPENWA_KEY`, dan `ADMIN_WA` masih dibaca kalau
-variabel baru kosong.
-
-Balasan otomatis `status INT-DDMMYY001` lewat OpenWA memakai `npm run wa:agent` dan
-`npm run wa:webhook` (webhook lokal `http://127.0.0.1:2786/webhook`). Variabel tambahan:
-`WA_INBOX_PORT` (default `2786`) dan opsional `WA_INBOX_SECRET` (default memakai
-`OPENWA_WEBHOOK_SECRET`). Di Windows, task `intorma-openwa` dan `intorma-wa-agent` menjalankan
-kedua proses otomatis saat login dan restart bila mati. Log ada di `logs/openwa.log` dan
-`logs/wa-agent.log`.
-
-Kalau sudah pindah ke provider hosted (Cloud API/Fonnte), nonaktifkan task OpenWA agar PC tidak lagi
-menjalankan gateway lama:
+Kalau sudah pindah ke Cloud, nonaktifkan task lokal agar PC tidak menjalankan gateway lama:
 
 ```powershell
 Disable-ScheduledTask -TaskName intorma-openwa
 Disable-ScheduledTask -TaskName intorma-wa-agent
 ```
-
-Script OpenWA tetap bisa dijalankan manual untuk pengembangan.
 
 Diagnostik & tes:
 

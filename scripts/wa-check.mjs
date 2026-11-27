@@ -29,6 +29,16 @@ const line = "-".repeat(66);
 console.log(line);
 console.log("  Diagnosa WhatsApp in.torma");
 console.log(line);
+const provider = String(env.WA_PROVIDER || (env.META_WA_TOKEN ? "cloud" : "openwa")).trim();
+console.log(`  Provider     : ${provider}`);
+if (provider === "cloud") {
+  const ready = ["META_WA_TOKEN", "META_WA_PHONE_ID", "META_WA_APP_SECRET", "META_WA_VERIFY_TOKEN"]
+    .map((key) => `${key}=${ok(env[key])}`)
+    .join(" · ");
+  console.log(`  Meta env     : ${ready}`);
+  console.log("  Gateway lokal tidak diperlukan saat WA_PROVIDER=cloud.");
+  console.log(line);
+}
 console.log(`  OpenWA URL   : ${base}`);
 console.log(`  Sesi         : ${sessionName}`);
 console.log(`  Situs publik : ${site || "(belum diisi)"}`);

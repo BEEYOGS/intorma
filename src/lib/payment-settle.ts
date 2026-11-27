@@ -4,7 +4,7 @@ import { sql } from "@/lib/db";
 import { rupiah } from "@/lib/format";
 import { withAccess } from "@/lib/order-access";
 import { isSettlement, orderCodeFromId } from "@/lib/payment";
-import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
+import { adminWhatsApp, sendWA, siteUrl, waTemplate } from "@/lib/wa";
 
 export type MidtransSettlement = {
   orderId: string;
@@ -92,17 +92,21 @@ async function finalizePaid(
   }
 
   const link = `${siteUrl()}${withAccess(`/lacak/${order.code}`, order.access_token)}`;
+  const customerMessage = `Halo ${order.name}, pembayaran pesanan ${order.code} sebesar ${rupiah(amount)} sudah kami terima. Terima kasih!\n\nPantau: ${link}`;
+  const adminMessage = `Pembayaran masuk via Midtrans untuk ${order.code} — ${order.name}.\nTotal: ${rupiah(amount)}`;
   await Promise.all([
     sendWA(
       order.wa,
-      `Halo ${order.name}, pembayaran pesanan ${order.code} sebesar ${rupiah(amount)} sudah kami terima. Terima kasih!\n\nPantau: ${link}`,
+      customerMessage,
       `midtrans-customer-${idempotency}`,
+      waTemplate("payment", [order.name, order.code, rupiah(amount), link]),
     ),
     adminWhatsApp()
       ? sendWA(
           adminWhatsApp(),
-          `Pembayaran masuk via Midtrans untuk ${order.code} — ${order.name}.\nTotal: ${rupiah(amount)}`,
+          adminMessage,
           `midtrans-admin-${idempotency}`,
+          waTemplate("admin", [`Pembayaran masuk ${order.code}`, adminMessage]),
         )
       : Promise.resolve(false),
   ]);

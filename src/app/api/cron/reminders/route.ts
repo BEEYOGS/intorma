@@ -5,7 +5,7 @@ import { normalizeWA, rupiah, tanggal, tanggalHariIni, tanggalJam } from "@/lib/
 import { withAccess } from "@/lib/order-access";
 import { planReminder } from "@/lib/reminders";
 import { getPaymentSettings, paymentLines } from "@/lib/settings";
-import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
+import { adminWhatsApp, sendWA, siteUrl, waTemplate } from "@/lib/wa";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -138,7 +138,18 @@ export async function GET(req: Request) {
       const to = normalizeWA(String(r.wa ?? "")) || String(r.wa ?? "");
       // Kunci idempoten ikut ke antrean supaya agent tidak mengirim ulang
       // pesan yang sudah dicatat gagal oleh cron.
-      const ok = await sendWA(to, message, plan.key);
+      const ok = await sendWA(
+        to,
+        message,
+        plan.key,
+        waTemplate("reminder", [
+          r.name,
+          r.code,
+          price !== null ? rupiah(price) : "menunggu konfirmasi",
+          deadlineAt ? tanggalJam(deadlineAt) : "-",
+          detailLink,
+        ]),
+      );
       await recordMessage(to, message, plan.key, ok);
       if (ok) sent += 1;
     }
@@ -183,7 +194,17 @@ export async function GET(req: Request) {
         `Pesan lagi: ${siteUrl()}/order?promo=REORDER10`,
         `Lihat pesanan lama: ${siteUrl()}${withAccess(`/lacak/${r.code}`, r.access_token)}`,
       ].join("\n");
-      const ok = await sendWA(to, message, key);
+      const ok = await sendWA(
+        to,
+        message,
+        key,
+        waTemplate("reorder", [
+          r.name,
+          r.code,
+          "REORDER10",
+          `${siteUrl()}/order?promo=REORDER10`,
+        ]),
+      );
       await recordMessage(to, message, key, ok);
       if (ok) reorderSent += 1;
     }
@@ -233,7 +254,12 @@ export async function GET(req: Request) {
           "",
           `Buka admin: ${siteUrl()}/admin`,
         ].join("\n");
-        const ok = await sendWA(admin, message);
+        const ok = await sendWA(
+          admin,
+          message,
+          key,
+          waTemplate("admin", [`Rangkuman in.torma — ${tanggal(new Date())}`, message]),
+        );
         await recordMessage(admin, message, key, ok);
         digest = ok ? "sent" : "skipped";
       }

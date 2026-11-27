@@ -48,6 +48,41 @@ function cloudConfigured(): boolean {
   return Boolean(metaToken() && metaPhoneId());
 }
 
+export type WATemplate = {
+  name: string;
+  params: string[];
+  language?: string;
+};
+
+type WATemplateKind = "order" | "admin" | "status" | "payment" | "reminder" | "reorder";
+
+const TEMPLATE_DEFAULTS: Record<WATemplateKind, string> = {
+  order: "order_created",
+  admin: "admin_notice",
+  status: "order_status",
+  payment: "payment_received",
+  reminder: "payment_reminder",
+  reorder: "reorder_offer",
+};
+
+/**
+ * Meta Cloud hanya boleh mengirim pesan bebas dalam 24 jam setelah pelanggan
+ * membalas. Notifikasi keluar (order baru, reminder, reorder) memakai template
+ * yang sudah disetujui. Nama template bisa diganti lewat env tanpa rebuild.
+ */
+export function waTemplate(
+  kind: WATemplateKind,
+  params: Array<string | number | null | undefined>,
+): WATemplate | undefined {
+  const configured = (process.env[`META_TPL_${kind.toUpperCase()}`] || "").trim();
+  const name = configured || TEMPLATE_DEFAULTS[kind];
+  return name ? { name, params: params.map((value) => String(value ?? "").slice(0, 1024)) } : undefined;
+}
+
+function metaLanguage(): string {
+  return (process.env.META_TPL_LANGUAGE || "id").trim();
+}
+
 /**
  * Provider hosted lebih dulu. OpenWA tetap dipakai sebagai fallback supaya
  * instalasi lama tidak langsung rusak. Atur WA_PROVIDER=cloud untuk memakai
@@ -328,6 +363,80 @@ async function sendCloud(number: string, content: string): Promise<WASendResult>
       status: 0,
       phone: number,
       error: error instanceof Error ? error.message : "Gagal menghubungi Meta Cloud API.",
+      provider: "cloud",
+    };
+  }
+}
+
+async function waSendTemplate(number: string, template: WATemplate): Promise<WASendResult> {
+  const startedAt = Date.now();
+  try {
+    const response = await fetch(
+      `${META_GRAPH_BASE}/${metaVersion()}/${metaPhoneId()}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${metaToken()}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: number,
+          type: "template",
+          template: {
+            name: template.name,
+            language: { code: template.language || metaLanguage() },
+            components: [
+              {
+                type: "body",
+                parameters: template.params.map((text) => ({ type: "text", text: String(text) })),
+              },
+            ],
+          },
+        }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+    const text = await response.text().catch(() => "");
+    type CloudError = { error?: { message?: string; code?: number } };
+    let parsed: CloudError | null = null;
+    try {
+      parsed = text ? (JSON.parse(text) as CloudError) : null;
+    } catch {
+      /* bukan JSON */
+    }
+    const ok = response.ok && !parsed?.error;
+    const detail = parsed?.error?.message || `Meta menolak template (HTTP ${response.status}).`;
+    const hint =
+      parsed?.error?.code === 132001
+        ? " Template belum disetujui atau nama tidak cocok."
+        : parsed?.error?.code === 131047
+          ? " Pesan bebas hanya boleh dalam 24 jam setelah balasan pelanggan."
+          : "";
+    return {
+      ok,
+      configured: true,
+      gatewayReachable: response.status > 0,
+      sessionStatus: ok ? "ready" : null,
+      latencyMs: Date.now() - startedAt,
+      status: response.status,
+      phone: number,
+      error: ok ? undefined : `${detail}${hint}`,
+      gatewayResponse: text.slice(0, 500),
+      provider: "cloud",
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      configured: true,
+      gatewayReachable: false,
+      sessionStatus: null,
+      latencyMs: Date.now() - startedAt,
+      status: 0,
+      phone: number,
+      error: error instanceof Error ? error.message : "Gagal mengirim template Meta Cloud.",
       provider: "cloud",
     };
   }
@@ -631,12 +740,16 @@ export async function sendWA(
   to: string,
   content: string,
   idempotencyKey?: string,
+  template?: WATemplate,
 ): Promise<boolean> {
   const number = normalizeWA(to);
   if (!number || !content.trim()) return false;
 
   if (waConfigured()) {
-    const result = await waSendTest(number, content);
+    const result =
+      waProvider() === "cloud" && template
+        ? await waSendTemplate(number, template)
+        : await waSendTest(number, content);
     if (result.ok) return true;
     console.warn(
       `[wa] ${result.provider ?? waProvider()} gagal (${result.status || "network"}): ${result.error ?? "unknown"}; masuk antrean database.`,

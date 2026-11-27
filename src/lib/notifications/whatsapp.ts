@@ -1,4 +1,4 @@
-import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
+import { adminWhatsApp, sendWA, siteUrl, waTemplate, type WATemplate } from "@/lib/wa";
 import { withAccess } from "@/lib/order-access";
 import { rupiah } from "@/lib/format";
 import { STATUS_META } from "@/lib/status";
@@ -9,9 +9,44 @@ import type { Status } from "@/lib/status";
  * agar isi pesan konsisten dan 100% bebas branding pihak ketiga. Provider
  * (Fonnte/OpenWA/Meta Cloud) tetap dipilih lewat lib/wa.ts sesuai env.
  */
-export async function sendStudioMessage(to: string, content: string, idempotencyKey?: string) {
-  return sendWA(to, content, idempotencyKey);
+export async function sendStudioMessage(
+  to: string,
+  content: string,
+  idempotencyKey?: string,
+  template?: WATemplate,
+) {
+  return sendWA(to, content, idempotencyKey, template);
 }
+
+/**
+ * Template Meta Cloud dipakai hanya saat WA_PROVIDER=cloud. Untuk OpenWA/Fonnte
+ * pesan bebas di bawah tetap dipakai, jadi tidak ada perubahan perilaku.
+ * Isi placeholder mengikuti template yang harus disetujui di Meta Business.
+ */
+export const customerOrderTemplate = (
+  input: Parameters<typeof orderCreatedCustomerMessage>[0],
+) =>
+  waTemplate("order", [
+    input.name,
+    input.code,
+    input.service,
+    input.total == null ? "menunggu konfirmasi" : rupiah(input.total),
+    input.deadline,
+    input.link,
+  ]);
+
+export const adminNoticeTemplate = (title: string, detail: string) =>
+  waTemplate("admin", [title, detail]);
+
+export const orderStatusTemplate = (
+  input: Parameters<typeof orderStatusMessage>[0],
+) =>
+  waTemplate("status", [
+    input.name,
+    input.code,
+    STATUS_META[input.status].label,
+    `${siteUrl()}${withAccess(`/lacak/${input.code}`, input.accessToken)}`,
+  ]);
 
 export function orderCreatedCustomerMessage(input: {
   name: string;

@@ -38,10 +38,13 @@ import { siteUrl } from "@/lib/wa";
 import { audit } from "@/lib/audit";
 import { clientErrorMessage } from "@/lib/error";
 import {
+  adminNoticeTemplate,
   adminWhatsApp,
+  customerOrderTemplate,
   orderCreatedAdminMessage,
   orderCreatedCustomerMessage,
   orderStatusMessage,
+  orderStatusTemplate,
   sendStudioMessage,
 } from "@/lib/notifications/whatsapp";
 
@@ -365,6 +368,26 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   const serviceSummary = quote.snapshot?.summary ?? svc.name;
   const total = finalPrice;
 
+  const customerNotice = {
+    name: values.name,
+    code: order.code,
+    service: serviceSummary,
+    total,
+    deadline: tanggalJam(deadlineAt),
+    link,
+  };
+  const adminNotice = {
+    code: order.code,
+    name: values.name,
+    wa,
+    service: serviceSummary,
+    total,
+    deadline: tanggalJam(deadlineAt),
+    brief: values.brief,
+    fileUrl,
+    driveLink,
+  };
+
   // Kalau trigger database aktif, trigger sudah mengantrekan pesan pelanggan
   // dan admin. Jangan kirim lagi dari sini supaya tidak dobel.
   if (!(await waTriggerActive())) {
@@ -372,29 +395,16 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     await Promise.all([
       sendStudioMessage(
         wa,
-        orderCreatedCustomerMessage({
-          name: values.name,
-          code: order.code,
-          service: serviceSummary,
-          total,
-          deadline: tanggalJam(deadlineAt),
-          link,
-        }),
+        orderCreatedCustomerMessage(customerNotice),
+        undefined,
+        customerOrderTemplate(customerNotice),
       ),
       adminWa
         ? sendStudioMessage(
             adminWa,
-            orderCreatedAdminMessage({
-              code: order.code,
-              name: values.name,
-              wa,
-              service: serviceSummary,
-              total,
-              deadline: tanggalJam(deadlineAt),
-              brief: values.brief,
-              fileUrl,
-              driveLink,
-            }),
+            orderCreatedAdminMessage(adminNotice),
+            undefined,
+            adminNoticeTemplate(`Pesanan baru ${order.code}`, orderCreatedAdminMessage(adminNotice)),
           )
         : Promise.resolve(false),
     ]);
@@ -686,18 +696,21 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
   if (f.get("notify") === "on" && (statusChanged || noteChanged || priceChanged || paidChanged)) {
     const payment = await getPaymentSettings();
     const paymentLinesList = payment.enabled && price !== null ? paymentLines(payment) : [];
+    const statusNotice = {
+      code: order.code,
+      name: order.name,
+      status: status as Status,
+      price,
+      note: note || null,
+      paid,
+      paymentLines: paymentLinesList,
+      accessToken: order.access_token,
+    };
     await sendStudioMessage(
       order.wa,
-      orderStatusMessage({
-        code: order.code,
-        name: order.name,
-        status: status as Status,
-        price,
-        note: note || null,
-        paid,
-        paymentLines: paymentLinesList,
-        accessToken: order.access_token,
-      }),
+      orderStatusMessage(statusNotice),
+      undefined,
+      orderStatusTemplate(statusNotice),
     );
   }
 
