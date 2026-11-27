@@ -118,8 +118,8 @@ export function PaymentPoller({ code, expiresAt }: { code: string; expiresAt: st
 
   if (expired) {
     return (
-      <div className="mt-4 flex items-start gap-3 rounded-tag-sm border border-[var(--warn)]/35 bg-[var(--warn)]/[0.07] px-4 py-3">
-        <Clock3 aria-hidden className="mt-0.5 size-4 shrink-0 text-[var(--warn)]" />
+      <div className="mt-4 flex items-start gap-3 rounded-tag-sm border border-[var(--quiet)]/35 bg-[var(--quiet)]/[0.07] px-4 py-3">
+        <Clock3 aria-hidden className="mt-0.5 size-4 shrink-0 text-[var(--quiet)]" />
         <div>
           <p className="text-sm font-semibold text-ink">Tagihan kedaluwarsa</p>
           <p className="mt-0.5 text-xs leading-5 text-mute">Muat ulang halaman untuk memilih metode lagi.</p>
@@ -147,7 +147,7 @@ export function PaymentPoller({ code, expiresAt }: { code: string; expiresAt: st
         type="button"
         onClick={checkNow}
         disabled={checking}
-        className="ml-auto inline-flex min-h-8 items-center gap-1.5 rounded-tag-sm border border-line px-2.5 text-[11px] font-semibold text-mute transition-colors hover:border-[var(--border-2)] hover:text-ink disabled:opacity-50"
+        className="ml-auto inline-flex min-h-10 items-center gap-1.5 rounded-tag-sm border border-line px-2.5 text-xs font-semibold text-mute transition-colors hover:border-[var(--border-2)] hover:text-ink disabled:opacity-50"
       >
         {checking ? <Loader2 aria-hidden className="size-3.5 animate-spin" /> : <RefreshCw aria-hidden className="size-3.5" />}
         Cek status

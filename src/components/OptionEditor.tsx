@@ -23,20 +23,20 @@ export function OptionEditor({ service }: { service: Service }) {
           type="button"
           onClick={() => setAddingGroup((v) => !v)}
           aria-expanded={addingGroup}
-          className="btn btn-ghost !h-9 text-xs"
+          className="btn btn-ghost !h-10 text-xs"
         >
           {addingGroup ? "Tutup" : "+ Tambah grup"}
         </button>
       </div>
 
       {addingGroup && (
-        <div className="mt-3 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-2)] p-4">
+        <div className="mt-3 rounded-[var(--radius-sharp)] border border-[var(--border)] bg-[var(--bg-2)] p-4">
           <GroupForm serviceId={service.id} />
         </div>
       )}
 
       {service.option_groups.length === 0 ? (
-        <p className="mt-5 rounded-[var(--radius)] border border-dashed border-[var(--border)] p-6 text-center text-sm text-mute">
+        <p className="mt-5 rounded-[var(--radius-sharp)] border border-dashed border-[var(--border)] p-6 text-center text-sm text-mute">
           Belum ada opsi. Pelanggan akan melihat harga dasar layanan ini saja.
         </p>
       ) : (
@@ -76,7 +76,7 @@ export function OptionEditor({ service }: { service: Service }) {
                       {group.options.map((option) => {
                         const optionOpen = openOption === option.id;
                         return (
-                          <div key={option.id} className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-2)]">
+                          <div key={option.id} className="rounded-[var(--radius-sharp)] border border-[var(--border)] bg-[var(--bg-2)]">
                             <button
                               type="button"
                               onClick={() => setOpenOption(optionOpen ? null : option.id)}

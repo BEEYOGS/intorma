@@ -46,7 +46,7 @@ export default async function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="mono text-xs text-[var(--text-3)]">admin session</span>
-            <span className="w-2 h-2 rounded-full bg-[var(--jade)]"></span>
+            <span className="w-2 h-2 rounded-full bg-[var(--accent)]"></span>
           </div>
         </div>
 
@@ -79,7 +79,7 @@ export default async function DashboardPage() {
                 {status.map((item) => (
                   <div key={item.label} className="flex justify-between gap-3">
                     <span className="text-[var(--text-2)]">{item.label}</span>
-                    <span className={`mono ${item.ok ? "text-[var(--jade)]" : "text-[var(--red)]"}`}>
+                    <span className={`mono ${item.ok ? "text-[var(--accent)]" : "text-[var(--red)]"}`}>
                       {item.ok ? item.on : item.off}
                     </span>
                   </div>

@@ -47,12 +47,12 @@ function FileThumb({ file }: { file: FileItem }) {
       <img
         src={`/api/upload/${file.code}`}
         alt={file.name}
-        className="size-10 shrink-0 rounded-[var(--radius)] border border-line bg-sand object-cover"
+        className="size-10 shrink-0 rounded-[var(--radius-sharp)] border border-line bg-sand object-cover"
       />
     );
   }
   return (
-    <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius)] border border-line bg-sand">
+    <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-line bg-sand">
       <span className="mono text-[10px] font-semibold uppercase text-mute">
         {ext.slice(0, 4)}
       </span>
@@ -267,7 +267,7 @@ export function FileLibrary({
             ref={previewRef}
             tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
-            className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--border-2)] bg-[var(--panel)] shadow-[0_30px_90px_-30px_rgba(0,0,0,0.95)] outline-none"
+            className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[var(--radius-sharp)] border border-[var(--border-2)] bg-[var(--panel)] shadow-[0_30px_90px_-30px_rgba(0,0,0,0.95)] outline-none"
           >
             <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -291,7 +291,7 @@ export function FileLibrary({
                   type="button"
                   onClick={() => setPreview(null)}
                   aria-label="Tutup pratinjau"
-                  className="grid size-9 place-items-center rounded-[var(--radius)] border border-[var(--border)] text-mute transition-colors hover:text-[var(--text)]"
+                  className="grid size-9 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-mute transition-colors hover:text-[var(--text)]"
                 >
                   <X aria-hidden className="size-4" />
                 </button>
@@ -310,7 +310,7 @@ export function FileLibrary({
                 <iframe
                   src={`/api/upload/${preview.code}`}
                   title={preview.name}
-                  className="h-[70vh] w-full rounded-[var(--radius)] border border-[var(--border)]"
+                  className="h-[70vh] w-full rounded-[var(--radius-sharp)] border border-[var(--border)]"
                 />
               ) : (
                 <div className="py-16 text-center">

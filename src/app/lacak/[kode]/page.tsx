@@ -145,8 +145,8 @@ export default async function TrackPage({
               <div className="mt-4 flex items-start gap-3">
                 <span
                   aria-hidden
-                  className="mt-2 grid size-3 shrink-0 place-items-center rounded-full"
-                  style={{ background: meta.color, boxShadow: `0 0 0 4px ${meta.soft}` }}
+                  className="mt-2 grid size-3 shrink-0 place-items-center rounded-full border border-white/15"
+                  style={{ background: meta.color }}
                 />
                 <div>
                   <h2 id="status-sekarang" key={st} className="animate-in text-2xl font-semibold tracking-tight sm:text-3xl" style={{ color: meta.color }}>
@@ -166,11 +166,11 @@ export default async function TrackPage({
             </section>
 
             <section aria-label="Langkah berikutnya" className="mt-4 flex gap-3 rounded-tag-sm border border-accent/20 bg-accent/[0.05] px-4 py-3.5">
-              <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-[#04110f]">
+              <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-[12px] font-bold text-white">
                 →
               </span>
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">Langkah berikutnya</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mute">Langkah berikutnya</p>
                 <p className="mt-1 text-sm leading-6 text-ink/75">{nextStep}</p>
               </div>
             </section>
@@ -200,7 +200,7 @@ export default async function TrackPage({
                       <div key={index} className="flex justify-between gap-3 text-mute">
                         <dt>
                           {line.label}
-                          {line.detail && <span className="block text-[11px] text-mute/70">{line.detail}</span>}
+                          {line.detail && <span className="block text-xs text-mute/70">{line.detail}</span>}
                         </dt>
                         <dd className="shrink-0 tabular-nums">{rupiah(line.amount)}</dd>
                       </div>

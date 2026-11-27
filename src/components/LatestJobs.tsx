@@ -36,7 +36,7 @@ export function LatestJobs({ jobs }: { jobs: LatestJob[] }) {
                 <td>{job.name}</td>
                 <td>
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold"
+                    className="inline-flex items-center gap-1.5 rounded-tag-sm border px-2 py-1 text-xs font-semibold"
                     style={{
                       color: jobStatusColor(job.status),
                       borderColor: `color-mix(in srgb, ${jobStatusColor(job.status)} 35%, transparent)`,

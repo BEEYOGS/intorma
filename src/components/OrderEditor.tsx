@@ -50,7 +50,7 @@ export function OrderEditor({
             <label key={s} className="cursor-pointer">
               <input type="radio" name="status" value={s} defaultChecked={status === s} className="peer sr-only" />
               <span
-                className="inline-flex items-center gap-2 rounded-full border border-line bg-panel/60 px-3 py-2 text-[12.5px] font-semibold text-ink/70 transition-colors peer-checked:[color:var(--status-color)] peer-checked:[border-color:var(--status-border)] peer-checked:[background:var(--status-soft)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
+                className="inline-flex items-center gap-2 rounded-tag-sm border border-line bg-panel/60 px-3 py-2 text-[13px] font-semibold text-ink/70 transition-colors peer-checked:[color:var(--status-color)] peer-checked:[border-color:var(--status-border)] peer-checked:[background:var(--status-soft)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
                 style={
                   {
                     "--status-color": STATUS_META[s].color,
@@ -108,7 +108,7 @@ export function OrderEditor({
       <label className="mt-5 block">
         <span className="label flex flex-wrap items-center gap-2">
           Catatan internal
-          <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-mute">
+          <span className="rounded-tag-sm border border-line px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-mute">
             Admin saja
           </span>
         </span>

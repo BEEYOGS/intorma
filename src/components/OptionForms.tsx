@@ -60,7 +60,7 @@ export function GroupForm({ serviceId, group }: { serviceId: string; group?: Ser
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={pending} className="btn btn-primary !h-9 text-xs">
+        <button type="submit" disabled={pending} className="btn btn-primary !h-10 text-xs">
           {pending ? "Menyimpan…" : group ? "Simpan grup" : "Tambah grup"}
         </button>
         <Result state={state} />
@@ -113,7 +113,7 @@ export function OptionForm({ groupId, option }: { groupId: number; option?: Serv
         <label className="flex items-center gap-2 text-xs text-mute">
           <input type="checkbox" name="active" defaultChecked={option?.active ?? true} /> Aktif
         </label>
-        <button type="submit" disabled={pending} className="btn btn-primary !h-9 text-xs">
+        <button type="submit" disabled={pending} className="btn btn-primary !h-10 text-xs">
           {pending ? "Menyimpan…" : option ? "Simpan opsi" : "Tambah opsi"}
         </button>
         <Result state={state} />
@@ -137,7 +137,7 @@ export function DeleteActionButton({
       if (!window.confirm(`${label}? Tindakan ini tidak bisa dibatalkan.`)) event.preventDefault();
     }} className="inline-flex">
       <input type="hidden" name="id" value={id} />
-      <button type="submit" disabled={pending} className="btn btn-danger !h-8 !px-3 text-xs">
+      <button type="submit" disabled={pending} className="btn btn-danger !h-10 !px-3 text-xs">
         <Trash2 aria-hidden className="size-3.5" /> {pending ? "Menghapus…" : label}
       </button>
       <Result state={state} />

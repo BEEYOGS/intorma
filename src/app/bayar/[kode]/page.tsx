@@ -223,7 +223,7 @@ export default async function PayPage({
                           <img src={raw.qrDataUrl} alt={`QRIS pembayaran ${order.code}`} className="block w-full" />
                         </div>
                       ) : (
-                        <p className="rounded-tag-sm border border-[var(--warn)]/35 bg-[var(--warn)]/[0.07] px-3 py-2 text-xs text-[var(--warn)]">
+                        <p className="rounded-tag-sm border border-[var(--quiet)]/35 bg-[var(--quiet)]/[0.07] px-3 py-2 text-xs text-[var(--quiet)]">
                           QR belum tersedia. Coba muat ulang halaman.
                         </p>
                       )}

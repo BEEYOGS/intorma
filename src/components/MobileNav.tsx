@@ -58,7 +58,7 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
   ];
 
   const rowClass =
-    "flex min-h-11 items-center gap-3 rounded-[var(--radius)] px-3 text-sm text-[var(--text-2)] transition-colors hover:bg-white/[0.04] hover:text-[var(--text)]";
+    "flex min-h-11 items-center gap-3 rounded-[var(--radius-sharp)] px-3 text-sm text-[var(--text-2)] transition-colors hover:bg-white/[0.04] hover:text-[var(--text)]";
 
   const installRow = (
     <InstallNavButton
@@ -78,13 +78,13 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
         aria-expanded={open}
         aria-controls="mobile-nav-menu"
         onClick={() => setOpen((v) => !v)}
-        className="grid size-10 place-items-center rounded-[var(--radius)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
+        className="grid size-10 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
       >
         {open ? <X aria-hidden className="size-5" /> : <Menu aria-hidden className="size-5" />}
       </button>
 
       {open && (
-        <div id="mobile-nav-menu" className="absolute right-0 top-12 z-50 w-60 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]">
+        <div id="mobile-nav-menu" className="absolute right-0 top-12 z-50 w-60 rounded-[var(--radius-sharp)] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]">
           <nav aria-label="Navigasi seluler" className="grid">
             {links.map(({ href, label, icon: Icon }) => (
               <Link key={href} href={href} onClick={() => setOpen(false)} className={rowClass}>

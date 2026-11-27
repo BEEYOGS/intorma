@@ -8,11 +8,12 @@
 
 ## Art direction: monochrome press
 
-The site is styled as a modern print production floor rendered entirely in the
-brand's five-tone grayscale ramp: near-black press steel, paper-white ink,
-paper tickets, registration marks, crop corners, and real Code39 barcodes.
-No chromatic color anywhere — hierarchy comes from luminance, weight, and
-pattern (solid / dashed / strike), never from hue.
+The site is styled as a modern print production floor: near-black press steel,
+paper-white ink, registration marks, crop corners, and real Code39 barcodes.
+Surfaces are monochrome; the only chromatic accent is blue `#0070f3`, with
+`#3291ff` for small text on dark panels. Green is never used, red is reserved
+for danger/error. No colored glow — hierarchy comes from luminance, weight,
+borders, and pattern (solid / dashed / strike).
 
 ### Signature shape
 
@@ -22,36 +23,34 @@ Tailwind radius tokens carry the pattern as a four-value `border-radius`:
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `rounded-tag-xs` | `0.35rem … 0` | day cells, checkboxes, micro chips |
-| `rounded-tag-sm` | `0.7rem … 0` | inputs, tags, pills, small buttons |
-| `rounded-tag` | `1.1rem … 0` | primary buttons, service cards |
-| `rounded-tag-lg` | `1.6rem … 0` | panels, dialogs, forms |
-| `rounded-tag-xl` | `2.2rem … 0` | hero spec sheet, feature cards |
+| `rounded-tag-sm` | `0.375rem 0.375rem 0.375rem 0` | inputs, tags, badges, small buttons |
+| `rounded-tag` | `0.5rem 0.5rem 0.5rem 0` | buttons, cards, panels |
+| `rounded-tag-lg` | `0.75rem 0.75rem 0.75rem 0` | dialogs, large panels |
 
-Side-specific utilities (`rounded-l-*`) must not use these tokens (four-value
-shorthand is invalid per-corner); use arbitrary values like
-`rounded-[0_0.7rem_0.7rem_0]` for joined input groups.
+CSS custom properties: `--radius` is the scalar (`8px`), `--radius-sharp` is
+the four-value pattern (`8px 8px 8px 0`) used by `.btn`, `.card`, `.input`,
+`.tag`, and `rounded-[var(--radius-sharp)]`. Side-specific utilities
+(`rounded-l-*`) must not use these tokens; use explicit corner values.
+Dots, progress bars, radios, and spinners stay `rounded-full`.
 
 ### Palette (Tailwind tokens)
 
 | Token | Hex | Role |
 | --- | --- | --- |
-| `paper` | `#070809` | page background (near-black) |
-| `panel` | `#14161a` | raised surface |
-| `sand` | `#0e1013` | inset surface / alternate section |
-| `line` | `#2b2f33` | hairline borders |
-| `coal` | `#3a3d3d` | scrollbar thumb, dark chips |
-| `ash` | `#6d7275` | "batal" status, cancelled cues |
-| `steel` | `#8a8d8e` | tertiary accent, "menunggu" |
-| `mute` | `#9ba0a3` | secondary text |
-| `silver` | `#c6c8c9` | secondary accent, "dikerjakan", danger text |
-| `ink` | `#f5f7f9` | primary text & primary action fill |
+| `bg` | `#09090b` | page background (near-black) |
+| `panel` | `#111113` | raised surface |
+| `sand` | `#18181b` | inset surface / alternate section |
+| `line` | `#27272a` | hairline borders |
+| `mute` | `#a1a1aa` | secondary text / quiet notices |
+| `ink` | `#fafafa` | primary text & primary action fill |
+| `accent` | `#0070f3` | functional blue (border, fill, focus) |
+| `accent.strong` | `#3291ff` | small text on dark panels |
+| `danger` | `#ef4444` | cancellation and errors only |
 
-Status tones are fixed in `src/lib/status.ts`: menunggu=steel,
-dikerjakan=silver, revisi=ink (dashed), selesai=white (solid fill, dark text),
-batal=ash (strike). Reuse them everywhere (badges, dots, steppers, timeline,
-admin pills) — never invent per-page variants. Patterns, not hues, separate
-adjacent tones.
+Status tones have one source of truth in `src/lib/status.ts`: menunggu=gray,
+dikerjakan=blue, revisi=light gray, selesai=white, batal=red. Badges, dots,
+steppers, timelines, and admin views must read from `STATUS_META` instead of
+defining per-page colors. Patterns, not new hues, separate adjacent tones.
 
 ### Typography
 

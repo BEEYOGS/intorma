@@ -28,7 +28,7 @@ export async function NotaQrCard({ code }: { code: string }) {
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-4">
         <div
-          className="grid size-[148px] shrink-0 place-items-center rounded-lg bg-white p-2 ring-1 ring-line [&>svg]:block [&>svg]:size-full"
+          className="grid size-[148px] shrink-0 place-items-center rounded-tag-sm bg-white p-2 ring-1 ring-line [&>svg]:block [&>svg]:size-full"
           aria-label={`QR unduh nota PDF ${code}`}
           dangerouslySetInnerHTML={{ __html: svg }}
         />
@@ -36,7 +36,7 @@ export async function NotaQrCard({ code }: { code: string }) {
           <a href={pdfUrl} download className="btn btn-primary min-h-10 w-full px-4 text-sm sm:w-auto">
             <Download aria-hidden className="size-4" /> Unduh nota PDF
           </a>
-          <p className="mt-2 break-all font-mono text-[10px] text-mute">{code}.pdf</p>
+          <p className="mt-2 break-all font-mono text-[11px] text-mute">{code}.pdf</p>
         </div>
       </div>
     </section>

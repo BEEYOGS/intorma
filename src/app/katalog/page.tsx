@@ -31,7 +31,7 @@ function ProductCard({ service }: { service: Service }) {
   return (
     <Link
       href={`/order?layanan=${service.id}`}
-      className="card glow-card group flex flex-col overflow-hidden"
+      className="card card-lift group flex flex-col overflow-hidden"
     >
       <div className="relative grid h-40 place-items-center overflow-hidden border-b border-line bg-white/[0.015] px-5 text-[var(--text-2)] transition-colors group-hover:text-[var(--text)]">
         <span
@@ -49,7 +49,7 @@ function ProductCard({ service }: { service: Service }) {
         <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-3)]">{service.blurb}</p>
         <div className="mt-auto flex items-end justify-between gap-3 pt-5">
           <div>
-            <p className="mono text-sm text-[var(--gold-2)]">{priceLabel(service)}</p>
+            <p className="mono text-sm text-[var(--accent-2)]">{priceLabel(service)}</p>
             <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--text-3)]">
               <Clock3 aria-hidden className="size-3" /> ± {service.days} hari
             </p>
@@ -116,7 +116,7 @@ export default async function KatalogPage() {
                   {String(items.length).padStart(2, "0")}
                 </span>
               </div>
-              <div className="grid grid-cols-1 gap-px overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-px overflow-hidden rounded-[var(--radius-sharp)] border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((service) => (
                   <ProductCard key={service.id} service={service} />
                 ))}

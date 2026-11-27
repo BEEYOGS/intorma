@@ -107,7 +107,7 @@ export function ServiceForm({ service }: { service?: Service }) {
                 onChange={() => setPricingModel(value)}
                 className="peer sr-only"
               />
-              <span className="inline-flex min-h-10 items-center rounded-full border border-line px-4 text-[13px] font-semibold text-ink/65 transition-colors peer-checked:border-accent/60 peer-checked:bg-accent/15 peer-checked:text-accent">
+              <span className="inline-flex min-h-10 items-center rounded-tag-sm border border-line px-4 text-[13px] font-semibold text-ink/65 transition-colors peer-checked:border-accent/60 peer-checked:bg-accent/15 peer-checked:text-accent">
                 {label}
               </span>
             </label>

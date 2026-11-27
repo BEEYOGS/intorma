@@ -18,7 +18,7 @@ import { getCustomer } from "@/lib/customer-auth";
 export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
   const customer = await getCustomer();
   const linkClass =
-    "inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-[var(--text-2)] hover:text-[var(--text)] transition-colors rounded-[var(--radius)] hover:bg-[var(--panel)]";
+    "inline-flex min-h-11 items-center gap-1.5 px-3 py-1.5 text-sm text-[var(--text-2)] hover:text-[var(--text)] transition-colors rounded-[var(--radius-sharp)] hover:bg-[var(--panel)]";
   const iconClass = "size-3.5 shrink-0 opacity-70";
 
   return (
@@ -53,18 +53,18 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
               <FolderOpen aria-hidden className={iconClass} /> File
             </Link>
             <form action={logoutCustomer} className="ml-1">
-              <button className="btn btn-ghost !h-8 !px-3 text-xs">
+              <button className="btn btn-ghost !h-11 !px-3 text-xs">
                 <LogOut aria-hidden className="size-3.5" /> Keluar
               </button>
             </form>
           </>
         ) : (
-          <Link href="/masuk" className="ml-1 btn btn-ghost !h-8 !px-3 text-xs">
+          <Link href="/masuk" className="ml-1 btn btn-ghost !h-11 !px-3 text-xs">
             <LogIn aria-hidden className="size-3.5" /> Masuk
           </Link>
         )}
         {isAdmin && (
-          <Link href="/dashboard" className={`${linkClass} ml-2 !text-[var(--gold-2)]`}>
+          <Link href="/dashboard" className={`${linkClass} ml-2 !text-[var(--accent-2)]`}>
             <LayoutDashboard aria-hidden className={iconClass} /> Dashboard
           </Link>
         )}

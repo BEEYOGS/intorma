@@ -21,7 +21,7 @@ export function ProfileForm({ customer }: { customer: Customer }) {
         <input name="email" type="email" defaultValue={customer.email} className="input" required />
       </label>
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={pending} className="btn btn-primary !h-9 text-xs">
+        <button type="submit" disabled={pending} className="btn btn-primary !h-10 text-xs">
           {pending ? "Menyimpan…" : "Simpan profil"}
         </button>
         {state?.ok && <span role="status" className="text-xs text-mute">Tersimpan.</span>}

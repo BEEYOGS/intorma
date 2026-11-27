@@ -181,20 +181,20 @@ export function InstallButton() {
           key={popupKey}
           role="dialog"
           aria-label="Pasang aplikasi in.torma"
-          className="fixed inset-x-4 bottom-[calc(1.5rem_+_env(safe-area-inset-bottom))] z-50 w-auto overflow-hidden rounded-[var(--radius)_var(--radius)_var(--radius)_0] border border-line border-t-2 border-t-accent bg-[var(--panel-2)]/95 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] backdrop-blur-md sm:inset-x-auto sm:right-6 sm:w-[23rem]"
+          className="fixed inset-x-4 bottom-[calc(1.5rem_+_env(safe-area-inset-bottom))] z-50 w-auto overflow-hidden rounded-[var(--radius-sharp)] border border-line border-t-2 border-t-accent bg-[var(--panel-2)]/95 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] backdrop-blur-md sm:inset-x-auto sm:right-6 sm:w-[23rem]"
         >
           <div className="p-5">
             <button
               type="button"
               onClick={closePopup}
               aria-label="Tutup notifikasi"
-              className="absolute right-3 top-3 grid size-8 place-items-center rounded-[var(--radius)] text-ink/45 transition-colors hover:bg-white/[0.06] hover:text-ink"
+              className="absolute right-3 top-3 grid size-10 place-items-center rounded-[var(--radius-sharp)] text-ink/45 transition-colors hover:bg-white/[0.06] hover:text-ink"
             >
               <X className="size-4" />
             </button>
 
             <div className="flex items-start gap-3">
-              <div className="grid size-12 shrink-0 place-items-center rounded-[var(--radius)_var(--radius)_var(--radius)_0] border border-accent/30 bg-accent/[0.06] p-1.5">
+              <div className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-accent/30 bg-accent/[0.06] p-1.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/icon.svg?v=2" alt="" className="size-full" />
               </div>
@@ -218,7 +218,7 @@ export function InstallButton() {
               </div>
             ) : (
               <div className="mt-4 space-y-3" aria-live="polite">
-                <p className="rounded-[var(--radius)_var(--radius)_var(--radius)_0] border border-line bg-[var(--panel)] px-3 py-2.5 text-[12px] leading-5 text-mute">
+                <p className="rounded-[var(--radius-sharp)] border border-line bg-[var(--panel)] px-3 py-2.5 text-[12px] leading-5 text-mute">
                   {platform === "ios" ? (
                     <>
                       Di iPhone/iPad: ketuk <span className="font-semibold text-ink">Share</span> lalu pilih{" "}

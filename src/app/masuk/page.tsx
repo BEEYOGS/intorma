@@ -36,7 +36,7 @@ export default async function LoginPage() {
           </ul>
           <p className="mt-8 text-sm text-mute">
             Belum siap pesan?{" "}
-            <Link href="/order" className="text-[var(--text)] underline underline-offset-4 hover:text-[var(--gold)]">
+            <Link href="/order" className="text-[var(--text)] underline underline-offset-4 hover:text-[var(--accent)]">
               Langsung buat pesanan <ArrowRight aria-hidden className="inline size-3.5 align-[-2px]" />
             </Link>
           </p>

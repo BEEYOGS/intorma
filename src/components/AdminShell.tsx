@@ -37,7 +37,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
                     key={tab.key}
                     href={tab.href}
                     aria-current={on ? "page" : undefined}
-                    className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--radius)] px-2.5 py-2 text-[13px] font-medium transition-colors lg:px-3 ${
+                    className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--radius-sharp)] px-2.5 py-2 text-[13px] font-medium transition-colors lg:px-3 ${
                       on
                         ? "bg-[var(--panel-2)] text-[var(--text)]"
                         : "text-[var(--text-3)] hover:bg-[var(--panel)] hover:text-[var(--text)]"
@@ -64,7 +64,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
               Lihat situs <ExternalLink aria-hidden className="ml-1.5 size-3.5" />
             </Link>
             <form action={adminLogout}>
-              <button type="submit" className="btn btn-ghost !h-9 !px-3 text-xs" aria-label="Keluar dari admin">
+              <button type="submit" className="btn btn-ghost !h-10 !px-3 text-xs" aria-label="Keluar dari admin">
                 <LogOut aria-hidden className="size-4 sm:hidden" />
                 <span className="hidden sm:inline">Keluar</span>
               </button>

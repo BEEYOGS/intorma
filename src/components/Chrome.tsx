@@ -41,7 +41,7 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className="animate-in inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+      className="animate-in inline-flex items-center gap-1.5 whitespace-nowrap rounded-tag-sm border px-2.5 py-1 text-xs font-semibold"
       style={{
         color,
         borderColor: `color-mix(in srgb, ${color} 35%, transparent)`,

@@ -208,7 +208,7 @@ export function OrderForm({
             <ServiceIcon service={service} className="size-4" />
           </span>
           <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{service.name}</span>
-          <span className="mono shrink-0 text-[11px] text-[var(--text-3)]">{priceLabel(service)}</span>
+          <span className="mono shrink-0 text-xs text-[var(--text-3)]">{priceLabel(service)}</span>
           <span
             aria-hidden
             className={`grid size-4 shrink-0 place-items-center rounded-full border transition-colors ${
@@ -243,7 +243,7 @@ export function OrderForm({
               return (
                 <li key={n} className="flex items-center gap-2">
                   <span
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-semibold transition-colors ${
+                    className={`inline-flex items-center gap-2 rounded-tag-sm border px-3 py-1.5 font-semibold transition-colors ${
                       current
                         ? "border-accent/50 bg-accent/10 text-ink"
                         : done
@@ -255,7 +255,7 @@ export function OrderForm({
                     {done ? (
                       <Check aria-hidden className="size-3.5 text-accent" />
                     ) : (
-                      <span className={`font-mono text-[10px] ${current ? "text-accent" : "text-mute"}`}>{n}</span>
+                      <span className={`font-mono text-xs ${current ? "text-accent" : "text-mute"}`}>{n}</span>
                     )}
                     <span className="hidden xs:inline">{label}</span>
                     <span className="xs:hidden">{label.split(" ")[0]}</span>
@@ -267,7 +267,7 @@ export function OrderForm({
           </ol>
 
           <div className="flex items-start gap-3 rounded-tag-sm border border-accent/20 bg-accent/[0.05] px-4 py-3.5">
-            <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-white">
+            <span aria-hidden className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-white">
               i
             </span>
             <p className="text-sm leading-6 text-ink/75">
@@ -315,7 +315,7 @@ export function OrderForm({
                     type="button"
                     onClick={() => setFilter(value)}
                     aria-pressed={filter === value}
-                    className={`min-h-9 rounded-[var(--radius)] border px-3 text-xs font-medium transition-colors ${
+                    className={`min-h-10 rounded-[var(--radius-sharp)] border px-3 text-xs font-medium transition-colors ${
                       filter === value
                         ? value === "print"
                           ? "border-dashed border-[var(--border-2)] bg-white/[0.06] text-[var(--text)]"
@@ -336,14 +336,14 @@ export function OrderForm({
 
             <div className="space-y-5">
               {visible.length === 0 && (
-                <p className="rounded-[var(--radius)] border border-dashed border-line p-6 text-center text-sm text-mute">
+                <p className="rounded-[var(--radius-sharp)] border border-dashed border-line p-6 text-center text-sm text-mute">
                   Tidak ada layanan yang cocok. Coba kata kunci lain atau pilih “Semua”.
                 </p>
               )}
               {serviceGroups.map((group) =>
                 group.items.length === 0 ? null : (
                   <div key={group.key}>
-                    <p className="mb-2 flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-3)]">
+                    <p className="mb-2 flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-3)]">
                       <span
                         aria-hidden
                         className={`size-2 shrink-0 ${
@@ -431,7 +431,7 @@ export function OrderForm({
                             setWidth(String(w));
                             setHeight(String(h));
                           }}
-                          className="rounded-full border border-line px-2.5 py-1 text-[11px] font-semibold text-ink/65 transition-colors hover:border-accent/40 hover:text-accent"
+                          className="rounded-tag-sm border border-line px-2.5 py-1 text-xs font-semibold text-ink/65 transition-colors hover:border-accent/40 hover:text-accent"
                         >
                           {label}
                         </button>
@@ -508,7 +508,7 @@ export function OrderForm({
                               <span className="flex items-start gap-2.5">
                                 <span
                                   aria-hidden
-                                  className={`mt-0.5 grid size-4 shrink-0 place-items-center border text-[9px] font-bold ${
+                                  className={`mt-0.5 grid size-4 shrink-0 place-items-center border text-xs font-bold ${
                                     single ? "rounded-full" : "rounded-[3px]"
                                   } ${active ? "border-accent bg-accent text-white" : "border-line text-transparent"}`}
                                 >
@@ -550,7 +550,7 @@ export function OrderForm({
                         {total != null ? rupiah(total) : "—"}
                       </p>
                       {chosen.price_note && (
-                        <p className="mt-1 max-w-xs text-[11px] leading-4 text-mute">{chosen.price_note}</p>
+                        <p className="mt-1 max-w-xs text-xs leading-4 text-mute">{chosen.price_note}</p>
                       )}
                     </div>
                   </div>
@@ -635,7 +635,7 @@ export function OrderForm({
                     accept={ACCEPT_ATTR}
                     className="sr-only"
                   />
-                  <span className="mt-2 flex cursor-pointer items-center justify-center rounded-[var(--radius)] border border-line bg-sand px-4 py-3 text-xs font-medium transition-colors hover:border-accent/40">
+                  <span className="mt-2 flex cursor-pointer items-center justify-center rounded-[var(--radius-sharp)] border border-line bg-sand px-4 py-3 text-xs font-medium transition-colors hover:border-accent/40">
                     {uploading ? "Mengunggah…" : "Pilih file atau seret ke sini"}
                   </span>
                   <span className="mt-1.5 block text-xs text-mute">
@@ -722,13 +722,13 @@ export function OrderForm({
             <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_10rem]">
               <label className="block">
                 <span className="label">
-                  Tanggal <span className="text-[var(--warn)]">*</span>
+                  Tanggal <span className="text-[var(--quiet)]">*</span>
                 </span>
                 <DateField name="deadline" defaultValue={v.deadline} placeholder="Pilih tanggal deadline" />
               </label>
               <label className="block">
                 <span className="label">
-                  Jam <span className="text-[var(--warn)]">*</span>
+                  Jam <span className="text-[var(--quiet)]">*</span>
                 </span>
                 <input
                   name="deadlineTime"
@@ -740,7 +740,7 @@ export function OrderForm({
               </label>
             </div>
             <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-mute">
-              <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--warn)]" />
+              <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--quiet)]" />
               Deadline otomatis masuk ke nota, halaman lacak, dan pesan WhatsApp ke kamu serta admin.
             </p>
           </fieldset>
@@ -783,7 +783,7 @@ export function OrderForm({
                 <div key={index} className="flex items-baseline justify-between gap-4">
                   <dt className="text-mute">
                     {line.label}
-                    {line.detail && <span className="mt-0.5 block text-[11px] text-mute/70">{line.detail}</span>}
+                    {line.detail && <span className="mt-0.5 block text-xs text-mute/70">{line.detail}</span>}
                   </dt>
                   <dd className="shrink-0 font-semibold tabular-nums">{rupiah(line.amount)}</dd>
                 </div>
@@ -807,7 +807,7 @@ export function OrderForm({
             </dl>
 
             <div className="mt-6 rounded-tag-sm border border-accent/20 bg-accent/[0.06] p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-mute">Total</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-mute">Total</p>
               <p className="mt-1.5 text-4xl font-semibold tabular-nums tracking-tight text-accent" aria-live="polite" aria-atomic="true">
                 {total != null ? rupiah(total) : "—"}
               </p>
@@ -846,7 +846,7 @@ export function OrderForm({
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-[11px] text-mute">{chosen?.name ?? "Pilih layanan"}</p>
+            <p className="truncate text-xs text-mute">{chosen?.name ?? "Pilih layanan"}</p>
             <p className="truncate text-xl font-semibold tabular-nums text-accent">
               {total != null ? rupiah(total) : "Belum dihitung"}
             </p>
@@ -862,7 +862,7 @@ export function OrderForm({
           </button>
         </div>
         {hasPriceError && (
-          <p className="mt-1.5 truncate text-[11px] text-danger">{quote?.error}</p>
+          <p className="mt-1.5 truncate text-xs text-danger">{quote?.error}</p>
         )}
       </div>
     </>

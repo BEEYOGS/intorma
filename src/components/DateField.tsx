@@ -154,20 +154,20 @@ export function DateField({
           className="absolute left-0 right-0 z-30 mt-2 rounded-tag-sm border border-line bg-panel p-4 shadow-[0_18px_40px_-24px_rgba(11,11,11,0.45)]"
         >
           <div className="flex items-center justify-between gap-2">
-            <button type="button" onClick={() => moveMonth(-1)} aria-label="Bulan sebelumnya" className="grid size-9 place-items-center rounded-full text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink">
+            <button type="button" onClick={() => moveMonth(-1)} aria-label="Bulan sebelumnya" className="grid size-10 place-items-center rounded-tag-sm text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink">
               <Arrow dir="left" />
             </button>
             <p aria-live="polite" className="text-sm font-semibold">
               {MONTHS[view.month]} {view.year}
             </p>
-            <button type="button" onClick={() => moveMonth(1)} aria-label="Bulan berikutnya" className="grid size-9 place-items-center rounded-full text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink">
+            <button type="button" onClick={() => moveMonth(1)} aria-label="Bulan berikutnya" className="grid size-10 place-items-center rounded-tag-sm text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink">
               <Arrow dir="right" />
             </button>
           </div>
 
           <div className="mt-3 grid grid-cols-7 gap-1">
             {WEEKDAYS.map((day) => (
-              <span key={day} aria-hidden="true" className="grid h-7 place-items-center text-[10px] font-semibold uppercase tracking-[0.06em] text-mute">
+              <span key={day} aria-hidden="true" className="grid h-7 place-items-center text-[11px] font-semibold uppercase tracking-[0.06em] text-mute">
                 {day}
               </span>
             ))}
@@ -188,7 +188,7 @@ export function DateField({
                   aria-pressed={selected}
                   aria-current={isToday ? "date" : undefined}
                   aria-label={`${day} ${MONTHS[view.month]} ${view.year}${past ? " (tanggal lampau)" : ""}`}
-                  className={`grid size-9 place-items-center rounded-full text-[13px] font-medium tabular-nums transition-colors ${
+                  className={`grid size-9 place-items-center rounded-tag-sm text-[13px] font-medium tabular-nums transition-colors ${
                     past
                       ? "cursor-not-allowed text-ink/25"
                       : selected

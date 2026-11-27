@@ -50,7 +50,7 @@ export function ToastHost() {
           aria-live={t.tone === "error" ? "assertive" : "polite"}
           className={`pointer-events-auto rounded-tag-sm border px-4 py-3 text-sm shadow-[0_16px_40px_-20px_rgba(0,0,0,0.8)] backdrop-blur-sm toast-item ${
             t.tone === "ok"
-              ? "border-[var(--jade)]/40 bg-[var(--panel)] text-[var(--text)]"
+              ? "border-[var(--accent)]/40 bg-[var(--panel)] text-[var(--text)]"
               : t.tone === "error"
                 ? "border-[var(--red)]/40 bg-[var(--panel)] text-[var(--text)]"
                 : "border-[var(--border)] bg-[var(--panel)] text-[var(--text)]"

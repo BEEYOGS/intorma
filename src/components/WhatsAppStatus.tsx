@@ -118,7 +118,7 @@ export function WhatsAppStatus(initial: WhatsAppStatusProps) {
   const tone = !status.configured
     ? "text-[var(--text-3)] border-line"
     : status.ready
-      ? "text-[var(--jade)] border-[var(--jade)]/40"
+      ? "text-[var(--accent)] border-[var(--accent)]/40"
       : "text-[var(--red)] border-[var(--red)]/40";
 
   return (
@@ -130,12 +130,12 @@ export function WhatsAppStatus(initial: WhatsAppStatusProps) {
           </span>
           <div>
             <p className="text-sm font-semibold text-ink">Notifikasi otomatis</p>
-            <p className="mono text-[11px] text-mute">
+            <p className="mono text-xs text-mute">
               {PROVIDER_LABEL[status.provider]}
             </p>
           </div>
         </div>
-        <span className={`mono rounded-full border px-2.5 py-1 text-[11px] ${tone}`}>
+        <span className={`mono rounded-tag-sm border px-2.5 py-1 text-xs ${tone}`}>
           {label}
         </span>
       </div>
@@ -164,7 +164,7 @@ export function WhatsAppStatus(initial: WhatsAppStatusProps) {
       </dl>
 
       {status.error && (
-        <p className="mt-4 rounded-[var(--radius)] border border-[var(--red)]/30 bg-[var(--red)]/5 px-3 py-2 text-xs leading-5 text-[var(--red)]">
+        <p className="mt-4 rounded-[var(--radius-sharp)] border border-[var(--red)]/30 bg-[var(--red)]/5 px-3 py-2 text-xs leading-5 text-[var(--red)]">
           {status.error}
         </p>
       )}
@@ -172,7 +172,7 @@ export function WhatsAppStatus(initial: WhatsAppStatusProps) {
       {note && (
         <p
           role="status"
-          className={`mt-4 text-xs leading-5 ${note.tone === "ok" ? "text-[var(--jade)]" : "text-[var(--red)]"}`}
+          className={`mt-4 text-xs leading-5 ${note.tone === "ok" ? "text-[var(--accent)]" : "text-[var(--red)]"}`}
         >
           {note.text}
         </p>

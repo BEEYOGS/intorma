@@ -123,7 +123,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
 
         <table className="nota-table mt-6 w-full border-collapse text-xs">
           <thead>
-            <tr className="bg-[#EEF4F3]">
+            <tr className="bg-[#F4F4F5]">
               <th className="w-10 border border-[#111] px-2 py-2 text-center font-bold">No</th>
               <th className="border border-[#111] px-3 py-2 text-left font-bold">Nama</th>
               <th className="w-40 border border-[#111] px-3 py-2 text-left font-bold">Jumlah</th>
@@ -141,7 +141,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
             ))}
           </tbody>
           <tfoot>
-            <tr className="bg-[#EEF4F3] font-bold">
+            <tr className="bg-[#F4F4F5] font-bold">
               <td colSpan={3} className="border border-[#111] px-3 py-2 text-right">Total:</td>
               <td className="border border-[#111] px-3 py-2 text-right tabular-nums">{total == null ? "-" : rupiah(total)}</td>
             </tr>

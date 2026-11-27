@@ -50,15 +50,15 @@ export default async function PortalPage() {
             <p className="mt-1 text-sm text-mute">Pantau dan kelola pesananmu dari sini.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/portal/files" className="btn btn-ghost !h-9 text-xs">File saya</Link>
-            <Link href="/order" className="btn btn-primary !h-9 text-xs">+ Pesan baru</Link>
+            <Link href="/portal/files" className="btn btn-ghost !h-10 text-xs">File saya</Link>
+            <Link href="/order" className="btn btn-primary !h-10 text-xs">+ Pesan baru</Link>
             <form action={logoutCustomer}>
-              <button className="btn btn-ghost !h-9 text-xs">Keluar</button>
+              <button className="btn btn-ghost !h-10 text-xs">Keluar</button>
             </form>
           </div>
         </div>
 
-        <div className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--border)] sm:grid-cols-4">
+        <div className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-sharp)] border border-[var(--border)] bg-[var(--border)] sm:grid-cols-4">
           {[
             ["Total pesanan", String(orders.length)],
             ["Menunggu bayar", String(unpaid)],
@@ -66,7 +66,7 @@ export default async function PortalPage() {
             ["Total nilai", rupiah(orders.reduce((sum, o) => sum + Number(o.price ?? 0), 0))],
           ].map(([label, value]) => (
             <div key={label} className="bg-[var(--panel)] p-4">
-              <p className="text-[11px] text-[var(--text-3)]">{label}</p>
+              <p className="text-xs text-[var(--text-3)]">{label}</p>
               <p className="mono mt-2 text-xl font-semibold text-[var(--text)]">{value}</p>
             </div>
           ))}
@@ -81,7 +81,7 @@ export default async function PortalPage() {
             {orders.length === 0 ? (
               <div className="p-8 text-center">
                 <p className="text-sm text-mute">Belum ada pesanan yang terhubung ke akun ini.</p>
-                <Link href="/order" className="btn btn-primary mt-5 !h-9 text-xs">Buat pesanan pertama</Link>
+                <Link href="/order" className="btn btn-primary mt-5 !h-10 text-xs">Buat pesanan pertama</Link>
               </div>
             ) : (
               <ul className="divide-y divide-[var(--border)]">
@@ -105,10 +105,10 @@ export default async function PortalPage() {
                           <p className="mono text-sm font-medium text-[var(--text)]">
                             {order.price != null ? rupiah(Number(order.price)) : "—"}
                           </p>
-                          <p className="text-[11px] text-mute">{order.paid ? "Lunas" : order.price != null ? "Belum dibayar" : "Menunggu harga"}</p>
+                          <p className="text-xs text-mute">{order.paid ? "Lunas" : order.price != null ? "Belum dibayar" : "Menunggu harga"}</p>
                         </div>
                         {order.service_id && (
-                          <Link href={`/order?layanan=${order.service_id}`} className="btn btn-ghost !h-8 !px-3 text-xs">
+                          <Link href={`/order?layanan=${order.service_id}`} className="btn btn-ghost !h-10 !px-3 text-xs">
                             Pesan lagi
                           </Link>
                         )}

@@ -35,7 +35,7 @@ function buildReturn(filter: string | null, special: Special | null, q: string):
   return query ? `/admin?${query}` : "/admin";
 }
 
-/** Penanda deadline: merah kalau lewat, amber kalau kurang dari 48 jam. */
+/** Penanda deadline: merah kalau lewat, abu muda kalau kurang dari 48 jam. */
 function deadlineBadge(value: string | Date | null | undefined) {
   if (!value) return null;
   const date = new Date(value);
@@ -155,28 +155,28 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       icon: ClipboardCheck,
       label: "Konfirmasi harga",
       value: Number(focus?.konfirmasi ?? 0),
-      color: "#a1a1aa",
+      color: STATUS_META.menunggu.color,
     },
     {
       href: keepSearch("/admin?p=deadline"),
       icon: Clock,
       label: "Deadline ≤48 jam",
       value: Number(focus?.deadline ?? 0),
-      color: "#3291ff",
+      color: STATUS_META.dikerjakan.color,
     },
     {
       href: keepSearch("/admin?p=aging"),
       icon: Wallet,
       label: "Telat bayar >2 hari",
       value: Number(focus?.aging ?? 0),
-      color: "#c7c7c7",
+      color: STATUS_META.revisi.color,
     },
     {
       href: keepSearch("/admin?s=revisi"),
       icon: RotateCcw,
       label: "Perlu revisi",
       value: Number(focus?.revisi ?? 0),
-      color: "#0070f3",
+      color: STATUS_META.revisi.color,
     },
   ].filter((item) => item.value > 0);
 
@@ -211,7 +211,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       </div>
 
       {focusItems.length > 0 && (
-        <section className="mt-4 rounded-tag-lg border border-line bg-panel/40 p-4 sm:p-5">
+        <section className="mt-4 rounded-tag-lg border border-line bg-panel/40 p-5 sm:p-6">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">
               Fokus hari ini
@@ -344,7 +344,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         </div>
       ) : (
         <>
-          <div className="mt-4 hidden grid-cols-[7rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_7rem_1.25rem] gap-4 border-b border-line px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-mute sm:grid">
+          <div className="mt-4 hidden grid-cols-[7rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_7rem_1.25rem] gap-4 border-b border-line px-3 pb-2 text-xs font-semibold uppercase tracking-[0.14em] text-mute md:grid">
             <span>Kode</span>
             <span>Klien</span>
             <span>Layanan</span>
@@ -361,25 +361,25 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
             return (
               <li key={o.id} className="border-b border-line">
                 <details className="group" open={o.code === openCode}>
-                  <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-1 py-5 transition-colors hover:bg-white/[0.02] sm:grid-cols-[7rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_7rem_1.25rem] sm:gap-4 sm:px-3">
+                  <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-1 py-5 transition-colors hover:bg-white/[0.02] md:grid-cols-[7rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_7rem_1.25rem] md:gap-4 md:px-3">
                     <span className="font-mono text-[13px] font-semibold tracking-wide">{o.code}</span>
-                    <span className="flex items-center gap-2 justify-self-end sm:hidden">
+                    <span className="flex items-center gap-2 justify-self-end md:hidden">
                       <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} status={st} compact />
                       <ChevronRight aria-hidden className="size-4 text-ink/30 transition-transform group-open:rotate-90" />
                     </span>
 
-                    <span className="col-span-2 min-w-0 sm:col-span-1">
+                    <span className="col-span-2 min-w-0 md:col-span-1">
                       <span className="block truncate font-semibold">{o.name}</span>
-                      <span className="block text-xs text-mute sm:hidden">
+                      <span className="block text-xs text-mute md:hidden">
                         {o.service ?? "—"} · {tanggal(o.created_at)}
                       </span>
                       {dl && (
                         <span
-                          className={`mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold sm:hidden ${
+                          className={`mt-1 inline-flex items-center gap-1 rounded-tag-sm border px-2 py-1 text-[11px] font-semibold md:hidden ${
                             dl.late
                               ? "border-danger/35 bg-danger/[0.06] text-danger"
                               : dl.soon
-                                ? "border-[var(--warn)]/35 bg-[var(--warn)]/[0.07] text-[var(--warn)]"
+                                ? "border-[var(--quiet)]/35 bg-[var(--quiet)]/[0.07] text-[var(--quiet)]"
                                 : "border-line text-mute"
                           }`}
                         >
@@ -389,13 +389,13 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       )}
                     </span>
 
-                    <span className="hidden text-sm text-mute sm:block">{o.service ?? "—"}</span>
-                    <span className="hidden sm:block">
+                    <span className="hidden text-sm text-mute md:block">{o.service ?? "—"}</span>
+                    <span className="hidden md:block">
                       <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} status={st} />
                       {dl && (
                         <span
-                          className={`mt-1 flex items-center gap-1 text-[10px] font-semibold ${
-                            dl.late ? "text-danger" : dl.soon ? "text-[var(--warn)]" : "text-mute"
+                          className={`mt-1 flex items-center gap-1 text-[11px] font-semibold ${
+                            dl.late ? "text-danger" : dl.soon ? "text-[var(--quiet)]" : "text-mute"
                           }`}
                         >
                           <span aria-hidden className="size-1.5 rounded-full bg-current" />
@@ -404,18 +404,18 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       )}
                     </span>
 
-                    <span className="col-span-2 flex items-center justify-between gap-3 border-t border-line/70 pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
-                      <span className="text-xs text-mute sm:hidden">Total</span>
+                    <span className="col-span-2 flex items-center justify-between gap-3 border-t border-line/70 pt-2 md:col-span-1 md:justify-end md:border-0 md:pt-0">
+                      <span className="text-xs text-mute md:hidden">Total</span>
                       <span className="text-right">
                         <span className="block text-sm font-semibold tabular-nums">{price ? rupiah(price) : "—"}</span>
-                        <span className={`block text-xs ${o.paid ? "font-medium text-ink/60" : "text-mute"} sm:hidden`}>
+                        <span className={`block text-xs ${o.paid ? "font-medium text-ink/60" : "text-mute"} md:hidden`}>
                           {o.paid ? "Lunas" : price ? "Belum dibayar" : "Tanpa harga"}
                         </span>
                       </span>
                     </span>
 
-                    <span className="hidden text-right text-xs text-mute sm:block">{tanggal(o.created_at)}</span>
-                    <span aria-hidden className="hidden text-ink/30 transition-transform group-open:rotate-90 sm:block">→</span>
+                    <span className="hidden text-right text-xs text-mute md:block">{tanggal(o.created_at)}</span>
+                    <span aria-hidden className="hidden text-ink/30 transition-transform group-open:rotate-90 md:block">→</span>
                   </summary>
 
                   <div className="grid gap-8 border-t border-line bg-panel/40 px-1 pb-7 pt-6 sm:px-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -583,7 +583,7 @@ function FilterLink({ href, active, children }: { href: string; active: boolean;
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`inline-flex min-h-10 items-center rounded-full border px-3.5 text-[12.5px] font-semibold transition-colors ${
+      className={`inline-flex min-h-10 items-center rounded-tag-sm border px-3.5 text-[13px] font-semibold transition-colors ${
         active ? "border-accent/40 bg-accent/10 text-accent" : "border-line text-ink/60 hover:border-accent/30 hover:text-ink"
       }`}
     >

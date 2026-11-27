@@ -68,7 +68,7 @@ export function QuickActions({
               type="button"
               disabled={Boolean(busy)}
               onClick={() => run(key, `jadi ${STATUS_META[next].short}`, "status", next)}
-              className={`inline-flex min-h-10 items-center gap-2 rounded-[var(--radius)] border px-3 text-[12.5px] font-semibold transition-colors disabled:opacity-50 ${
+              className={`inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-sharp)] border px-3 text-[12.5px] font-semibold transition-colors disabled:opacity-50 ${
                 danger
                   ? "border-danger/35 bg-danger/[0.05] text-danger hover:bg-danger/[0.1]"
                   : "border-line bg-white/[0.03] text-ink/70 hover:border-[var(--border-2)] hover:bg-white/[0.07] hover:text-ink"
@@ -96,7 +96,7 @@ export function QuickActions({
             )
           }
           title={price === null ? "Harga belum disepakati" : undefined}
-          className={`inline-flex min-h-10 items-center gap-2 rounded-[var(--radius)] border px-3 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
+          className={`inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-sharp)] border px-3 text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
             paid
               ? "border-line bg-transparent text-mute hover:text-ink"
               : "border-[var(--border-2)] bg-white/[0.09] text-ink hover:bg-white/[0.14]"

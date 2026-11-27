@@ -91,7 +91,7 @@ export default async function ProductPage() {
             Pilih bahan, ukuran, finishing, dan jumlah—total dihitung otomatis sebelum kamu membayar.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[var(--border)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[var(--border)] border border-[var(--border)] rounded-[var(--radius-sharp)] overflow-hidden">
             {featuredServices.map((svc) => (
               <Link
                 key={svc.id}
@@ -108,12 +108,12 @@ export default async function ProductPage() {
                     }}
                   />
                   <ProductIllustration service={svc} className="relative h-24 w-full max-w-[220px]" />
-                  <ArrowUpRight aria-hidden className="absolute right-3 top-3 size-4 text-[var(--text-3)] transition-colors group-hover:text-[var(--gold-2)]" />
+                  <ArrowUpRight aria-hidden className="absolute right-3 top-3 size-4 text-[var(--text-3)] transition-colors group-hover:text-[var(--accent-2)]" />
                 </div>
                 <h3 className="text-[15px] font-medium text-[var(--text)] mb-1">{svc.name}</h3>
                 <p className="text-xs text-[var(--text-3)] leading-relaxed min-h-[2.5rem]">{svc.blurb}</p>
                 <div className="flex items-center justify-between mt-4">
-                  <span className="mono text-sm text-[var(--gold-2)]">{priceLabel(svc)}</span>
+                  <span className="mono text-sm text-[var(--accent-2)]">{priceLabel(svc)}</span>
                   <span className="text-xs text-[var(--text-3)]">± {svc.days} hari</span>
                 </div>
               </Link>
@@ -136,7 +136,7 @@ export default async function ProductPage() {
           <p className="eyebrow mb-2">Cara kerja</p>
           <h2 className="display text-2xl sm:text-3xl mb-10">Jelas dari awal sampai akhir.</h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--border)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--border)] border border-[var(--border)] rounded-[var(--radius-sharp)] overflow-hidden">
             {[
               { num: "01", title: "Pilih & atur", desc: "Pilih layanan, lalu tentukan bahan, ukuran, finishing, dan jumlah." },
               { num: "02", title: "Lihat total", desc: "Harga dihitung otomatis dan langsung terlihat sebelum kamu memesan." },
@@ -165,15 +165,15 @@ export default async function ProductPage() {
               </p>
               <ul className="mt-6 space-y-2 text-sm text-[var(--text-2)]">
                 <li className="flex items-start gap-2">
-                  <span className="text-[var(--gold-2)] mt-0.5">—</span>
+                  <span className="text-[var(--accent-2)] mt-0.5">—</span>
                   Nominal sesuai total di halaman pesanan.
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[var(--gold-2)] mt-0.5">—</span>
+                  <span className="text-[var(--accent-2)] mt-0.5">—</span>
                   Status pembayaran ditandai lunas oleh admin.
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-[var(--gold-2)] mt-0.5">—</span>
+                  <span className="text-[var(--accent-2)] mt-0.5">—</span>
                   Bukti transfer bisa dikirim langsung di WhatsApp.
                 </li>
               </ul>
@@ -203,7 +203,7 @@ export default async function ProductPage() {
           <p className="eyebrow mb-2">Pertanyaan</p>
           <h2 className="display text-2xl sm:text-3xl mb-8">Hal yang sering ditanya.</h2>
 
-          <div className="max-w-2xl space-y-px bg-[var(--border)] border border-[var(--border)] rounded-[var(--radius)] overflow-hidden">
+          <div className="max-w-2xl space-y-px bg-[var(--border)] border border-[var(--border)] rounded-[var(--radius-sharp)] overflow-hidden">
             {[
               { q: "Bagaimana harga ditentukan?", a: "Pilih bahan, ukuran, finishing, dan jumlah. Total langsung dihitung otomatis dan terlihat sebelum kamu membuat pesanan." },
               { q: "Berapa lama pengerjaannya?", a: "Tergantung jenis layanan, rata-rata 1-5 hari kerja. Jadwal pasti dibahas saat konfirmasi." },
@@ -251,7 +251,7 @@ export default async function ProductPage() {
           <div className="wrap">
             <p className="eyebrow mb-2">Aktivitas terbaru</p>
             <h2 className="display text-2xl sm:text-3xl mb-8">Pesanan terbaru.</h2>
-            <div className="border border-[var(--border)] rounded-[var(--radius)] overflow-hidden">
+            <div className="border border-[var(--border)] rounded-[var(--radius-sharp)] overflow-hidden">
               <table className="table">
                 <thead>
                   <tr>

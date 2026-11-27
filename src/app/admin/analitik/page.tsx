@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal, tanggalJam } from "@/lib/format";
+import { STATUS_META, asStatus } from "@/lib/status";
 import { Download } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -119,7 +120,7 @@ export default async function AnalitikPage({
                 key={r.key}
                 href={`/admin/analitik?range=${r.key}`}
                 aria-current={range === r.key ? "page" : undefined}
-                className={`inline-flex min-h-9 items-center rounded-full border px-3 text-xs font-semibold transition-colors ${
+                className={`inline-flex min-h-10 items-center rounded-tag-sm border px-3 text-xs font-semibold transition-colors ${
                   range === r.key
                     ? "border-accent/40 bg-accent/10 text-accent"
                     : "border-line text-ink/60 hover:border-accent/30 hover:text-ink"
@@ -131,7 +132,7 @@ export default async function AnalitikPage({
           </nav>
           <a
             href={`/api/admin/export/orders?range=${range}`}
-            className="btn btn-outline min-h-9 px-3 text-xs"
+            className="btn btn-outline min-h-10 px-3 text-xs"
           >
             <Download aria-hidden className="size-3.5" /> Export CSV
           </a>
@@ -165,7 +166,7 @@ export default async function AnalitikPage({
                       style={{ height: `${h}px` }}
                       title={`${tanggal(r.day)}: ${n} pesanan`}
                     />
-                    <span className="text-[9px] text-mute">{String(r.day).slice(5)}</span>
+                    <span className="text-[11px] text-mute">{String(r.day).slice(5)}</span>
                   </div>
                 );
               })}
@@ -191,7 +192,7 @@ export default async function AnalitikPage({
                     <div className="mt-1.5 h-2 rounded-full bg-panel">
                       <div className="h-2 rounded-full bg-accent/70" style={{ width: `${w}%` }} />
                     </div>
-                    <p className="mt-1 text-[10px] text-mute">{Number(r.n)} pesanan</p>
+                    <p className="mt-1 text-xs text-mute">{Number(r.n)} pesanan</p>
                   </li>
                 );
               })}
@@ -266,7 +267,7 @@ export default async function AnalitikPage({
 
 function Kpi({ label, value, hint }: { label: string; value: string | number; hint: string }) {
   return (
-    <div className="rounded-tag-lg border border-line bg-panel/50 p-4 sm:p-5">
+    <div className="rounded-tag-lg border border-line bg-panel/50 p-5 sm:p-6">
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">{label}</p>
       <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">{value}</p>
       <p className="mt-1 text-xs text-mute">{hint}</p>
@@ -286,12 +287,5 @@ function statusLabel(s: string): string {
 }
 
 function statusColor(s: string): string {
-  const map: Record<string, string> = {
-    menunggu: "#a1a1aa",
-    dikerjakan: "#0070f3",
-    revisi: "#c7c7c7",
-    selesai: "#ffffff",
-    batal: "#ef4444",
-  };
-  return map[s] ?? "#888";
+  return STATUS_META[asStatus(s)].color;
 }

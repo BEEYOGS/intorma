@@ -40,7 +40,7 @@ export function CopyButton({
     <button
       type="button"
       onClick={copy}
-      className={`inline-flex min-h-9 items-center gap-1.5 rounded-tag-sm border border-line bg-panel/70 px-3 text-xs font-semibold text-ink/70 transition-colors hover:border-ink hover:text-ink ${className}`}
+      className={`inline-flex min-h-10 items-center gap-1.5 rounded-tag-sm border border-line bg-panel/70 px-3 text-xs font-semibold text-ink/70 transition-colors hover:border-ink hover:text-ink ${className}`}
       aria-label={label}
     >
       {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}

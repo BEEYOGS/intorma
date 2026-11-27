@@ -161,16 +161,16 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
                       <span className="mono block text-xs text-mute">{c.wa}</span>
                     </span>
                     <span className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-full border border-line px-2.5 py-1 text-mute">
+                      <span className="rounded-tag-sm border border-line px-2.5 py-1 text-mute">
                         {orders} pesanan
                       </span>
                       {spent > 0 && (
-                        <span className="rounded-full border border-line px-2.5 py-1 tabular-nums">
+                        <span className="rounded-tag-sm border border-line px-2.5 py-1 tabular-nums">
                           {rupiah(spent)}
                         </span>
                       )}
                       {due > 0 && (
-                        <span className="rounded-full border border-danger/30 bg-danger/[0.05] px-2.5 py-1 font-semibold tabular-nums text-danger">
+                        <span className="rounded-tag-sm border border-danger/30 bg-danger/[0.05] px-2.5 py-1 font-semibold tabular-nums text-danger">
                           Piutang {rupiah(due)}
                         </span>
                       )}
@@ -255,7 +255,7 @@ function MiniStat({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-tag-lg border border-line bg-panel/50 p-4 sm:p-5">
+    <div className="rounded-tag-lg border border-line bg-panel/50 p-5 sm:p-6">
       <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">
         {icon} {label}
       </p>

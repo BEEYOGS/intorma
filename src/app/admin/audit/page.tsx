@@ -88,7 +88,7 @@ export default async function AuditPage({
                 <tr key={String(r.id)} className="align-top">
                   <td className="px-4 py-3 text-xs text-mute whitespace-nowrap">{tanggal(r.created_at)}</td>
                   <td className="px-4 py-3">
-                    <span className="rounded-full border border-line bg-panel px-2 py-0.5 text-[11px] font-semibold">
+                    <span className="rounded-tag-sm border border-line bg-panel px-2 py-1 text-xs font-semibold">
                       {String(r.action)}
                     </span>
                   </td>

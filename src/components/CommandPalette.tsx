@@ -166,7 +166,7 @@ export function CommandPalette() {
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-mute"
           />
           {loading && <span className="text-xs text-mute">…</span>}
-          <button type="button" onClick={close} aria-label="Tutup" className="grid size-7 place-items-center rounded-full text-mute hover:text-ink">
+          <button type="button" onClick={close} aria-label="Tutup" className="grid size-10 place-items-center rounded-tag-sm text-mute hover:text-ink">
             <X className="size-4" />
           </button>
         </div>

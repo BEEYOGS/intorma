@@ -31,7 +31,7 @@ export function StatusTree({
 
   return (
     <div className="mt-6">
-      <div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">
+      <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-mute">
         <GitBranch aria-hidden className="size-3.5" /> Alur pesanan
       </div>
       <ol className="relative ml-1 animate-in">
@@ -98,7 +98,7 @@ export function StatusTree({
                   <p className={`text-sm font-semibold ${isActive ? "" : "text-ink/75"}`} style={isActive ? { color: meta.color } : undefined}>
                     {meta.label}
                   </p>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-mute">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">
                     {state === "done" ? "selesai" : isActive ? "saat ini" : "belum"}
                   </span>
                 </div>
@@ -107,7 +107,7 @@ export function StatusTree({
                 {stepEvents.length > 0 && (
                   <ul className="mt-3 space-y-1.5 border-t border-line/70 pt-2.5">
                     {stepEvents.map((event, i) => (
-                      <li key={i} className="flex flex-wrap items-baseline gap-x-2 text-[11px] text-mute">
+                      <li key={i} className="flex flex-wrap items-baseline gap-x-2 text-xs text-mute">
                         <span className="tabular-nums">{jam(event.created_at)}</span>
                         {event.note && <span className="text-ink/70">{event.note}</span>}
                       </li>
@@ -132,12 +132,12 @@ export function StatusTree({
                     <CornerDownRight aria-hidden className="size-3.5" />
                     <IconForStatus status={branch} className="size-3.5" />
                     <span className="text-xs font-semibold">{branchMeta.label}</span>
-                    <span className="ml-auto text-[10px] uppercase tracking-[0.1em] opacity-70">
+                    <span className="ml-auto text-[11px] uppercase tracking-[0.1em] opacity-70">
                       {branchActive ? "saat ini" : "cabang"}
                     </span>
                   </div>
                   {branchEvents.length > 0 && (
-                    <ul className="mt-2 space-y-1 text-[11px] text-mute">
+                    <ul className="mt-2 space-y-1 text-xs text-mute">
                       {branchEvents.map((event, i) => (
                         <li key={i} className="flex flex-wrap gap-x-2">
                           <span className="tabular-nums">{jam(event.created_at)}</span>
