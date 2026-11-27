@@ -243,6 +243,24 @@ body::after {
   color: var(--text-3);
 }
 
+.time-picker-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-2) transparent;
+}
+
+.time-picker-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.time-picker-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 999px;
+}
+
+.time-picker-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 input[type="search"]::-webkit-search-cancel-button {
   display: none;
 }

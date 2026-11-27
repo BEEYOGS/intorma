@@ -12,6 +12,7 @@ import { searchServices } from "@/lib/catalog-search";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
 import { BriefAssistant } from "@/components/BriefAssistant";
+import { TimeField } from "@/components/TimeField";
 import { ServiceIcon } from "@/components/ServiceIcon";
 import { ArrowRight, Check } from "lucide-react";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
@@ -888,13 +889,7 @@ setInteracted(true);
                 <span className="label">
                   Jam <span className="text-[var(--quiet)]">*</span>
                 </span>
-                <input
-                  name="deadlineTime"
-                  type="time"
-                  defaultValue={v.deadlineTime || "17:00"}
-                  className="field tabular-nums"
-                  required
-                />
+                <TimeField name="deadlineTime" defaultValue={v.deadlineTime || "17:00"} />
               </label>
             </div>
             <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-mute">
