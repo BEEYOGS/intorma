@@ -99,9 +99,23 @@ export function OrderForm({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "design" | "print" | "other">("all");
   const [brief, setBrief] = useState(v.brief || "");
+  const [promoCode, setPromoCode] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoMessage, setPromoMessage] = useState("");
+  const [promoPending, setPromoPending] = useState(false);
   const [draft, setDraft] = useState<OrderDraft | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [interacted, setInteracted] = useState(false);
+
+  // Reset promo bila spesifikasi berubah.
+  useEffect(() => {
+    if (promoCode) {
+      setPromoCode("");
+      setPromoDiscount(0);
+      setPromoMessage("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, qty, width, height, selection]);
 
   // Pulihkan draf spesifikasi yang tersimpan (tanpa data pribadi).
   useEffect(() => {
@@ -213,6 +227,7 @@ export function OrderForm({
     ? calculateQuote(chosen, { qty, widthCm: width, heightCm: height, selected: selection })
     : null;
   const total = quote?.price ?? null;
+  const finalTotal = total != null ? Math.max(0, total - promoDiscount) : null;
   const hasPriceError = Boolean(quote?.error);
   const activeStep = !chosen ? 0 : hasPriceError || total == null ? 1 : 2;
   const relatedServices = chosen
@@ -299,6 +314,38 @@ export function OrderForm({
     }
   }
 
+  async function applyPromo() {
+    const code = promoCode.trim().toUpperCase();
+    if (!code || total == null) return;
+    setPromoPending(true);
+    setPromoMessage("");
+    try {
+      const response = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, amount: total }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+        discount?: number;
+      };
+      if (!response.ok) {
+        setPromoDiscount(0);
+        setPromoMessage(data.error || "Kode promo tidak valid.");
+        return;
+      }
+      setPromoCode(data.code || code);
+      setPromoDiscount(data.discount || 0);
+      setPromoMessage(`Diskon ${rupiah(data.discount || 0)} diterapkan.`);
+    } catch {
+      setPromoDiscount(0);
+      setPromoMessage("Gagal memvalidasi kode promo.");
+    } finally {
+      setPromoPending(false);
+    }
+  }
+
   function serviceCard(service: Service) {
     const on = selectedId === service.id;
     const tone =
@@ -382,6 +429,7 @@ export function OrderForm({
           <input type="hidden" name="width" value={isArea ? width : ""} />
           <input type="hidden" name="height" value={isArea ? height : ""} />
           <input type="hidden" name="selection" value={JSON.stringify(selection)} />
+          <input type="hidden" name="promo" value={promoCode} />
 
           <ol className="flex flex-wrap items-center gap-2 border-b border-line pb-5 text-[12px]">
             {[
@@ -699,7 +747,7 @@ setInteracted(true);
                     <div className="text-right">
                       <p className="eyebrow">Total</p>
                       <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-accent">
-                        {total != null ? rupiah(total) : "—"}
+                        {finalTotal != null ? rupiah(finalTotal) : "—"}
                       </p>
                       {chosen.price_note && (
                         <p className="mt-1 max-w-xs text-xs leading-4 text-mute">{chosen.price_note}</p>
@@ -961,9 +1009,34 @@ setInteracted(true);
 
             <div className="mt-6 rounded-tag-sm border border-accent/20 bg-accent/[0.06] p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-mute">Total</p>
+              {promoDiscount > 0 && (
+                <div className="mt-2 flex items-baseline justify-between gap-4 text-sm">
+                  <span className="text-mute">Diskon promo</span>
+                  <span className="mono font-semibold text-accent">-{rupiah(promoDiscount)}</span>
+                </div>
+              )}
               <p className="mt-1.5 text-4xl font-semibold tabular-nums tracking-tight text-accent" aria-live="polite" aria-atomic="true">
-                {total != null ? rupiah(total) : "—"}
+                {finalTotal != null ? rupiah(finalTotal) : "—"}
               </p>
+              <div className="mt-4 flex gap-2">
+                <input
+                  value={promoCode}
+                  onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
+                  placeholder="Kode promo"
+                  className="field min-h-10 text-xs uppercase"
+                />
+                <button
+                  type="button"
+                  onClick={applyPromo}
+                  disabled={promoPending || !promoCode.trim() || total == null}
+                  className="btn btn-ghost min-h-10 px-3 text-xs"
+                >
+                  {promoPending ? "Cek…" : "Terapkan"}
+                </button>
+              </div>
+              {promoMessage && (
+                <p className={`mt-2 text-xs ${promoDiscount > 0 ? "text-accent" : "text-danger"}`}>{promoMessage}</p>
+              )}
               {hasPriceError && <p className="mt-1 text-xs text-danger">{quote?.error}</p>}
               {!hasPriceError && total == null && (
                 <p className="mt-1 text-xs text-mute">Lengkapi spesifikasi untuk melihat total.</p>

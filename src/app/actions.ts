@@ -116,6 +116,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     height: str(f, "height"),
     selection: str(f, "selection"),
     file: str(f, "file"),
+    promo: str(f, "promo"),
   };
   const wa = normalizeWA(values.wa);
   const customer = await getCustomer();
@@ -169,6 +170,37 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   });
   if (quote.error) return { error: quote.error, values };
 
+  let promoCode: string | null = null;
+  let discountAmount = 0;
+  if (values.promo) {
+    const code = values.promo.toUpperCase();
+    const rows = (await sql`
+      select code, type, value, min_order, max_discount, usage_limit, used_count, active, expires_at
+      from promo_codes where code = ${code}
+    `) as Array<Record<string, unknown>>;
+    const promo = rows[0];
+    if (!promo) return { error: "Kode promo tidak ditemukan.", values };
+    if (!promo.active) return { error: "Kode promo tidak aktif.", values };
+    if (promo.expires_at && new Date(String(promo.expires_at)) < new Date()) {
+      return { error: "Kode promo sudah kedaluwarsa.", values };
+    }
+    if (promo.usage_limit != null && Number(promo.used_count) >= Number(promo.usage_limit)) {
+      return { error: "Kuota kode promo habis.", values };
+    }
+    const basePrice = quote.price ?? 0;
+    if (basePrice < Number(promo.min_order ?? 0)) {
+      return { error: `Minimal pesanan Rp${Number(promo.min_order).toLocaleString("id-ID")} untuk kode ini.`, values };
+    }
+    if (promo.type === "percent") {
+      discountAmount = Math.round((basePrice * Number(promo.value)) / 100);
+      if (promo.max_discount != null) discountAmount = Math.min(discountAmount, Number(promo.max_discount));
+    } else {
+      discountAmount = Math.round(Number(promo.value));
+    }
+    discountAmount = Math.max(0, Math.min(discountAmount, basePrice));
+    promoCode = String(promo.code);
+  }
+
   const snapshot = quote.snapshot ? JSON.stringify(quote.snapshot) : null;
   const paymentStatus = quote.price != null ? "unpaid" : "waiting";
   const widthCm = quote.snapshot?.width_cm ?? null;
@@ -180,20 +212,24 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
       insert into orders (
         code, name, wa, service_id, service_label, customer_id, brief, ref_link, deadline, deadline_at,
         qty, unit_rate, price, width_cm, height_cm, options, subtotal,
-        file_url, payment_method, payment_status
+        file_url, payment_method, payment_status, promo_code, discount_amount
       )
       values (
         ${await makeCode()}, ${values.name}, ${wa}, ${svc.id}, ${svc.name}, ${customer?.id ?? null}, ${values.brief},
         ${values.ref || null}, ${values.deadline}, ${deadlineAt},
-        ${quote.qty}, ${quote.unitRate}, ${quote.price},
+        ${quote.qty}, ${quote.unitRate}, ${quote.price != null ? quote.price - discountAmount : null},
         ${widthCm}, ${heightCm}, ${snapshot}::jsonb, ${quote.subtotal},
-        ${fileUrl}, 'transfer', ${paymentStatus}
+        ${fileUrl}, 'transfer', ${paymentStatus}, ${promoCode}, ${discountAmount}
       )
       on conflict (code) do nothing
       returning id, code`;
     order = rows[0] as { id: number; code: string } | undefined;
   }
   if (!order) return { error: "Gagal menyimpan pesanan. Coba kirim lagi.", values };
+
+  if (promoCode) {
+    await sql`update promo_codes set used_count = used_count + 1 where code = ${promoCode}`;
+  }
 
   await sql`insert into order_events (order_id, status, note) values (${order.id}, 'menunggu', 'Pesanan diterima')`;
   if (quote.price != null) {
@@ -282,6 +318,48 @@ export async function deleteReview(f: FormData): Promise<void> {
   await sql`delete from reviews where id = ${id}`;
   revalidatePath("/admin/ulasan");
   revalidatePath("/");
+}
+
+export async function createPromo(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir." };
+
+  const code = str(f, "code").toUpperCase().replace(/[^A-Z0-9-]/g, "");
+  const type = str(f, "type");
+  const value = Number(str(f, "value").replace(",", "."));
+  const minOrder = Number(digits(f, "minOrder") || "0");
+  const maxDiscountRaw = digits(f, "maxDiscount");
+  const maxDiscount = maxDiscountRaw ? Number(maxDiscountRaw) : null;
+  const usageLimitRaw = digits(f, "usageLimit");
+  const usageLimit = usageLimitRaw ? Number(usageLimitRaw) : null;
+  const expiresRaw = str(f, "expiresAt");
+  const expiresAt = expiresRaw ? new Date(`${expiresRaw}T23:59:59+07:00`) : null;
+
+  if (!code || code.length < 3) return { error: "Kode promo minimal 3 karakter." };
+  if (type !== "percent" && type !== "fixed") return { error: "Tipe promo tidak valid." };
+  if (!Number.isFinite(value) || value <= 0) return { error: "Nilai promo harus lebih dari 0." };
+  if (type === "percent" && value > 100) return { error: "Diskon persen maksimal 100%." };
+  if (expiresAt && Number.isNaN(expiresAt.getTime())) return { error: "Tanggal kedaluwarsa tidak valid." };
+
+  try {
+    await sql`
+      insert into promo_codes (code, type, value, min_order, max_discount, usage_limit, expires_at)
+      values (${code}, ${type}, ${value}, ${minOrder}, ${maxDiscount}, ${usageLimit}, ${expiresAt})
+    `;
+  } catch (error) {
+    return { error: "Kode promo sudah ada atau gagal disimpan." };
+  }
+
+  revalidatePath("/admin/promo");
+  return { ok: true };
+}
+
+export async function togglePromo(f: FormData): Promise<void> {
+  if (!(await isAdmin())) return;
+  const id = Number(f.get("id"));
+  const active = f.get("active") === "on";
+  if (!id) return;
+  await sql`update promo_codes set active = ${active} where id = ${id}`;
+  revalidatePath("/admin/promo");
 }
 
 export async function lookupOrder(_prev: { error?: string } | null, f: FormData) {

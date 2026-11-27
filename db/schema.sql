@@ -254,6 +254,23 @@ create table if not exists reviews (
 );
 create index if not exists reviews_approved_idx on reviews (approved, created_at desc);
 
+-- Kode promo. Dipakai di checkout untuk diskon persen/nominal.
+create table if not exists promo_codes (
+  id serial primary key,
+  code text unique not null,
+  type text not null check (type in ('percent', 'fixed')),
+  value numeric(10,2) not null,
+  min_order int not null default 0,
+  max_discount int,
+  usage_limit int,
+  used_count int not null default 0,
+  active boolean not null default true,
+  expires_at timestamptz,
+  created_at timestamptz not null default now()
+);
+alter table orders add column if not exists promo_code text;
+alter table orders add column if not exists discount_amount int not null default 0;
+
 -- Jejak aksi admin. audit() menulis ke tabel ini; halaman /admin/audit membacanya.
 create table if not exists audit_log (
   id bigserial primary key,
