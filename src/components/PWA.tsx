@@ -116,7 +116,7 @@ export function InstallButton() {
 
             <div className="flex items-start gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon.svg?v=2" alt="" className="size-12 shrink-0 rounded-[var(--radius)_var(--radius)_var(--radius)_0] bg-[var(--panel-2)] p-1" />
+              <img src="/icon.svg?v=2" alt="" className="size-12 shrink-0 rounded-[var(--radius)_var(--radius)_var(--radius)_0] border border-line bg-[var(--panel-2)] p-1" />
               <div className="min-w-0">
                 <p className="eyebrow">Lebih mudah lewat aplikasi</p>
                 <h2 className="mt-1.5 text-lg font-semibold tracking-tight">Pasang in.torma</h2>

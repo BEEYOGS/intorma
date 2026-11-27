@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   title: { default: "in.torma — Studio desain & cetak", template: "%s — in.torma" },
   description: "Logo, poster, konten sosial, kemasan, sampai spanduk dan kartu nama. Brief singkat, harga jelas, progres bisa dipantau.",
   applicationName: "in.torma",
-  manifest: "/manifest.webmanifest",
+  manifest: "/manifest.webmanifest?v=2",
   icons: {
     icon: [
       { url: "/icons/icon-192-v2.png", sizes: "192x192", type: "image/png" },
