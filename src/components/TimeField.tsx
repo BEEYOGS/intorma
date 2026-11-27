@@ -60,7 +60,6 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label="Pilih jam"
         className="field flex min-h-12 items-center justify-between gap-3 text-left"
       >
         <span className="mono tabular-nums text-lg font-semibold">{value}</span>
