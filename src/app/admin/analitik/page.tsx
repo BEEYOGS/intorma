@@ -41,7 +41,7 @@ export default async function AnalitikPage({
   const where = cParam ? "where created_at >= $1" : "";
   const paramsArr = cParam ? [cParam] : [];
 
-  const [summary, byDay, byService, byStatus, overdue, unpaidOld] = await Promise.all([
+  const [summary, byDay, byService, byStatus, overdue, unpaidOld, growth, aging, topCustomers] = await Promise.all([
     sql.query(
       `select
         count(*)::int as total,
@@ -84,6 +84,31 @@ export default async function AnalitikPage({
          and created_at < now() - interval '7 days'
        order by created_at asc limit 8`,
     ),
+    sql.query(
+      `select
+         count(*) filter (where status = 'selesai' and deadline_at is not null and updated_at <= deadline_at)::int as on_time,
+         count(*) filter (where status = 'selesai' and deadline_at is not null)::int as with_deadline,
+         coalesce(avg(extract(epoch from (updated_at - created_at)) / 86400) filter (where status = 'selesai'), 0)::numeric(10,1) as avg_turnaround,
+         count(distinct coalesce(customer_id::text, wa))::int as customers
+       from orders ${where}`,
+      paramsArr,
+    ),
+    sql.query(
+      `select
+         count(*) filter (where created_at > now() - interval '7 days')::int as d0_7,
+         count(*) filter (where created_at <= now() - interval '7 days' and created_at > now() - interval '14 days')::int as d8_14,
+         count(*) filter (where created_at <= now() - interval '14 days')::int as d15_plus
+       from orders
+       where price is not null and not paid and status <> 'batal'`,
+    ),
+    sql.query(
+      `select name, wa, count(*)::int as orders, coalesce(sum(price),0)::int as revenue
+       from orders ${where}
+       group by name, wa
+       order by revenue desc, orders desc
+       limit 6`,
+      paramsArr,
+    ),
   ]);
 
   const s = (summary[0] ?? {}) as Record<string, number>;
@@ -94,6 +119,20 @@ export default async function AnalitikPage({
   const done = Number(s.done ?? 0);
   const cancelled = Number(s.cancelled ?? 0);
   const avgPrice = Number(s.avg_price ?? 0);
+
+  const g = (growth[0] ?? {}) as Record<string, number | string>;
+  const onTime = Number(g.on_time ?? 0);
+  const withDeadline = Number(g.with_deadline ?? 0);
+  const avgTurnaround = Number(g.avg_turnaround ?? 0);
+  const customerCount = Number(g.customers ?? 0);
+  const newCustomers = customerCount;
+  const onTimeRate = withDeadline > 0 ? Math.round((onTime / withDeadline) * 100) : 0;
+  const paymentRate = total > 0 ? Math.round((paidCount / Math.max(1, total)) * 100) : 0;
+
+  const a = (aging[0] ?? {}) as Record<string, number>;
+  const aging07 = Number(a.d0_7 ?? 0);
+  const aging814 = Number(a.d8_14 ?? 0);
+  const aging15 = Number(a.d15_plus ?? 0);
 
   const maxDay = Math.max(1, ...byDay.map((r) => Number(r.n)));
   const maxSvc = Math.max(1, ...byService.map((r) => Number(r.revenue)));
@@ -196,6 +235,73 @@ export default async function AnalitikPage({
                   </li>
                 );
               })}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <section className="rounded-tag-lg border border-line bg-panel/40 p-5">
+          <h2 className="text-sm font-semibold">Pertumbuhan & operasional</h2>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-tag-sm border border-line bg-panel/60 p-4">
+              <p className="text-xs text-mute">Konversi pembayaran</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{paymentRate}%</p>
+              <p className="mt-1 text-xs text-mute">{paidCount} dari {total} pesanan</p>
+            </div>
+            <div className="rounded-tag-sm border border-line bg-panel/60 p-4">
+              <p className="text-xs text-mute">Tepat waktu</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{onTimeRate}%</p>
+              <p className="mt-1 text-xs text-mute">{onTime} dari {withDeadline} dengan deadline</p>
+            </div>
+            <div className="rounded-tag-sm border border-line bg-panel/60 p-4">
+              <p className="text-xs text-mute">Rata-rata pengerjaan</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{avgTurnaround.toFixed(1)} hari</p>
+              <p className="mt-1 text-xs text-mute">dari dibuat ke selesai</p>
+            </div>
+            <div className="rounded-tag-sm border border-line bg-panel/60 p-4">
+              <p className="text-xs text-mute">Pelanggan</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{customerCount}</p>
+              <p className="mt-1 text-xs text-mute">{newCustomers} baru di rentang ini</p>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mute">Aging piutang</p>
+            <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-panel">
+              {aging07 + aging814 + aging15 > 0 ? (
+                <>
+                  <div className="bg-accent/70" style={{ width: `${(aging07 / (aging07 + aging814 + aging15)) * 100}%` }} />
+                  <div className="bg-[var(--quiet)]" style={{ width: `${(aging814 / (aging07 + aging814 + aging15)) * 100}%` }} />
+                  <div className="bg-danger/70" style={{ width: `${(aging15 / (aging07 + aging814 + aging15)) * 100}%` }} />
+                </>
+              ) : (
+                <div className="w-full bg-panel" />
+              )}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-4 text-xs text-mute">
+              <span><span className="mr-1 inline-block size-2 rounded-full bg-accent/70" />0–7 hari: {aging07}</span>
+              <span><span className="mr-1 inline-block size-2 rounded-full bg-[var(--quiet)]" />8–14 hari: {aging814}</span>
+              <span><span className="mr-1 inline-block size-2 rounded-full bg-danger/70" />&gt;14 hari: {aging15}</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-tag-lg border border-line bg-panel/40 p-5">
+          <h2 className="text-sm font-semibold">Pelanggan teratas</h2>
+          {topCustomers.length === 0 ? (
+            <p className="mt-4 text-sm text-mute">Belum ada data.</p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {topCustomers.map((r, index) => (
+                <li key={`${r.name}-${index}`} className="flex items-center justify-between gap-3 rounded-tag-sm border border-line px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{String(r.name)}</p>
+                    <p className="text-xs text-mute">{Number(r.orders)} pesanan</p>
+                  </div>
+                  <span className="mono shrink-0 text-sm font-semibold">{rupiah(Number(r.revenue))}</span>
+                </li>
+              ))}
             </ul>
           )}
         </section>

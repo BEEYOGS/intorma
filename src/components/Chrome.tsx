@@ -16,6 +16,7 @@ export function Footer() {
         <div className="flex flex-wrap items-center gap-5">
           <Link href="/order" className="transition-colors hover:text-[var(--text)]">Pesan</Link>
           <Link href="/lacak" className="transition-colors hover:text-[var(--text)]">Lacak</Link>
+          <Link href="/faq" className="transition-colors hover:text-[var(--text)]">FAQ</Link>
           <WhatsAppLink
             text="Halo in.torma, saya mau tanya soal layanan desain dan cetak."
             className="inline-flex items-center gap-1.5 transition-colors hover:text-[var(--text)]"

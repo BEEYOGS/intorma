@@ -13,6 +13,7 @@ const ROUTES = [
   "/privacy",
   "/terms",
   "/masuk",
+  "/faq",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
