@@ -20,6 +20,7 @@ const fontSerifItalic = localFont({
 
 import { ToastHost } from "@/components/Toast";
 import { PageFade } from "@/components/PageFade";
+import { ScrollProgress } from "@/components/ScrollProgress";
 import { ServiceWorkerRegister, InstallButton } from "@/components/PWA";
 
 export const metadata: Metadata = {
@@ -59,6 +60,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-dvh bg-[var(--bg)] text-[var(--text)]">
         <a href="#konten" className="skip-link">Lewati ke konten</a>
+        <ScrollProgress />
         <PageFade>
           <main id="konten">{children}</main>
         </PageFade>
