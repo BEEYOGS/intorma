@@ -5,7 +5,7 @@ export const metadata = { title: "Download aplikasi", robots: { index: false } }
 export const revalidate = 300;
 
 const RELEASES_URL = "https://github.com/BEEYOGS/intorma/releases";
-const LATEST_API = "https://api.github.com/repos/BEEYOGS/intorma/releases/latest";
+const RELEASES_API = "https://api.github.com/repos/BEEYOGS/intorma/releases?per_page=20";
 
 type ReleaseAsset = {
   name: string;
@@ -16,12 +16,20 @@ type ReleaseAsset = {
 type Release = {
   tag_name: string;
   html_url: string;
+  draft?: boolean;
+  prerelease?: boolean;
   assets: ReleaseAsset[];
 };
 
+function versionValue(tag: string) {
+  const match = tag.match(/(\d+)\.(\d+)\.(\d+)/);
+  if (!match) return 0;
+  return Number(match[1]) * 1_000_000 + Number(match[2]) * 1_000 + Number(match[3]);
+}
+
 async function getLatestRelease(): Promise<Release | null> {
   try {
-    const res = await fetch(LATEST_API, {
+    const res = await fetch(RELEASES_API, {
       headers: {
         Accept: "application/vnd.github+json",
         "User-Agent": "in.torma-download-page",
@@ -29,8 +37,12 @@ async function getLatestRelease(): Promise<Release | null> {
       next: { revalidate: 300 },
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as Release;
-    return data?.tag_name ? data : null;
+    const releases = (await res.json()) as Release[];
+    const published = releases.filter(
+      (release) => release?.tag_name && !release.draft && !release.prerelease,
+    );
+    published.sort((a, b) => versionValue(b.tag_name) - versionValue(a.tag_name));
+    return published[0] ?? null;
   } catch {
     return null;
   }
