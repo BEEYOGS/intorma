@@ -7,6 +7,7 @@ import { OrderEditor } from "@/components/OrderEditor";
 import { ProductionBoard } from "@/components/ProductionBoard";
 import { BulkOrderForm } from "@/components/BulkOrderForm";
 import { QuickActions } from "@/components/QuickActions";
+import { OrderInspection } from "@/components/OrderInspection";
 import { CopySpecButton, SyncPaymentButton } from "@/components/AdminOrderActions";
 import { ChevronRight, ClipboardCheck, Clock, Eye, MessageCircle, Printer, RotateCcw, Search, Wallet, X, type LucideIcon } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
@@ -459,12 +460,16 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
             const dl = deadlineBadge(o.deadline_at);
             return (
               <li key={o.id} className="border-b border-line">
-                <details className="group" open={o.code === openCode}>
-                  <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-1 py-5 transition-colors hover:bg-white/[0.02] md:grid-cols-[7rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_7rem_1.25rem] md:gap-4 md:px-3">
+                <OrderInspection
+                  code={o.code}
+                  initialOpen={o.code === openCode}
+                  closeHref={returnTo}
+                  trigger={
+                  <span className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-1 py-5 text-left transition-colors hover:bg-white/[0.02] md:grid-cols-[7rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_7rem_1.25rem] md:gap-4 md:px-3">
                     <span className="font-mono text-[13px] font-semibold tracking-wide">{o.code}</span>
                     <span className="flex items-center gap-2 justify-self-end md:hidden">
                       <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} status={st} compact />
-                      <ChevronRight aria-hidden className="size-4 text-ink/30 transition-transform group-open:rotate-90" />
+                      <ChevronRight aria-hidden className="size-4 text-ink/30" />
                     </span>
 
                     <span className="col-span-2 min-w-0 md:col-span-1">
@@ -514,10 +519,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                     </span>
 
                     <span className="hidden text-right text-xs text-mute md:block">{tanggal(o.created_at)}</span>
-                    <span aria-hidden className="hidden text-ink/30 transition-transform group-open:rotate-90 md:block">→</span>
-                  </summary>
+                    <span aria-hidden className="hidden text-ink/30 md:block">→</span>
+                  </span>
+                  }
+                >
 
-                  <div className="grid gap-8 border-t border-line bg-panel/40 px-1 pb-7 pt-6 sm:px-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                  <div className="grid gap-8 border-t border-line px-1 pb-7 pt-6 sm:px-3">
                     <div className="space-y-5">
                       <div>
                         <p className="eyebrow">Brief</p>
@@ -576,7 +583,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                           <dd className="mt-1 font-medium">
                             {o.file_url ? (
                               <a href={o.file_url} target="_blank" rel="noreferrer" className="underline decoration-ink/25 underline-offset-4 hover:decoration-ink">
-                                Buka file
+                                Buka Drive
                               </a>
                             ) : "—"}
                           </dd>
@@ -650,7 +657,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       </div>
                     </div>
                   </div>
-                </details>
+                </OrderInspection>
               </li>
             );
           })}
