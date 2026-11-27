@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BarChart3, ClipboardList, ExternalLink, History, Layers3, LogOut, Settings2, Star, Tag, UsersRound } from "lucide-react";
+import { BarChart3, ClipboardList, ExternalLink, History, Layers3, LogOut, Settings2, ShieldCheck, Star, Tag, UsersRound } from "lucide-react";
 import { adminLogout } from "@/app/actions";
 import { SITE_NAME } from "@/lib/site";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -13,6 +13,7 @@ const tabs = [
   { href: "/admin/audit", label: "Log aktivitas", short: "Audit", key: "audit", icon: History },
   { href: "/admin/ulasan", label: "Ulasan", short: "Ulasan", key: "reviews", icon: Star },
   { href: "/admin/promo", label: "Promo", short: "Promo", key: "promo", icon: Tag },
+  { href: "/admin/akun", label: "Akun admin", short: "Akun", key: "accounts", icon: ShieldCheck },
   { href: "/admin/pengaturan", label: "Pengaturan", short: "Setelan", key: "settings", icon: Settings2 },
 ] as const;
 
@@ -85,7 +86,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
         aria-label="Navigasi admin bawah"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--bg)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm sm:hidden"
       >
-        <ul className="grid grid-cols-8">
+        <ul className="grid grid-cols-9">
           {tabs.map((tab) => {
             const on = active === tab.key;
             const Icon = tab.icon;
@@ -94,7 +95,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
                 <Link
                   href={tab.href}
                   aria-current={on ? "page" : undefined}
-                  className={`relative flex min-h-[60px] flex-col items-center justify-center gap-1 px-2 py-2 text-[11px] font-semibold transition-colors ${
+                  className={`relative flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-semibold transition-colors ${
                     on ? "text-[var(--text)]" : "text-[var(--text-3)]"
                   }`}
                 >

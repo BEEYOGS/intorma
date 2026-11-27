@@ -296,3 +296,14 @@ where code ~ '^INT-[0-9]{9,}$'
 group by 1
 on conflict (day) do update
   set last_seq = greatest(order_code_counters.last_seq, excluded.last_seq);
+
+-- Akun admin dengan password terpisah. Password ADMIN_PASSWORD di environment
+-- tetap diterima sebagai cadangan, jadi mengelola akun tidak bisa mengunci diri.
+create table if not exists admin_accounts (
+  id serial primary key,
+  username text unique not null,
+  label text not null default '',
+  password_hash text not null,
+  created_at timestamptz not null default now(),
+  last_login_at timestamptz
+);

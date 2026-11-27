@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getServiceWithOptions, sql } from "@/lib/db";
-import { isAdmin, login, logout } from "@/lib/auth";
+import { isAdmin, login, logout, verifyAdminCredential } from "@/lib/auth";
 import { normalizeWA, rupiah, tanggalJam } from "@/lib/format";
 import { isValidCode, makeCode, normalizeCode } from "@/lib/codes";
 import { calculateQuote, type QuoteSelection } from "@/lib/pricing";
@@ -391,6 +391,92 @@ export async function adminLogin(_prev: { error?: string } | null, f: FormData) 
 export async function adminLogout() {
   await logout();
   redirect("/admin/login");
+}
+
+function normalizeAdminUsername(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9._-]/g, "");
+}
+
+function newAdminPassword(f: FormData): { value: string } | { error: string } {
+  const password = String(f.get("password") ?? "");
+  const confirm = String(f.get("confirm") ?? "");
+  if (password.length < 8) return { error: "Password minimal 8 karakter." };
+  if (password.length > 128) return { error: "Password terlalu panjang." };
+  if (password !== confirm) return { error: "Konfirmasi password tidak cocok." };
+  return { value: password };
+}
+
+export async function createAdminAccount(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+
+  const username = normalizeAdminUsername(str(f, "username"));
+  const label = str(f, "label").slice(0, 60) || username;
+  if (!/^[a-z0-9._-]{3,32}$/.test(username)) {
+    return { error: "Username harus 3–32 karakter: huruf, angka, titik, garis bawah, atau tanda hubung." };
+  }
+  const password = newAdminPassword(f);
+  if ("error" in password) return { error: password.error };
+
+  const exists = (await sql`select 1 from admin_accounts where username = ${username}`)[0];
+  if (exists) return { error: "Username itu sudah dipakai." };
+
+  await sql`
+    insert into admin_accounts (username, label, password_hash)
+    values (${username}, ${label}, ${hashPassword(password.value)})
+  `;
+  await audit("create", "admin_account", username, { label });
+  revalidatePath("/admin/akun");
+  return { ok: true };
+}
+
+export async function updateAdminAccount(_prev: ActionResult, f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+
+  const id = Number(f.get("id"));
+  if (!id) return { error: "Akun tidak ditemukan." };
+  if (!(await verifyAdminCredential(str(f, "current")))) {
+    return { error: "Password admin saat ini salah." };
+  }
+  const row = (await sql`select username from admin_accounts where id = ${id}`)[0];
+  if (!row) return { error: "Akun tidak ditemukan." };
+
+  const label = str(f, "label").slice(0, 60);
+  const passwordRaw = String(f.get("password") ?? "");
+  if (passwordRaw) {
+    const password = newAdminPassword(f);
+    if ("error" in password) return { error: password.error };
+    await sql`
+      update admin_accounts set label = ${label}, password_hash = ${hashPassword(password.value)}
+      where id = ${id}
+    `;
+  } else {
+    await sql`update admin_accounts set label = ${label} where id = ${id}`;
+  }
+
+  await audit("update", "admin_account", String(row.username), { label, passwordChanged: Boolean(passwordRaw) });
+  revalidatePath("/admin/akun");
+  return { ok: true };
+}
+
+export async function deleteAdminAccount(f: FormData): Promise<ActionResult> {
+  if (!(await isAdmin())) return { error: "Sesi admin berakhir. Muat ulang halaman lalu masuk lagi." };
+
+  const id = Number(f.get("id"));
+  if (!id) return { error: "Akun tidak ditemukan." };
+  if (!(await verifyAdminCredential(str(f, "current")))) {
+    return { error: "Password admin saat ini salah." };
+  }
+  const rows = (await sql`select id, username from admin_accounts`) as Array<{ id: number; username: string }>;
+  const target = rows.find((row) => Number(row.id) === id);
+  if (!target) return { error: "Akun tidak ditemukan." };
+  if (rows.length === 1 && !process.env.ADMIN_PASSWORD) {
+    return { error: "Tidak bisa menghapus akun terakhir sebelum cadangan ADMIN_PASSWORD aktif." };
+  }
+
+  await sql`delete from admin_accounts where id = ${id}`;
+  await audit("delete", "admin_account", target.username);
+  revalidatePath("/admin/akun");
+  return { ok: true };
 }
 
 export async function updateOrder(_prev: ActionResult, f: FormData): Promise<ActionResult> {
