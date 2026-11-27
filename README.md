@@ -100,8 +100,30 @@ Dengan Drive aktif:
 
 ### WhatsApp
 
-Ada tiga provider. **Rekomendasi produksi: Meta WhatsApp Cloud API**, karena hosted dan tidak
-menyisipkan watermark pihak ketiga.
+Ada tiga provider. **Produksi saat ini: Fonnte** (hosted, tetap online tanpa PC). OpenWA dipakai
+untuk pengembangan lokal. Meta WhatsApp Cloud API tersedia sebagai alternatif tanpa watermark pihak
+ketiga bila kredensial Meta sudah siap.
+
+```
+WA_PROVIDER=fonnte
+FONNTE_TOKEN=token-dari-dashboard-fonnte
+WA_WEBHOOK_SECRET=string-acak-untuk-webhook
+ADMIN_WHATSAPP_NUMBER=0895329940950
+```
+
+1. Daftar di [fonnte.com](https://fonnte.com), buat device, lalu hubungkan WhatsApp dengan scan QR
+   sekali di dashboard Fonnte.
+2. Salin token device ke `FONNTE_TOKEN` di Vercel.
+3. Set webhook device ke `https://intorma-psi.vercel.app/api/wa/webhook?s=WA_WEBHOOK_SECRET`.
+4. Aktifkan autoread di device Fonnte.
+
+Fonnte menyimpan sesi WhatsApp di server mereka, jadi notifikasi dan balasan `status INT-DDMMYY001`
+tetap berjalan walau PC mati. `connectOnly=false` membuat pesan tetap diantrekan Fonnte saat device
+sedang reconnect. Branding “sent via fonnte” ditentukan oleh paket/device Fonnte, bukan parameter API;
+satu-satunya cara menghapusnya adalah pindah provider atau mengaktifkan fitur branding di paket Fonnte.
+Pesan lama tidak bisa diubah watermark-nya; hanya pesan baru yang terpengaruh setelah pindah provider.
+
+Alternatif tanpa watermark — Meta WhatsApp Cloud API ( belum diaktifkan di produksi ):
 
 ```
 WA_PROVIDER=cloud
@@ -122,26 +144,6 @@ ADMIN_WHATSAPP_NUMBER=0895329940950
 
 Pesan teks di luar jendela 24 jam ditolak Meta dengan kode `131047`; aplikasi akan menampilkan
 pesan error tersebut di diagnostik. Nomor pengirim berubah dari nomor lama, jadi beri tahu pelanggan.
-
-Fonnte masih didukung sebagai alternatif hosted:
-
-```
-WA_PROVIDER=fonnte
-FONNTE_TOKEN=token-dari-dashboard-fonnte
-WA_WEBHOOK_SECRET=string-acak-untuk-webhook
-ADMIN_WHATSAPP_NUMBER=0895329940950
-```
-
-1. Daftar di [fonnte.com](https://fonnte.com), buat device, lalu hubungkan WhatsApp dengan scan QR
-   sekali di dashboard Fonnte.
-2. Salin token device ke `FONNTE_TOKEN` di Vercel.
-3. Set webhook device ke `https://intorma-psi.vercel.app/api/wa/webhook?s=WA_WEBHOOK_SECRET`.
-4. Aktifkan autoread di device Fonnte.
-
-Fonnte menyimpan sesi WhatsApp di server mereka, jadi notifikasi dan balasan `status INT-DDMMYY001`
-tetap berjalan walau PC mati. `connectOnly=false` membuat pesan tetap diantrekan Fonnte saat device
-sedang reconnect. Branding “sent via fonnte” ditentukan oleh paket/device Fonnte, bukan parameter API;
-satu-satunya cara menghapusnya adalah pindah provider atau mengaktifkan fitur branding di paket Fonnte.
 
 OpenWA tetap didukung untuk self-hosted:
 
