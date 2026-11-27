@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { logoutCustomer } from "@/app/actions";
 import { MobileNav } from "@/components/MobileNav";
+import { InstallNavButton } from "@/components/PWA";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { getCustomer } from "@/lib/customer-auth";
 
@@ -36,6 +37,7 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
         <Link href="/lacak" className={linkClass}>
           <Search aria-hidden className={iconClass} /> Lacak
         </Link>
+        <InstallNavButton className={`${linkClass} hidden md:inline-flex`} />
         <WhatsAppLink
           text="Halo in.torma, saya mau tanya soal layanan desain dan cetak."
           className={linkClass}

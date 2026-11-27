@@ -1,4 +1,5 @@
 import { TopBar } from "@/components/TopBar";
+import { InstallNavButton } from "@/components/PWA";
 
 export const metadata = { title: "Pasang aplikasi", robots: { index: false } };
 
@@ -9,12 +10,22 @@ export default async function InstallPage() {
       <main id="konten" className="wrap py-10 sm:py-16">
         <p className="eyebrow mb-2">Aplikasi</p>
         <h1 className="display text-3xl sm:text-4xl mb-4">Pasang in.torma di layar utama.</h1>
-        <p className="max-w-2xl text-sm leading-6 text-[var(--text-2)] mb-8">
+        <p className="max-w-2xl text-sm leading-6 text-[var(--text-2)]">
           in.torma adalah Progressive Web App. Tidak perlu download dari toko aplikasi; cukup pasang dari browser.
           Pop-up pemasangan otomatis muncul beberapa detik, lalu hilang sendiri.
         </p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <InstallNavButton
+            className="btn btn-primary min-h-10 px-4 text-sm"
+            label="Install sekarang"
+            iconClassName="size-4"
+          />
+          <a href="/download" className="btn btn-ghost min-h-10 px-4 text-sm">
+            Unduh installer native
+          </a>
+        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <div className="card p-5">
             <p className="font-semibold mb-2">Android (Chrome)</p>
             <ol className="list-decimal space-y-1 pl-5 text-sm text-[var(--text-2)]">

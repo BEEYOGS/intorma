@@ -1,4 +1,5 @@
 import { TopBar } from "@/components/TopBar";
+import { InstallNavButton } from "@/components/PWA";
 import { CheckCircle2, Clock3, Download, ExternalLink, Monitor, Smartphone } from "lucide-react";
 
 export const metadata = { title: "Download aplikasi", robots: { index: false } };
@@ -177,6 +178,14 @@ export default async function DownloadPage() {
                   </li>
                 </ul>
               </div>
+              <span className="tag">Direkomendasikan</span>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <InstallNavButton
+                className="btn btn-primary min-h-10 px-4 text-sm"
+                label="Install dari browser"
+                iconClassName="size-4"
+              />
               <a href="/install" className="btn btn-ghost min-h-10 px-4 text-sm">
                 Lihat panduan pasang
               </a>

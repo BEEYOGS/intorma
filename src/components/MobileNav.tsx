@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { logoutCustomer } from "@/app/actions";
+import { InstallNavButton } from "@/components/PWA";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 
 type NavLink = { href: string; label: string; icon: LucideIcon };
@@ -59,6 +60,15 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
   const rowClass =
     "flex min-h-11 items-center gap-3 rounded-[var(--radius)] px-3 text-sm text-[var(--text-2)] transition-colors hover:bg-white/[0.04] hover:text-[var(--text)]";
 
+  const installRow = (
+    <InstallNavButton
+      className={rowClass}
+      iconClassName="size-4 shrink-0 text-accent"
+      label="Install aplikasi"
+      onOpen={() => setOpen(false)}
+    />
+  );
+
   return (
     <div ref={rootRef} className="relative sm:hidden">
       <button
@@ -90,6 +100,7 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
               <WhatsAppIcon aria-hidden className="size-4 shrink-0 text-[var(--text-3)]" />
               WhatsApp
             </WhatsAppLink>
+            {installRow}
             {loggedIn && (
               <form action={logoutCustomer} className="mt-1 border-t border-[var(--border)] pt-1">
                 <button className={`${rowClass} w-full text-left`}>
