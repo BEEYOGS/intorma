@@ -783,7 +783,7 @@ export function OrderForm({
                 <div key={index} className="flex items-baseline justify-between gap-4">
                   <dt className="text-mute">
                     {line.label}
-                    {line.detail && <span className="mt-0.5 block text-xs text-mute/70">{line.detail}</span>}
+                    {line.detail && <span className="mt-0.5 block text-xs text-mute">{line.detail}</span>}
                   </dt>
                   <dd className="shrink-0 font-semibold tabular-nums">{rupiah(line.amount)}</dd>
                 </div>

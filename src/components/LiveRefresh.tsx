@@ -18,7 +18,7 @@ export function LiveRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
   }, [router, intervalMs]);
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] text-mute">
+    <span className="inline-flex items-center gap-1.5 text-xs text-mute">
       <RefreshCw aria-hidden className="size-3" />
       Auto-refresh tiap {Math.round(intervalMs / 1000)} dtk
       {last ? ` · terakhir ${last.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })}` : null}

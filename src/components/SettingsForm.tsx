@@ -105,13 +105,13 @@ export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; 
               <BankLogo bank={form.bankName} className="h-5 w-auto" />
             </span>
           )}
-          <p className={`mt-4 text-sm ${form.enabled ? "text-mute" : "text-mute/70"}`}>
+          <p className={`mt-4 text-sm ${form.enabled ? "text-mute" : "text-mute"}`}>
             Transfer {form.bankName || "bank"}
           </p>
           <p className={`mt-1 break-all text-2xl font-semibold tabular-nums tracking-tight ${form.enabled ? "text-ink" : "text-mute"}`}>
             {form.bankAccount || "—"}
           </p>
-          {form.bankHolder && <p className={`mt-1 text-sm ${form.enabled ? "text-mute" : "text-mute/70"}`}>a.n. {form.bankHolder}</p>}
+          {form.bankHolder && <p className={`mt-1 text-sm ${form.enabled ? "text-mute" : "text-mute"}`}>a.n. {form.bankHolder}</p>}
           {form.note && (
             <p className="mt-4 border-t border-line pt-3 text-[13px] leading-5 text-mute">
               {form.note}

@@ -98,7 +98,7 @@ export function StatusTree({
                   <p className={`text-sm font-semibold ${isActive ? "" : "text-ink/75"}`} style={isActive ? { color: meta.color } : undefined}>
                     {meta.label}
                   </p>
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-mute">
                     {state === "done" ? "selesai" : isActive ? "saat ini" : "belum"}
                   </span>
                 </div>
@@ -132,7 +132,7 @@ export function StatusTree({
                     <CornerDownRight aria-hidden className="size-3.5" />
                     <IconForStatus status={branch} className="size-3.5" />
                     <span className="text-xs font-semibold">{branchMeta.label}</span>
-                    <span className="ml-auto text-[11px] uppercase tracking-[0.1em] opacity-70">
+                    <span className="ml-auto text-xs uppercase tracking-[0.1em] text-mute">
                       {branchActive ? "saat ini" : "cabang"}
                     </span>
                   </div>

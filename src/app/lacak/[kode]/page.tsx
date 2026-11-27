@@ -204,7 +204,7 @@ export default async function TrackPage({
                       <div key={index} className="flex justify-between gap-3 text-mute">
                         <dt>
                           {line.label}
-                          {line.detail && <span className="block text-xs text-mute/70">{line.detail}</span>}
+                          {line.detail && <span className="block text-xs text-mute">{line.detail}</span>}
                         </dt>
                         <dd className="shrink-0 tabular-nums">{rupiah(line.amount)}</dd>
                       </div>
