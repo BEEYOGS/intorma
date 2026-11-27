@@ -74,6 +74,8 @@ export default async function DownloadPage() {
   const exe = assets.find((asset) => asset.name.toLowerCase().endsWith(".exe"));
   const msi = assets.find((asset) => asset.name.toLowerCase().endsWith(".msi"));
   const apk = assets.find((asset) => asset.name.toLowerCase().endsWith(".apk"));
+  // APK 1.0.1 masih memakai splash bawaan Capacitor; mulai 1.0.2 sudah memakai ikon in.torma.
+  const apkReady = Boolean(apk) && versionValue(release?.tag_name ?? "") >= 1_000_002;
   const releaseUrl = release?.html_url ?? RELEASES_URL;
 
   return (
@@ -130,7 +132,7 @@ export default async function DownloadPage() {
               Pasang langsung di Android. Izinkan pemasangan dari sumber tidak dikenal saat diminta.
             </p>
             <div className="mt-auto flex flex-wrap gap-2">
-              {apk ? (
+              {apkReady && apk ? (
                 <AssetButton asset={apk} label="Unduh APK" />
               ) : (
                 <div className="rounded-tag-sm border border-line bg-white/[0.02] px-3.5 py-2.5 text-xs leading-5 text-mute">
@@ -141,7 +143,7 @@ export default async function DownloadPage() {
                   Build Android berjalan otomatis lewat GitHub Actions. Cek halaman rilis untuk file terbaru.
                 </div>
               )}
-              {!apk && (
+              {!apkReady && (
                 <a href={releaseUrl} target="_blank" rel="noreferrer" className="btn btn-ghost min-h-10 px-4 text-sm">
                   <ExternalLink aria-hidden className="size-4" /> Halaman rilis
                 </a>
