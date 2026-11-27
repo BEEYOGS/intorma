@@ -40,14 +40,11 @@ export function PaymentPoller({ code, expiresAt }: { code: string; expiresAt: st
   useEffect(() => {
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    let attempt = 0;
 
-    // Backoff progresif: 2s, 4s, 8s, 16s, lalu 30s. Halaman yang dibiarkan
-    // terbuka tidak terus menerus memanggil server (dan Midtrans).
+    // Status PENDING dicek tiap 5 detik. Endpoint status punya cache 10 detik,
+    // jadi Midtrans tidak dibombardir walau halaman dibiarkan terbuka.
     function schedule() {
-      const delay = Math.min(30_000, 2_000 * 2 ** Math.min(attempt, 4));
-      attempt += 1;
-      timer = setTimeout(() => void check(), delay);
+      timer = setTimeout(() => void check(), 5_000);
     }
 
     async function check() {
