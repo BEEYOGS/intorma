@@ -28,7 +28,10 @@ function deadlineInfo(value: string | Date | null | undefined) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   const diff = date.getTime() - Date.now();
-  return { label: tanggalJam(date), late: diff < 0, soon: diff <= 48 * 3600_000 };
+  const overdue = diff < 0;
+  const soon = !overdue && diff <= 6 * 3600_000;
+  const status = overdue ? "OVERDUE" : soon ? "DUE SOON (< 6 jam)" : "ON TRACK";
+  return { label: `${status} · ${tanggalJam(date)}`, overdue, soon };
 }
 
 export function ProductionBoard({ orders, returnTo }: { orders: Order[]; returnTo: string }) {
@@ -101,8 +104,8 @@ export function ProductionBoard({ orders, returnTo }: { orders: Order[]; returnT
                   <p className="mt-1 text-sm font-medium leading-snug">{order.name}</p>
                   <p className="mt-0.5 text-xs text-mute">{order.service ?? "Layanan"}</p>
                   {dl && (
-                    <p className={`mt-2 text-xs font-medium ${dl.late ? "text-danger" : dl.soon ? "text-[var(--quiet)]" : "text-mute"}`}>
-                      {dl.late ? "Terlambat" : "Deadline"} {dl.label}
+                    <p className={`mt-2 text-xs font-medium ${dl.overdue ? "text-danger" : dl.soon ? "text-accent" : "text-mute"}`}>
+                      {dl.label}
                     </p>
                   )}
                   <p className="mt-2 mono text-xs text-mute">

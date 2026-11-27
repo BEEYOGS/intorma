@@ -25,30 +25,39 @@ type Params = {
   saved?: string;
   deleted?: string;
   view?: string;
+  sort?: string;
 };
 
-type Special = "belum" | "deadline" | "aging";
+type Special = "belum" | "deadline" | "aging" | "overdue";
+type Sort = "deadline" | "newest";
 
-function buildReturn(filter: string | null, special: Special | null, q: string): string {
+function buildReturn(
+  filter: string | null,
+  special: Special | null,
+  q: string,
+  sort: Sort = "deadline",
+): string {
   const params = new URLSearchParams();
   if (filter) params.set("s", filter);
   if (special) params.set("p", special);
   if (q) params.set("q", q);
+  if (sort === "newest") params.set("sort", "newest");
   const query = params.toString();
   return query ? `/admin?${query}` : "/admin";
 }
 
-/** Penanda deadline: merah kalau lewat, abu muda kalau kurang dari 48 jam. */
+/** SLA produksi: merah kalau lewat, biru kalau kurang dari 6 jam. */
 function deadlineBadge(value: string | Date | null | undefined) {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   const diff = date.getTime() - Date.now();
-  const late = diff < 0;
-  const soon = diff <= 48 * 3600_000;
+  const overdue = diff < 0;
+  const soon = !overdue && diff <= 6 * 3600_000;
+  const status = overdue ? "OVERDUE" : soon ? "DUE SOON (< 6 jam)" : "ON TRACK";
   return {
-    label: `${late ? "Lewat" : "Deadline"} ${jam(date)}`,
-    late,
+    label: `${status} · ${jam(date)}`,
+    overdue,
     soon,
   };
 }
@@ -65,16 +74,20 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const params = await searchParams;
   const filter = params.s && isStatus(params.s) ? params.s : null;
   const special: Special | null =
-    !filter && (params.p === "belum" || params.p === "deadline" || params.p === "aging")
+    !filter &&
+    (params.p === "belum" || params.p === "deadline" || params.p === "aging" || params.p === "overdue")
       ? params.p
       : null;
   const q = (params.q ?? "").trim().slice(0, 80);
+  const sort: Sort = params.sort === "newest" ? "newest" : "deadline";
   const openCode = params.open?.toUpperCase() ?? null;
   const saved = params.saved === "1";
   const deleted = params.deleted?.toUpperCase() ?? null;
-  const returnTo = buildReturn(filter, special, q);
+  const returnTo = buildReturn(filter, special, q, sort);
   const boardView = params.view === "board";
   const boardUrl = `${returnTo}${returnTo.includes("?") ? "&" : "?"}view=board`;
+  const deadlineUrl = buildReturn(filter, special, q, "deadline");
+  const newestUrl = buildReturn(filter, special, q, "newest");
 
   const conditions: string[] = [];
   const values: Array<string | number> = [];
@@ -87,7 +100,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   }
   if (special === "deadline") {
     conditions.push(
-      `o.status not in ('selesai', 'batal') and coalesce(o.deadline_at, (o.deadline + time '23:59') at time zone 'Asia/Jakarta') <= now() + interval '2 days'`,
+      `o.status not in ('selesai', 'batal') and coalesce(o.deadline_at, (o.deadline + time '23:59') at time zone 'Asia/Jakarta') <= now() + interval '6 hours'`,
+    );
+  }
+  if (special === "overdue") {
+    conditions.push(
+      `o.status not in ('selesai', 'batal') and coalesce(o.deadline_at, (o.deadline + time '23:59') at time zone 'Asia/Jakarta') < now()`,
     );
   }
   if (special === "aging") {
@@ -103,12 +121,20 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const where = conditions.length ? `where ${conditions.join(" and ")}` : "";
   const from = `from orders o left join services v on v.id = o.service_id`;
 
-  const [orders, matched, counts, unpaid, revenue, aging, attention] = await Promise.all([
+  const orderClause =
+    sort === "newest"
+      ? "order by o.created_at desc"
+      : `order by
+          case when o.status in ('selesai', 'batal') then 1 else 0 end,
+          coalesce(o.deadline_at, (o.deadline + time '23:59') at time zone 'Asia/Jakarta') asc nulls last,
+          o.created_at desc`;
+
+  const [orders, matched, counts, unpaid, revenue, aging, attention, sla] = await Promise.all([
     sql.query(
       `select o.*, coalesce(v.name, o.service_label) as service, v.price_from as service_price, v.unit_label as unit_label,
         (select p.proof_url from payments p where p.order_id = o.id and p.provider = 'manual' order by p.id desc limit 1) as proof_url
        ${from} ${where}
-       order by o.created_at desc limit 100`,
+       ${orderClause} limit 100`,
       values,
     ),
     sql.query(`select count(*)::int as n ${from} ${where}`, values),
@@ -130,10 +156,20 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         (select count(*)::int from orders
           where status not in ('selesai', 'batal')
             and coalesce(deadline_at, (deadline + time '23:59') at time zone 'Asia/Jakarta')
-              <= now() + interval '48 hours') as deadline,
+              <= now() + interval '6 hours') as deadline,
         (select count(*)::int from orders
           where price is not null and not paid and status <> 'batal'
             and created_at <= now() - interval '2 days') as aging`,
+    sql`
+      with active as (
+        select coalesce(deadline_at, (deadline + time '23:59') at time zone 'Asia/Jakarta') as due
+        from orders where status not in ('selesai', 'batal')
+      )
+      select
+        (select count(*)::int from active where due < now()) as overdue,
+        (select count(*)::int from active where due >= now() and due <= now() + interval '6 hours') as soon,
+        (select count(*)::int from active where due > now() + interval '6 hours') as on_track,
+        (select count(*)::int from active where due is null) as flexible`,
   ]);
 
   const count = (st: string) => Number(counts.find((c) => c.status === st)?.n ?? 0);
@@ -146,8 +182,15 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const focus = attention[0] as
     | { konfirmasi: number; revisi: number; deadline: number; aging: number }
     | undefined;
-  const keepSearch = (path: string) =>
-    q ? `${path}${path.includes("?") ? "&" : "?"}q=${encodeURIComponent(q)}` : path;
+  const slaRows = sla[0] as
+    | { overdue: number; soon: number; on_track: number; flexible: number }
+    | undefined;
+  const keepSearch = (path: string) => {
+    const url = new URL(path, "http://admin.local");
+    if (q) url.searchParams.set("q", q);
+    if (sort === "newest") url.searchParams.set("sort", "newest");
+    return `${url.pathname}${url.search}`;
+  };
   const clearSearch = filter
     ? `/admin?s=${filter}`
     : special
@@ -165,7 +208,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
     {
       href: keepSearch("/admin?p=deadline"),
       icon: Clock,
-      label: "Deadline ≤48 jam",
+      label: "Deadline ≤6 jam",
       value: Number(focus?.deadline ?? 0),
       color: STATUS_META.dikerjakan.color,
     },
@@ -215,6 +258,13 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         <Link href={boardUrl} className={boardView ? "btn btn-primary min-h-9 px-4 text-xs" : "btn btn-ghost min-h-9 px-4 text-xs"}>
           Papan produksi
         </Link>
+        <span aria-hidden className="mx-1 hidden w-px bg-line sm:block" />
+        <Link href={deadlineUrl} className={sort === "deadline" ? "btn btn-primary min-h-9 px-4 text-xs" : "btn btn-ghost min-h-9 px-4 text-xs"}>
+          Urut deadline
+        </Link>
+        <Link href={newestUrl} className={sort === "newest" ? "btn btn-primary min-h-9 px-4 text-xs" : "btn btn-ghost min-h-9 px-4 text-xs"}>
+          Terbaru
+        </Link>
       </div>
 
       <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -223,6 +273,36 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         <Stat label="Selesai" value={count("selesai")} hint="total pesanan selesai" />
         <Stat label="Belum dibayar" value={unpaidCount} hint="harga sudah disepakati" href={keepSearch("/admin?p=belum")} />
       </div>
+
+      <section
+        aria-label="KPI SLA produksi"
+        className="mt-4 rounded-tag-lg border border-line bg-panel/40 p-4 sm:p-5"
+      >
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">SLA produksi</h2>
+          <p className="text-xs text-mute">Dihitung dari deadline pesanan aktif</p>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <SlaStat
+            label="OVERDUE"
+            value={Number(slaRows?.overdue ?? 0)}
+            tone="danger"
+            href={keepSearch("/admin?p=overdue")}
+          />
+          <SlaStat
+            label={"DUE SOON (< 6 jam)"}
+            value={Number(slaRows?.soon ?? 0)}
+            tone="accent"
+            href={keepSearch("/admin?p=deadline")}
+          />
+          <SlaStat
+            label="ON TRACK"
+            value={Number(slaRows?.on_track ?? 0)}
+            tone="neutral"
+            hint={`Fleksibel: ${Number(slaRows?.flexible ?? 0)}`}
+          />
+        </div>
+      </section>
 
       {focusItems.length > 0 && (
         <section className="mt-4 rounded-tag-lg border border-line bg-panel/40 p-5 sm:p-6">
@@ -306,8 +386,11 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         <FilterLink href={keepSearch("/admin?p=belum")} active={special === "belum"}>
           Belum dibayar ({unpaidCount})
         </FilterLink>
+        <FilterLink href={keepSearch("/admin?p=overdue")} active={special === "overdue"}>
+          OVERDUE ({Number(slaRows?.overdue ?? 0)})
+        </FilterLink>
         <FilterLink href={keepSearch("/admin?p=deadline")} active={special === "deadline"}>
-          Deadline dekat ({Number(focus?.deadline ?? 0)})
+          DUE SOON &lt; 6 jam ({Number(slaRows?.soon ?? 0)})
         </FilterLink>
         <FilterLink href={keepSearch("/admin?p=aging")} active={special === "aging"}>
           Telat bayar ({Number(focus?.aging ?? 0)})
@@ -334,7 +417,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
               : special === "belum"
                 ? "Semua pesanan berharga sudah dibayar."
                 : special === "deadline"
-                  ? "Tidak ada deadline dalam 48 jam ke depan."
+                  ? "Tidak ada deadline dalam 6 jam ke depan."
                   : special === "aging"
                     ? "Tidak ada pesanan yang telat bayar."
                     : filter
@@ -392,10 +475,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       {dl && (
                         <span
                           className={`mt-1 inline-flex items-center gap-1 rounded-tag-sm border px-2 py-1 text-[11px] font-semibold md:hidden ${
-                            dl.late
+                            dl.overdue
                               ? "border-danger/35 bg-danger/[0.06] text-danger"
                               : dl.soon
-                                ? "border-[var(--quiet)]/35 bg-[var(--quiet)]/[0.07] text-[var(--quiet)]"
+                                ? "border-accent/35 bg-accent/[0.07] text-accent"
                                 : "border-line text-mute"
                           }`}
                         >
@@ -411,7 +494,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       {dl && (
                         <span
                           className={`mt-1 flex items-center gap-1 text-[11px] font-semibold ${
-                            dl.late ? "text-danger" : dl.soon ? "text-[var(--quiet)]" : "text-mute"
+                            dl.overdue ? "text-danger" : dl.soon ? "text-accent" : "text-mute"
                           }`}
                         >
                           <span aria-hidden className="size-1.5 rounded-full bg-current" />
@@ -587,6 +670,38 @@ function Stat({ label, value, hint, href }: { label: string; value: number; hint
     </>
   );
   const className = "block rounded-tag-lg border border-line bg-panel/50 p-4 transition-colors sm:p-5";
+  return href ? (
+    <Link href={href} className={`${className} hover:border-accent/30`}>
+      {body}
+    </Link>
+  ) : (
+    <div className={className}>{body}</div>
+  );
+}
+
+function SlaStat({
+  label,
+  value,
+  tone,
+  href,
+  hint,
+}: {
+  label: string;
+  value: number;
+  tone: "danger" | "accent" | "neutral";
+  href?: string;
+  hint?: string;
+}) {
+  const valueClass =
+    tone === "danger" ? "text-danger" : tone === "accent" ? "text-accent" : "text-ink";
+  const body = (
+    <>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">{label}</p>
+      <p className={`mt-1.5 text-2xl font-semibold tabular-nums tracking-tight ${valueClass}`}>{value}</p>
+      {hint && <p className="mt-0.5 text-[11px] text-mute">{hint}</p>}
+    </>
+  );
+  const className = "block rounded-tag-sm border border-line bg-panel/60 px-3 py-3 transition-colors";
   return href ? (
     <Link href={href} className={`${className} hover:border-accent/30`}>
       {body}

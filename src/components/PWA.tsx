@@ -10,33 +10,51 @@ type InstallPrompt = Event & {
 };
 
 type Platform = "ios" | "android" | "desktop";
-type StorageScope = "session" | "local";
 
 const POPUP_MS = 15_000;
-const AUTO_SHOW_MS = 3_000;
+const DISMISS_MS = 30 * 24 * 60 * 60 * 1000;
 const OPEN_EVENT = "intorma:open-install";
 const DISMISSED_KEY = "intorma-install-dismissed";
 const INSTALLED_KEY = "intorma-install-installed";
 
-function readFlag(key: string, scope: StorageScope): boolean {
+function readInstalledFlag(): boolean {
   try {
-    const store = scope === "session" ? window.sessionStorage : window.localStorage;
-    return store.getItem(key) === "1";
+    return window.localStorage.getItem(INSTALLED_KEY) === "1";
   } catch {
     return false;
   }
 }
 
-function writeFlag(key: string, scope: StorageScope) {
+/** Penolakan dipatuhi 30 hari. Flag lama berbasis session juga dimigrasi. */
+function dismissedRecently(): boolean {
   try {
-    const store = scope === "session" ? window.sessionStorage : window.localStorage;
-    store.setItem(key, "1");
+    const raw = window.localStorage.getItem(DISMISSED_KEY);
+    if (raw) {
+      const at = Number(raw);
+      if (Number.isFinite(at)) return Date.now() - at < DISMISS_MS;
+    }
+    return window.sessionStorage.getItem(DISMISSED_KEY) === "1";
   } catch {
-    /* storage bisa diblokir; popup tetap berfungsi untuk sesi ini. */
+    return false;
   }
 }
 
-// Deteksi multi-lapis dipusatkan di useAppEnvironment / isInstalledEnvironment.
+function rememberDismissal() {
+  try {
+    window.localStorage.setItem(DISMISSED_KEY, String(Date.now()));
+    window.sessionStorage.removeItem(DISMISSED_KEY);
+  } catch {
+    /* storage bisa diblokir; popup tetap tertutup untuk sesi ini. */
+  }
+}
+
+function rememberInstalled() {
+  try {
+    window.localStorage.setItem(INSTALLED_KEY, "1");
+  } catch {
+    /* deteksi environment lain tetap bekerja. */
+  }
+}
 
 export function ServiceWorkerRegister() {
   useEffect(() => {
@@ -49,7 +67,7 @@ export function ServiceWorkerRegister() {
   return null;
 }
 
-/** Tombol kecil untuk header/menu/halaman; membuka popup install global. */
+/** Tombol pasif di header/menu; tidak pernah membuka popup dengan sendirinya. */
 export function InstallNavButton({
   className = "",
   label = "Install aplikasi",
@@ -62,7 +80,14 @@ export function InstallNavButton({
   onOpen?: () => void;
 }) {
   const env = useAppEnvironment();
-  if (env.isInstalled) return null;
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    setHidden(isInstalledEnvironment() || readInstalledFlag() || dismissedRecently());
+  }, []);
+
+  if (env.isInstalled || hidden) return null;
+
   return (
     <button
       type="button"
@@ -93,11 +118,9 @@ export function InstallButton() {
     timer.current = null;
   }, []);
 
+  /** Popup hanya dibuka karena klik tombol pasif, bukan auto-show. */
   const openPopup = useCallback(() => {
-    if (isInstalledEnvironment() || readFlag(INSTALLED_KEY, "local")) {
-      setInstalled(true);
-      return;
-    }
+    if (isInstalledEnvironment() || readInstalledFlag() || dismissedRecently()) return;
     clearTimer();
     setShowPopup(true);
     setPopupKey((value) => value + 1);
@@ -107,18 +130,18 @@ export function InstallButton() {
   const closePopup = useCallback(() => {
     clearTimer();
     setShowPopup(false);
-    writeFlag(DISMISSED_KEY, "session");
+    rememberDismissal();
   }, [clearTimer]);
 
   useEffect(() => {
     const onPrompt = (event: Event) => {
+      // Simpan prompt untuk aksi eksplisit; jangan tampilkan modal otomatis.
       event.preventDefault();
       setPrompt(event as InstallPrompt);
-      if (!readFlag(DISMISSED_KEY, "session")) openPopup();
     };
     const onInstalled = () => {
       clearTimer();
-      writeFlag(INSTALLED_KEY, "local");
+      rememberInstalled();
       setInstalled(true);
       setShowPopup(false);
       setPrompt(null);
@@ -133,11 +156,7 @@ export function InstallButton() {
     const android = /android/i.test(navigator.userAgent);
     setPlatform(ios ? "ios" : android ? "android" : "desktop");
 
-    if (!isInstalledEnvironment() && !readFlag(INSTALLED_KEY, "local") && !readFlag(DISMISSED_KEY, "session")) {
-      timer.current = setTimeout(openPopup, AUTO_SHOW_MS);
-    } else if (isInstalledEnvironment() || readFlag(INSTALLED_KEY, "local")) {
-      setInstalled(true);
-    }
+    if (isInstalledEnvironment() || readInstalledFlag()) setInstalled(true);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
@@ -153,10 +172,10 @@ export function InstallButton() {
       await prompt.prompt();
       const choice = await prompt.userChoice;
       if (choice.outcome === "accepted") {
-        writeFlag(INSTALLED_KEY, "local");
+        rememberInstalled();
         setInstalled(true);
       } else {
-        writeFlag(DISMISSED_KEY, "session");
+        rememberDismissal();
       }
     } catch {
       /* Prompt bisa dibatalkan browser; biarkan pengguna memakai panduan. */

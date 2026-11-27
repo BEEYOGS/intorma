@@ -127,7 +127,13 @@ export async function createCoreCharge(order: GatewayOrder, method: PaymentMetho
 
   const response = await fetch(`${baseUrl()}/v2/charge`, {
     method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json", authorization: authHeader() },
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json",
+      authorization: authHeader(),
+      // Menjaga charge tidak dobel bila klien mengulang submit yang sama.
+      "Idempotency-Key": orderIdUsed,
+    },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(20_000),
     cache: "no-store",
