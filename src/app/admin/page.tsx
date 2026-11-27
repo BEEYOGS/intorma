@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { StatusBadge } from "@/components/Chrome";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderEditor } from "@/components/OrderEditor";
+import { ProductionBoard } from "@/components/ProductionBoard";
 import { BulkOrderForm } from "@/components/BulkOrderForm";
 import { QuickActions } from "@/components/QuickActions";
 import { ChevronRight, ClipboardCheck, Clock, Eye, MessageCircle, Printer, RotateCcw, Search, Wallet, X, type LucideIcon } from "lucide-react";
@@ -22,6 +23,7 @@ type Params = {
   open?: string;
   saved?: string;
   deleted?: string;
+  view?: string;
 };
 
 type Special = "belum" | "deadline" | "aging";
@@ -70,6 +72,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const saved = params.saved === "1";
   const deleted = params.deleted?.toUpperCase() ?? null;
   const returnTo = buildReturn(filter, special, q);
+  const boardView = params.view === "board";
+  const boardUrl = `${returnTo}${returnTo.includes("?") ? "&" : "?"}view=board`;
 
   const conditions: string[] = [];
   const values: Array<string | number> = [];
@@ -202,6 +206,15 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           </Link>
         </div>
       )}
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        <Link href={returnTo} className={boardView ? "btn btn-ghost min-h-9 px-4 text-xs" : "btn btn-primary min-h-9 px-4 text-xs"}>
+          Tabel
+        </Link>
+        <Link href={boardUrl} className={boardView ? "btn btn-primary min-h-9 px-4 text-xs" : "btn btn-ghost min-h-9 px-4 text-xs"}>
+          Papan produksi
+        </Link>
+      </div>
 
       <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Baru" value={count("menunggu")} hint="menunggu konfirmasi" href={keepSearch("/admin?s=menunggu")} />
@@ -342,6 +355,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
             </Link>
           )}
         </div>
+      ) : boardView ? (
+        <ProductionBoard orders={orders as any} returnTo={returnTo} />
       ) : (
         <>
           <div className="mt-4 hidden grid-cols-[7rem_minmax(0,1.2fr)_minmax(0,.85fr)_10rem_7rem_7rem_1.25rem] gap-4 border-b border-line px-3 pb-2 text-xs font-semibold uppercase tracking-[0.14em] text-mute md:grid">
