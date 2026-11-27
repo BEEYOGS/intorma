@@ -25,6 +25,7 @@ import {
 } from "@/lib/payment";
 import { adminWhatsApp, sendWA, siteUrl } from "@/lib/wa";
 import { audit } from "@/lib/audit";
+import { clientErrorMessage } from "@/lib/error";
 
 export type OrderState = {
   error?: string;
@@ -734,7 +735,8 @@ export async function chargePayment(_prev: ActionResult, f: FormData): Promise<A
       method,
     );
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Gagal membuat pembayaran." };
+    console.error("chargePayment failed", error);
+    return { error: clientErrorMessage(error, "Gagal membuat pembayaran. Coba lagi.") };
   }
 
   await sql`

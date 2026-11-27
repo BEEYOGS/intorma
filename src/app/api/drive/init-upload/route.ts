@@ -7,6 +7,7 @@ import {
   isAllowedUpload,
 } from "@/lib/upload-rules";
 import { verifyUploadToken } from "@/lib/upload-token";
+import { clientErrorMessage } from "@/lib/error";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -106,10 +107,9 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     console.error("drive init-upload failed", error);
-    const message = error instanceof Error ? error.message : "Gagal menyiapkan upload ke Google Drive.";
     return NextResponse.json(
       {
-        error: `Gagal menyiapkan upload ke Google Drive. ${message.slice(0, 240)}`,
+        error: clientErrorMessage(error, "Gagal menyiapkan upload ke Google Drive."),
         drive: true,
       },
       { status: 502 },
