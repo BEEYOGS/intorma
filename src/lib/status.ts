@@ -10,6 +10,8 @@ export const STATUS_META: Record<
     label: string;
     short: string;
     color: string;
+    /** Warna teks di atas kertas putih (nota HTML dan PDF). */
+    printColor: string;
     soft: string;
     icon: StatusIconName;
     wa: (code: string, name: string) => string;
@@ -19,6 +21,7 @@ export const STATUS_META: Record<
     label: "Menunggu konfirmasi",
     short: "Menunggu",
     color: "#a1a1aa",
+    printColor: "#52525b",
     soft: "rgba(161, 161, 170, 0.13)",
     icon: "clock",
     wa: (c, n) => `Halo ${n}, pesananmu ${c} sudah kami terima. Kami cek brief-nya dulu, lalu kabari soal harga dan jadwal.`,
@@ -27,6 +30,7 @@ export const STATUS_META: Record<
     label: "Sedang dikerjakan",
     short: "Dikerjakan",
     color: "#3291ff",
+    printColor: "#1d4ed8",
     soft: "rgba(0, 112, 243, 0.14)",
     icon: "brush",
     wa: (c, n) => `Halo ${n}, pesanan ${c} sekarang sedang dikerjakan.`,
@@ -35,6 +39,7 @@ export const STATUS_META: Record<
     label: "Revisi",
     short: "Revisi",
     color: "#c7c7c7",
+    printColor: "#3f3f46",
     soft: "rgba(199, 199, 199, 0.14)",
     icon: "rotate",
     wa: (c, n) => `Halo ${n}, pesanan ${c} masuk tahap revisi. Kami lanjutkan sesuai catatanmu.`,
@@ -43,6 +48,7 @@ export const STATUS_META: Record<
     label: "Selesai",
     short: "Selesai",
     color: "#ffffff",
+    printColor: "#171717",
     soft: "rgba(255, 255, 255, 0.10)",
     icon: "check",
     wa: (c, n) => `Halo ${n}, pesanan ${c} sudah selesai. File final dikirim lewat chat ini.`,
@@ -51,6 +57,7 @@ export const STATUS_META: Record<
     label: "Dibatalkan",
     short: "Batal",
     color: "#ef4444",
+    printColor: "#b91c1c",
     soft: "rgba(239, 68, 68, 0.14)",
     icon: "ban",
     wa: (c, n) => `Halo ${n}, pesanan ${c} dibatalkan. Kalau ini keliru, balas chat ini.`,

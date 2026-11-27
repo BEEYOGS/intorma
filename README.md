@@ -1,12 +1,14 @@
-# in.torma — modern SaaS
+# in.torma — self-service desain & cetak
 
-Work in progress. The current app is a **mini-admin + product portal** design:
-- Public product snapshot: `/`
-- Dashboard: `/dashboard`
-- Admin login: `/admin/login`, admin area: `/admin`
-- Contact: `/contact`
+Platform self-service untuk memesan jasa desain dan cetak: katalog dan kalkulasi harga,
+order dengan deadline tanggal **dan jam**, pembayaran (transfer/Midtrans), lacak status,
+portal pelanggan, nota PDF, PWA, serta installer native (Windows/Android).
 
-Palette: grayscale ramp (black → white) as the base, with red reserved for status and warnings. The in.torma logo keeps its original colors.
+Antarmuka memakai tema gelap monokrom dengan aksen biru `#0070f3`; hijau tidak dipakai,
+merah hanya untuk kondisi berbahaya. Logo resmi mempertahankan warna aslinya.
+
+Halaman utama: `/` · order: `/order` · lacak: `/lacak` · portal: `/masuk`
+· admin: `/admin/login` · unduh aplikasi: `/download`.
 
 ## Run
 ```bash
@@ -48,9 +50,9 @@ Halaman yang dipakai pelanggan:
 - `/order` — pilih layanan, atur bahan/ukuran/finishing/jumlah, lihat total, lalu kirim pesanan.
 - `/lacak` dan `/lacak/INT-DDMMYY001` — cek status, rincian harga, dan instruksi transfer.
 
-Tampilan memakai tema gelap bertingkat obsidian → panel → garis tipis. Aksen aksi/lunas adalah abu
-perak, bukan hijau; amber, biru, cyan, violet, dan merah tetap dipakai sebagai penanda status yang
-berbeda. Teks status di nota/PDF memakai `printColor` supaya tetap terbaca di atas kertas putih.
+Tampilan memakai tema gelap bertingkat obsidian → panel → garis tipis. Aksen bidang dan tombol
+memakai biru `#0070f3`; teks kecil memakai turunannya `#3291ff` agar kontrasnya lolos audit.
+Teks status di nota/PDF memakai `printColor` supaya tetap terbaca di atas kertas putih.
 
 Satu fungsi perhitungan dipakai form dan server action (`src/lib/pricing.ts`), sehingga angka di
 layar sama dengan tagihan yang tersimpan. Model harganya:
@@ -65,13 +67,14 @@ model baru ada di `services.pricing_model`. Rincian pesanan disimpan sebagai sna
 `orders.options`, jadi pesanan lama tetap menampilkan harga yang saat itu disepakati.
 
 Untuk produk cetak, pelanggan bisa **upload langsung** atau menempel link Google Drive/WeTransfer.
-Tanpa Drive, file disimpan di tabel `uploads` (maksimal 4 MB, karena batas body Vercel 4,5 MB) dan
-diakses lewat `/api/upload/<kode>`. Dengan Drive aktif, file besar **tidak melewati Vercel**:
-browser membuat sesi Google Drive Resumable Upload lalu mengirim chunk 8 MB langsung ke Google,
-dengan progress bar, retry otomatis 3×, dan nama file `[KODE]_[NamaPelanggan]_[NamaAsli]`.
+Google Drive wajib aktif untuk tombol upload: file tidak pernah disimpan di database ataupun
+melewati Vercel. Browser membuat sesi Google Drive Resumable Upload lalu mengirim chunk 8 MB
+langsung ke Google, dengan progress bar, retry otomatis 3×, dan nama file
+`[KODE]_[NamaPelanggan]_[NamaAsli]`. Neon hanya menyimpan metadata di tabel `uploads`.
 Batas praktisnya mengikuti Google Drive (5 TB per file), bukan batas serverless.
+Unduh ZIP maksimal 200 MB total agar tidak menghabiskan memory serverless.
 
-### Penyimpanan file di Google Drive (opsional)
+### Penyimpanan file di Google Drive (wajib untuk upload)
 
 Untuk memakai kuota Google Drive pribadi:
 
@@ -123,7 +126,9 @@ sedang reconnect. Branding “sent via fonnte” ditentukan oleh paket/device Fo
 satu-satunya cara menghapusnya adalah pindah provider atau mengaktifkan fitur branding di paket Fonnte.
 Pesan lama tidak bisa diubah watermark-nya; hanya pesan baru yang terpengaruh setelah pindah provider.
 
-Alternatif tanpa watermark — Meta WhatsApp Cloud API ( belum diaktifkan di produksi ):
+Alternatif tanpa watermark — Meta WhatsApp Cloud API (belum diaktifkan di produksi).
+Provider ini hanya dipakai jika `WA_PROVIDER=cloud` ditetapkan eksplisit; keberadaan token
+saja tidak mengganti Fonnte. Webhook Cloud wajib memakai `META_WA_APP_SECRET`.
 
 ```
 WA_PROVIDER=cloud
@@ -131,7 +136,7 @@ META_WA_TOKEN=system-user-token-dari-meta
 META_WA_PHONE_ID=phone-number-id-dari-meta
 META_WA_VERSION=v25.0
 META_WA_VERIFY_TOKEN=string-acak-untuk-verifikasi-webhook
-META_WA_APP_SECRET=app-secret-untuk-tanda-tangan-webhook (opsional)
+META_WA_APP_SECRET=app-secret-untuk-tanda-tangan-webhook (wajib jika cloud)
 ADMIN_WHATSAPP_NUMBER=0895329940950
 ```
 
@@ -236,6 +241,8 @@ Perubahan langsung dipakai halaman `/order` tanpa menjalankan SQL manual.
   pesanan per hari, kunci `reminder-<kode>-<tanggal>`) dan tagihan belum dibayar pada hari ke-2, 7,
   dan 14 (kunci `unpaid-<kode>-<stage>`). Rangkuman admin dikirim sekali sehari dengan kunci
   `admin-digest-<tanggal>`.
+- **Keamanan cron**: endpoint `/api/cron/reminders` menolak panggilan tanpa
+  `Authorization: Bearer <CRON_SECRET>` di production. `CRON_SECRET` wajib diisi di Vercel.
 - **Pesan klien**: balasan yang bukan perintah `status` diteruskan ke WhatsApp admin, maksimal sekali
   per nomor per hari (`inbound-<nomor>-<tanggal>`) supaya kuota tetap hemat.
 - **Pengaturan notifikasi**: `/admin/pengaturan` punya dua sakelar terpisah untuk pengingat klien dan

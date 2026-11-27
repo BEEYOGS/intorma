@@ -135,11 +135,14 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   }
   if (values.ref && !/^https?:\/\//i.test(values.ref)) return { error: "Link referensi harus diawali http:// atau https://.", values };
   if (!values.deadline) return { error: "Pilih tanggal deadline pengerjaan dulu.", values };
-  const deadlineTime = /^\d{2}:\d{2}$/.test(values.deadlineTime) ? values.deadlineTime : "17:00";
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(values.deadlineTime ?? "")) {
+    return { error: "Jam deadline belum valid. Pilih jam antara 00:00 sampai 23:59.", values };
+  }
+  const deadlineTime = values.deadlineTime;
   // Input dari browser adalah waktu WIB; ubah ke UTC agar konsisten di server.
   const deadlineAt = new Date(`${values.deadline}T${deadlineTime}:00+07:00`);
   if (Number.isNaN(deadlineAt.getTime())) return { error: "Tanggal atau jam deadline belum valid.", values };
-  if (deadlineAt.getTime() < Date.now() - 60_000) {
+  if (deadlineAt.getTime() < Date.now() - 30_000) {
     return { error: "Deadline tidak boleh di masa lalu.", values };
   }
   if (svc.requires_file && !values.file) {
@@ -148,8 +151,13 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   if (values.file && !/^https?:\/\//i.test(values.file) && !values.file.startsWith("/api/upload/")) {
     return { error: "Link file harus diawali http:// atau https://.", values };
   }
-  const fileUrl = values.file.startsWith("/api/upload/")
-    ? `${siteUrl()}${values.file}`
+  // Simpan kode upload sebelum URL diubah absolut, supaya relasi uploads
+  // ke order tidak hilang saat admin hendak menyertakan tautan Drive.
+  const uploadCode = values.file.startsWith("/api/upload/")
+    ? values.file.slice("/api/upload/".length).split("?")[0]
+    : null;
+  const fileUrl = uploadCode
+    ? `${siteUrl()}/api/upload/${uploadCode}`
     : values.file || null;
 
   const quote = calculateQuote(svc, {
@@ -193,8 +201,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
       values (${order.id}, 'manual', 'transfer', ${quote.price}, 'pending')`;
   }
   let driveLink: string | null = null;
-  if (fileUrl?.startsWith("/api/upload/")) {
-    const uploadCode = fileUrl.slice("/api/upload/".length).split("?")[0];
+  if (uploadCode) {
     const uploaded = (await sql`
       update uploads set order_id = ${order.id},
         customer_id = coalesce(customer_id, ${customer?.id ?? null})
@@ -670,8 +677,8 @@ export async function deleteOption(_prev: ActionResult, f: FormData): Promise<Ac
 }
 
 export async function startPayment(_prev: ActionResult, f: FormData): Promise<ActionResult> {
-  const code = str(f, "code").toUpperCase();
-  if (!code) return { error: "Kode pesanan tidak ditemukan." };
+  const code = normalizeCode(str(f, "code"));
+  if (!isValidCode(code)) return { error: "Kode pesanan tidak valid." };
   if (!gatewayEnabled()) return { error: "Payment gateway belum dikonfigurasi. Gunakan transfer manual." };
 
   const order = (await sql`
@@ -693,9 +700,9 @@ export async function startPayment(_prev: ActionResult, f: FormData): Promise<Ac
  * halaman pembayaran bisa menampilkan QR/nomor VA yang sama saat dimuat ulang.
  */
 export async function chargePayment(_prev: ActionResult, f: FormData): Promise<ActionResult> {
-  const code = str(f, "code").toUpperCase();
+  const code = normalizeCode(str(f, "code"));
   const method = str(f, "method") as PaymentMethod;
-  if (!code) return { error: "Kode pesanan tidak ditemukan." };
+  if (!isValidCode(code)) return { error: "Kode pesanan tidak valid." };
   if (!PAYMENT_METHODS.some((item) => item.id === method)) {
     return { error: "Pilih metode pembayaran dulu." };
   }

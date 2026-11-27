@@ -161,6 +161,7 @@ export function CommandPalette() {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            aria-label="Cari pesanan, layanan, atau halaman"
             placeholder="Cari pesanan, layanan, atau halaman…"
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-mute"
           />

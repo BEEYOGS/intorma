@@ -554,7 +554,7 @@ export function OrderForm({
                       )}
                     </div>
                   </div>
-                  {quote?.error && <p className="mt-3 text-sm text-danger">{quote.error}</p>}
+                  {quote?.error && <p role="alert" className="mt-3 text-sm text-danger">{quote.error}</p>}
                 </div>
               </div>
             </fieldset>

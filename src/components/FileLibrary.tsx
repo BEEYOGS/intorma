@@ -167,13 +167,13 @@ export function FileLibrary({
               <a
                 href={`/api/files/zip?ids=${selected.join(",")}`}
                 download
-                className="btn btn-primary !h-9 text-xs"
+                className="btn btn-primary min-h-11 sm:min-h-0 !h-9 text-xs"
               >
                 <Archive aria-hidden className="size-4" /> Unduh ZIP ({selected.length})
               </a>
             )}
             <label
-              className={`btn btn-ghost !h-9 text-xs ${driveReady ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+              className={`btn btn-ghost min-h-11 sm:min-h-0 !h-9 text-xs ${driveReady ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
             >
               <Upload aria-hidden className="size-4" />
               {uploading ? "Mengunggah…" : driveReady ? "Upload file" : "Drive nonaktif"}
@@ -235,7 +235,7 @@ export function FileLibrary({
                       <button
                         type="button"
                         onClick={() => setPreview(file)}
-                        className="btn btn-ghost !h-9 !px-3 text-xs"
+                        className="btn btn-ghost min-h-11 sm:min-h-0 !h-9 !px-3 text-xs"
                       >
                         <Eye aria-hidden className="size-3.5" /> Pratinjau
                       </button>
@@ -243,7 +243,7 @@ export function FileLibrary({
                     <a
                       href={`/api/upload/${file.code}?download=1`}
                       download
-                      className="btn btn-ghost !h-9 !px-3 text-xs"
+                      className="btn btn-ghost min-h-11 sm:min-h-0 !h-9 !px-3 text-xs"
                     >
                       <Download aria-hidden className="size-3.5" /> Unduh
                     </a>
@@ -283,7 +283,7 @@ export function FileLibrary({
                 <a
                   href={`/api/upload/${preview.code}?download=1`}
                   download
-                  className="btn btn-ghost !h-9 !px-3 text-xs"
+                  className="btn btn-ghost min-h-11 sm:min-h-0 !h-9 !px-3 text-xs"
                 >
                   <Download aria-hidden className="size-3.5" /> Unduh
                 </a>

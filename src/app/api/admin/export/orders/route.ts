@@ -6,7 +6,9 @@ export const runtime = "nodejs";
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
-  const s = String(value).replace(/"/g, '""');
+  let s = String(value).replace(/"/g, '""');
+  // Excel/Sheets mengevaluasi sel yang diawali simbol ini sebagai rumus.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\n]/.test(s) ? `"${s}"` : s;
 }
 
@@ -56,7 +58,8 @@ export async function GET(req: Request) {
   }
 
   const filename = `pesanan-${range === "all" ? "semua" : range + "hari"}.csv`;
-  return new NextResponse(lines.join("\n"), {
+  // BOM UTF-8 supaya Excel Indonesia membaca karakter lokal dengan benar.
+  return new NextResponse(`\uFEFF${lines.join("\n")}`, {
     headers: {
       "content-type": "text/csv; charset=utf-8",
       "content-disposition": `attachment; filename="${filename}"`,

@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { gatewayEnabled, midtransSignature } from "@/lib/payment";
 import { settleMidtransPayment } from "@/lib/payment-settle";
@@ -24,7 +25,9 @@ export async function POST(req: Request) {
   }
 
   const expected = midtransSignature(payload.order_id, payload.status_code, payload.gross_amount);
-  if (expected !== payload.signature_key) {
+  const expectedSig = Buffer.from(expected);
+  const givenSig = Buffer.from(payload.signature_key);
+  if (expectedSig.length !== givenSig.length || !timingSafeEqual(expectedSig, givenSig)) {
     return NextResponse.json({ ok: false, error: "Signature tidak cocok." }, { status: 403 });
   }
 
@@ -38,10 +41,16 @@ export async function POST(req: Request) {
     raw: payload,
   });
 
-  return NextResponse.json({
-    ok: result.ok,
-    code: result.code,
-    reason: result.reason,
-    already: result.already ?? false,
-  });
+  // Nominal tidak cocok bukan alasan untuk menganggap webhook berhasil:
+  // Midtrans perlu retry setelah harga/admin diperbaiki.
+  const status = result.reason === "amount_mismatch" ? 409 : 200;
+  return NextResponse.json(
+    {
+      ok: result.ok,
+      code: result.code,
+      reason: result.reason,
+      already: result.already ?? false,
+    },
+    { status },
+  );
 }

@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { normalizeWA, rupiah, tanggal, tanggalHariIni, tanggalJam } from "@/lib/format";
@@ -39,9 +40,13 @@ function recordMessage(to: string, content: string, key: string, ok: boolean) {
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
+  if (!secret && process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "CRON_SECRET belum dikonfigurasi." }, { status: 503 });
+  }
   if (secret) {
-    const auth = req.headers.get("authorization") ?? "";
-    if (auth !== `Bearer ${secret}`) {
+    const auth = Buffer.from(req.headers.get("authorization") ?? "");
+    const expected = Buffer.from(`Bearer ${secret}`);
+    if (auth.length !== expected.length || !timingSafeEqual(auth, expected)) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
   }
@@ -126,7 +131,9 @@ export async function GET(req: Request) {
 
       const message = lines.filter((line): line is string => Boolean(line)).join("\n");
       const to = normalizeWA(String(r.wa ?? "")) || String(r.wa ?? "");
-      const ok = await sendWA(to, message);
+      // Kunci idempoten ikut ke antrean supaya agent tidak mengirim ulang
+      // pesan yang sudah dicatat gagal oleh cron.
+      const ok = await sendWA(to, message, plan.key);
       await recordMessage(to, message, plan.key, ok);
       if (ok) sent += 1;
     }

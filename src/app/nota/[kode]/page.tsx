@@ -113,7 +113,7 @@ export default async function NotaPage({ params }: { params: Promise<{ kode: str
           </div>
           <div>
             <span className="nota-caption">Status</span>
-            <p className="mt-0.5 font-semibold" style={{ color: meta.color }}>{meta.label}</p>
+            <p className="mt-0.5 font-semibold" style={{ color: meta.printColor }}>{meta.label}</p>
           </div>
           <div className="sm:text-right">
             <span className="nota-caption">Pembayaran</span>

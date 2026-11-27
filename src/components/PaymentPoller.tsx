@@ -39,7 +39,18 @@ export function PaymentPoller({ code, expiresAt }: { code: string; expiresAt: st
 
   useEffect(() => {
     let alive = true;
-    const check = async () => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempt = 0;
+
+    // Backoff progresif: 2s, 4s, 8s, 16s, lalu 30s. Halaman yang dibiarkan
+    // terbuka tidak terus menerus memanggil server (dan Midtrans).
+    function schedule() {
+      const delay = Math.min(30_000, 2_000 * 2 ** Math.min(attempt, 4));
+      attempt += 1;
+      timer = setTimeout(() => void check(), delay);
+    }
+
+    async function check() {
       if (done.current) return;
       try {
         const response = await fetch(`/api/payment/status?code=${encodeURIComponent(code)}`, {
@@ -58,14 +69,15 @@ export function PaymentPoller({ code, expiresAt }: { code: string; expiresAt: st
         }
       } catch {
         // Jaringan sedang buruk; polling berikutnya akan mencoba lagi.
+      } finally {
+        if (alive && !done.current) schedule();
       }
-    };
-    const first = setTimeout(check, 2_000);
-    const timer = setInterval(check, 5_000);
+    }
+
+    schedule();
     return () => {
       alive = false;
-      clearTimeout(first);
-      clearInterval(timer);
+      if (timer) clearTimeout(timer);
     };
   }, [code, router]);
 

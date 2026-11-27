@@ -240,3 +240,29 @@ alter table uploads add column if not exists order_id int references orders(id) 
 create index if not exists uploads_customer_idx on uploads(customer_id, created_at desc);
 create unique index if not exists uploads_drive_file_unique
   on uploads(drive_file_id) where drive_file_id is not null;
+
+-- Jejak aksi admin. audit() menulis ke tabel ini; halaman /admin/audit membacanya.
+create table if not exists audit_log (
+  id bigserial primary key,
+  actor text not null default 'admin',
+  action text not null,
+  entity text not null,
+  entity_id text,
+  meta jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists audit_log_created_idx on audit_log(created_at desc);
+
+-- Kode pesanan harian: satu statement UPSERT memberi nomor urut yang atomik.
+-- last_seq sudah diisi dari orders lama supaya deploy tidak mengulang kode.
+create table if not exists order_code_counters (
+  day char(6) primary key,
+  last_seq int not null default 0
+);
+insert into order_code_counters (day, last_seq)
+select substr(code, 5, 6), max(substr(code, 11)::int)
+from orders
+where code ~ '^INT-[0-9]{9,}$'
+group by 1
+on conflict (day) do update
+  set last_seq = greatest(order_code_counters.last_seq, excluded.last_seq);

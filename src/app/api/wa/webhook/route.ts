@@ -64,11 +64,17 @@ export async function POST(req: Request) {
 
   if (isCloud) {
     const appSecret = (process.env.META_WA_APP_SECRET || "").trim();
-    if (appSecret) {
-      const digest = `sha256=${createHmac("sha256", appSecret).update(raw).digest("hex")}`;
-      const signature = req.headers.get("x-hub-signature-256") ?? "";
-      if (!signatureValid(signature, digest)) return NextResponse.json({ ok: false }, { status: 401 });
+    // Provider Cloud harus tanda tangan. Tanpa secret, payload siapa pun bisa
+    // memicu balasan status order, jadi kita tolak lebih awal (fail closed).
+    if (!appSecret) {
+      return NextResponse.json(
+        { ok: false, error: "META_WA_APP_SECRET belum dikonfigurasi." },
+        { status: 503 },
+      );
     }
+    const digest = `sha256=${createHmac("sha256", appSecret).update(raw).digest("hex")}`;
+    const signature = req.headers.get("x-hub-signature-256") ?? "";
+    if (!signatureValid(signature, digest)) return NextResponse.json({ ok: false }, { status: 401 });
   } else {
     const secret = webhookSecret();
     if (!secret || new URL(req.url).searchParams.get("s") !== secret) {

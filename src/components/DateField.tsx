@@ -176,19 +176,24 @@ export function DateField({
               const iso = toISO(view.year, view.month, day);
               const selected = value === iso;
               const isToday = todayISO === iso;
+              const past = iso < todayISO;
               return (
                 <button
                   key={iso}
                   ref={selected ? selectedRef : undefined}
                   type="button"
-                  onClick={() => choose(iso)}
+                  onClick={() => !past && choose(iso)}
+                  disabled={past}
+                  aria-disabled={past || undefined}
                   aria-pressed={selected}
                   aria-current={isToday ? "date" : undefined}
-                  aria-label={`${day} ${MONTHS[view.month]} ${view.year}`}
+                  aria-label={`${day} ${MONTHS[view.month]} ${view.year}${past ? " (tanggal lampau)" : ""}`}
                   className={`grid size-9 place-items-center rounded-full text-[13px] font-medium tabular-nums transition-colors ${
-                    selected
-                      ? "bg-ink text-paper"
-                      : `text-ink/75 hover:bg-ink/5 hover:text-ink ${isToday ? "border border-ink/30" : ""}`
+                    past
+                      ? "cursor-not-allowed text-ink/25"
+                      : selected
+                        ? "bg-ink text-paper"
+                        : `text-ink/75 hover:bg-ink/5 hover:text-ink ${isToday ? "border border-ink/30" : ""}`
                   }`}
                 >
                   {day}

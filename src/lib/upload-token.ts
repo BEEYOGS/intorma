@@ -19,7 +19,8 @@ export function createUploadToken(): string {
 }
 
 export function verifyUploadToken(token: string | null | undefined): boolean {
-  if (!secret()) return true; // development tanpa ADMIN_SECRET
+  // Tanpa kunci rahasia tidak ada cara membedakan token asli, jadi tolak.
+  if (!secret()) return false;
   if (!token) return false;
   const [expiresRaw, given] = token.split(".");
   const expires = Number(expiresRaw);

@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-// Vercel/Neon dark: obsidian + emerald (aksi/lunas), cyan (aktif), amber (menunggu).
+// Tema gelap obsidian + aksen biru #0070f3 (turunan #3291ff untuk teks kecil).
 // Warna memakai kanal RGB supaya utilitas opacity seperti text-mute/70 tetap bekerja.
 export default {
   content: ["./src/**/*.{ts,tsx}"],

@@ -56,7 +56,8 @@ function cloudConfigured(): boolean {
 export function waProvider(): WAProvider {
   const configured = (process.env.WA_PROVIDER || "").trim().toLowerCase();
   if (configured === "cloud" || configured === "fonnte" || configured === "openwa") return configured;
-  if (cloudConfigured()) return "cloud";
+  // Cloud sengaja tidak dipilih otomatis: produksi tetap Fonnte sampai
+  // WA_PROVIDER=cloud ditetapkan eksplisit beserta APP_SECRET dan webhook.
   return fonnteToken() ? "fonnte" : "openwa";
 }
 
@@ -607,11 +608,14 @@ export async function waDiagnostics(): Promise<WADiagnostics> {
   };
 }
 
-async function enqueue(to: string, content: string): Promise<boolean> {
+async function enqueue(to: string, content: string, idempotencyKey?: string): Promise<boolean> {
   try {
     const number = normalizeWA(to);
     if (!number) return false;
-    await sql`insert into wa_outbox (to_number, content) values (${number}, ${content.slice(0, MAX_LENGTH)})`;
+    await sql`
+      insert into wa_outbox (to_number, content, idempotency_key)
+      values (${number}, ${content.slice(0, MAX_LENGTH)}, ${idempotencyKey ?? null})
+      on conflict (idempotency_key) where idempotency_key is not null do nothing`;
     return true;
   } catch {
     return false;
@@ -623,7 +627,11 @@ async function enqueue(to: string, content: string): Promise<boolean> {
  * pesan tetap masuk antrean database dan dikirim oleh `npm run wa:agent`.
  * Semua langkah di-await supaya tidak dibunuh setelah response serverless.
  */
-export async function sendWA(to: string, content: string): Promise<boolean> {
+export async function sendWA(
+  to: string,
+  content: string,
+  idempotencyKey?: string,
+): Promise<boolean> {
   const number = normalizeWA(to);
   if (!number || !content.trim()) return false;
 
@@ -634,7 +642,7 @@ export async function sendWA(to: string, content: string): Promise<boolean> {
       `[wa] ${result.provider ?? waProvider()} gagal (${result.status || "network"}): ${result.error ?? "unknown"}; masuk antrean database.`,
     );
   }
-  return enqueue(to, content);
+  return enqueue(to, content, idempotencyKey);
 }
 
 export const siteUrl = () =>

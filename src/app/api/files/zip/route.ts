@@ -10,6 +10,7 @@ type UploadRow = {
   id: number;
   file_name: string;
   drive_file_id: string | null;
+  size: number | string | null;
 };
 
 export async function GET(req: Request) {
@@ -28,10 +29,20 @@ export async function GET(req: Request) {
   if (!ids.length) return new Response("Pilih minimal satu file.", { status: 400 });
 
   const rows = (await sql`
-    select id, file_name, drive_file_id from uploads
+    select id, file_name, drive_file_id, size from uploads
     where customer_id = ${customer.id} and id = any(${ids}::int[])
     order by id`) as unknown as UploadRow[];
   if (!rows.length) return new Response("File tidak ditemukan.", { status: 404 });
+
+  // Batasi total byte sebelum mengunduh apa pun dari Drive ke memory serverless.
+  const zipMaxBytes = 200 * 1024 * 1024;
+  const total = rows.reduce((sum, row) => sum + Number(row.size ?? 0), 0);
+  if (!Number.isFinite(total) || total > zipMaxBytes) {
+    return new Response(
+      "Total file terlalu besar untuk satu ZIP (maksimal 200 MB). Pilih lebih sedikit file.",
+      { status: 413 },
+    );
+  }
 
   const entries = [];
   for (const row of rows) {

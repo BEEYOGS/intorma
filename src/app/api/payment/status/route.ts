@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isValidCode, normalizeCode } from "@/lib/codes";
 import { sql } from "@/lib/db";
 import { getCoreStatus, isSettlement } from "@/lib/payment";
 import { settleMidtransPayment } from "@/lib/payment-settle";
@@ -6,13 +7,32 @@ import { settleMidtransPayment } from "@/lib/payment-settle";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type CoreStatus = NonNullable<Awaited<ReturnType<typeof getCoreStatus>>>;
+const statusCache = new Map<string, { at: number; value: CoreStatus | null }>();
+const STATUS_TTL_MS = 10_000;
+
+/** Polling dan panggilan langsung yang berulang tidak boleh menyerbu Midtrans. */
+async function coreStatusCached(orderId: string) {
+  const now = Date.now();
+  const hit = statusCache.get(orderId);
+  if (hit && now - hit.at < STATUS_TTL_MS) return hit.value;
+  const value = await getCoreStatus(orderId).catch(() => null);
+  statusCache.set(orderId, { at: now, value });
+  if (statusCache.size > 500) {
+    for (const [key, entry] of statusCache) {
+      if (now - entry.at > STATUS_TTL_MS) statusCache.delete(key);
+    }
+  }
+  return value;
+}
+
 /**
  * Polling ringan untuk halaman pembayaran. Kalau webhook telat, endpoint ini
  * ikut menanyakan status ke Midtrans lalu menyelesaikan pesanan.
  */
 export async function GET(req: Request) {
-  const code = new URL(req.url).searchParams.get("code")?.trim().toUpperCase() ?? "";
-  if (!/^INT-[A-Z0-9-]{4,24}$/.test(code)) {
+  const code = normalizeCode(new URL(req.url).searchParams.get("code") ?? "");
+  if (!isValidCode(code)) {
     return NextResponse.json({ ok: false, error: "Kode tidak valid." }, { status: 400 });
   }
 
@@ -39,7 +59,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, paid: false, orderStatus: order.status, pending: false });
   }
 
-  const status = await getCoreStatus(pending.order_id_used).catch(() => null);
+  const status = await coreStatusCached(pending.order_id_used);
   if (!status) {
     return NextResponse.json({
       ok: true,

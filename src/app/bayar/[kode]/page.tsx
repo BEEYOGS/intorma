@@ -15,6 +15,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { Footer, Nav } from "@/components/Chrome";
 import { PaymentMethodPicker } from "@/components/PaymentMethodPicker";
 import { PaymentPoller } from "@/components/PaymentPoller";
+import { isValidCode, normalizeCode } from "@/lib/codes";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal, tanggalJam } from "@/lib/format";
 import { PAYMENT_METHODS, gatewayEnabled } from "@/lib/payment";
@@ -81,7 +82,8 @@ export default async function PayPage({
   searchParams: Promise<{ ganti?: string }>;
 }) {
   const [{ kode }, { ganti }] = await Promise.all([params, searchParams]);
-  const code = kode.toUpperCase();
+  const code = normalizeCode(kode);
+  if (!isValidCode(code)) notFound();
 
   const order = (
     await sql`

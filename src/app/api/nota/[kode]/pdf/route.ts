@@ -92,7 +92,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kode: s
     y,
     { width: quarter - 6 },
   );
-  doc.fillColor(meta.color);
+  doc.fillColor(meta.printColor);
   doc.text(meta.label, M + quarter * 2, y, { width: quarter - 6 });
   doc.fillColor("#111111");
   doc.text(

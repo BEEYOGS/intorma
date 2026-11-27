@@ -26,10 +26,14 @@ export async function makeCode(): Promise<string> {
   const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   const prefix = `INT-${part("day")}${part("month")}${part("year")}`;
 
+  // Satu baris per hari WIB. UPSERT atomik menggantikan "baca terakhir + 1"
+  // yang bisa duplikat kalau dua order masuk bersamaan.
   const rows = (await sql.query(
-    "select code from orders where code like $1 order by code desc limit 1",
-    [`${prefix}%`],
-  )) as Array<{ code: string }>;
-  const last = Number(String(rows[0]?.code ?? "").slice(prefix.length)) || 0;
-  return `${prefix}${String(last + 1).padStart(3, "0")}`;
+    `insert into order_code_counters (day, last_seq) values ($1, 1)
+     on conflict (day) do update set last_seq = order_code_counters.last_seq + 1
+     returning last_seq`,
+    [prefix.slice(4)],
+  )) as Array<{ last_seq: number }>;
+  const seq = Number(rows[0]?.last_seq ?? 1);
+  return `${prefix}${String(seq).padStart(3, "0")}`;
 }
