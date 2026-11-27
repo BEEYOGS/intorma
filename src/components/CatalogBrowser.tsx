@@ -93,6 +93,7 @@ function ProductCard({ service, query }: { service: Service; query: string }) {
 export function CatalogBrowser({ services }: { services: Service[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category>("all");
+  const [budget, setBudget] = useState<"all" | "low" | "mid" | "high">("all");
   const [sort, setSort] = useState<SortKey>("recommended");
   const [hydrated, setHydrated] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -103,9 +104,11 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     const q = params.get("q");
     const kat = params.get("kat");
     const urut = params.get("urut");
+    const bud = params.get("budget");
     if (q) setQuery(q.slice(0, 120));
     if (isCategory(kat)) setCategory(kat);
     if (isSort(urut)) setSort(urut);
+    if (bud === "low" || bud === "mid" || bud === "high") setBudget(bud);
     setHydrated(true);
   }, []);
 
@@ -119,6 +122,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     };
     patch("q", query.trim(), "");
     patch("kat", category, "all");
+    patch("budget", budget, "all");
     patch("urut", sort, "recommended");
     const search = params.toString();
     const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
@@ -161,7 +165,15 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
 
   const searched = useMemo(() => (query.trim() ? searchServices(services, query) : services), [services, query]);
   const visible = useMemo(() => {
-    const list = searched.filter((service) => category === "all" || service.category === category);
+    const list = searched.filter((service) => {
+      const matchCategory = category === "all" || service.category === category;
+      const matchBudget =
+        budget === "all" ||
+        (budget === "low" && service.price_from < 100000) ||
+        (budget === "mid" && service.price_from >= 100000 && service.price_from <= 300000) ||
+        (budget === "high" && service.price_from > 300000);
+      return matchCategory && matchBudget;
+    });
     if (sort !== "recommended") {
       list.sort((a, b) => {
         if (sort === "price-asc") return a.price_from - b.price_from || a.name.localeCompare(b.name, "id");
@@ -173,7 +185,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
       list.sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name, "id"));
     }
     return list;
-  }, [searched, category, sort, query]);
+  }, [searched, category, budget, sort, query]);
   const suggestions = useMemo(
     () => (query.trim() && visible.length === 0 ? searchSuggestions(query) : []),
     [query, visible.length],
@@ -182,6 +194,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
   function reset() {
     setQuery("");
     setCategory("all");
+    setBudget("all");
     setSort("recommended");
   }
 
@@ -199,7 +212,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
   return (
     <div>
       <div className="card mb-8 p-5">
-        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_13rem] md:items-end">
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_11rem_11rem] md:items-end">
           <label className="block">
             <span className="label flex items-center justify-between gap-2">
               <span>Cari layanan</span>
@@ -229,6 +242,19 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
                 </button>
               )}
             </span>
+          </label>
+          <label className="block">
+            <span className="label">Anggaran</span>
+            <select
+              value={budget}
+              onChange={(event) => setBudget(event.target.value as "all" | "low" | "mid" | "high")}
+              className="field cursor-pointer"
+            >
+              <option value="all">Semua harga</option>
+              <option value="low">Di bawah Rp100rb</option>
+              <option value="mid">Rp100rb – Rp300rb</option>
+              <option value="high">Di atas Rp300rb</option>
+            </select>
           </label>
           <label className="block">
             <span className="label">Urutkan</span>

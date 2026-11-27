@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { createOrder, type OrderState } from "@/app/actions";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
@@ -10,6 +11,7 @@ import { calculateQuote, formatQty, optionPriceLabel, priceLabel } from "@/lib/p
 import { searchServices } from "@/lib/catalog-search";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
+import { BriefAssistant } from "@/components/BriefAssistant";
 import { ServiceIcon } from "@/components/ServiceIcon";
 import { ArrowRight, Check } from "lucide-react";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
@@ -95,6 +97,7 @@ export function OrderForm({
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "design" | "print" | "other">("all");
+  const [brief, setBrief] = useState(v.brief || "");
   const [draft, setDraft] = useState<OrderDraft | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [interacted, setInteracted] = useState(false);
@@ -211,6 +214,16 @@ export function OrderForm({
   const total = quote?.price ?? null;
   const hasPriceError = Boolean(quote?.error);
   const activeStep = !chosen ? 0 : hasPriceError || total == null ? 1 : 2;
+  const relatedServices = chosen
+    ? services
+        .filter((service) => service.id !== chosen.id)
+        .sort(
+          (a, b) =>
+            Number(a.category === chosen.category) - Number(b.category === chosen.category) ||
+            a.sort - b.sort,
+        )
+        .slice(0, 3)
+    : [];
   const briefMin = chosen?.category === "print" ? 10 : 15;
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -825,6 +838,12 @@ setInteracted(true);
             </fieldset>
           )}
 
+          <BriefAssistant
+            category={chosen?.category ?? "design"}
+            dimensions={isArea && width && height ? `${width} × ${height} cm` : undefined}
+            onApply={setBrief}
+          />
+
           <fieldset>
             <legend className="mb-1 text-xl font-semibold tracking-tight">
               {chosen?.category === "print" ? "Catatan pesanan" : "Brief"}
@@ -838,7 +857,8 @@ setInteracted(true);
               <span className="sr-only">Brief</span>
               <textarea
                 name="brief"
-                defaultValue={v.brief}
+                value={brief}
+                onChange={(event) => setBrief(event.target.value)}
                 rows={5}
                 className="field resize-y"
                 required
@@ -954,6 +974,24 @@ setInteracted(true);
                 <p className="mt-1 text-xs text-mute">Lengkapi spesifikasi untuk melihat total.</p>
               )}
             </div>
+
+            {relatedServices.length > 0 && (
+              <div className="mt-5 border-t border-line pt-5">
+                <p className="eyebrow mb-3">Sering dipesan bersama</p>
+                <div className="space-y-2">
+                  {relatedServices.map((service) => (
+                    <Link
+                      key={service.id}
+                      href={`/order?layanan=${service.id}`}
+                      className="flex items-center justify-between gap-3 rounded-tag-sm border border-line px-3 py-2 text-xs transition-colors hover:border-accent/40 hover:bg-white/[0.03]"
+                    >
+                      <span className="font-medium">{service.name}</span>
+                      <span className="mono text-mute">{priceLabel(service)}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {payment.enabled && (payment.bankAccount || payment.note) && (
               <div className="mt-5 rounded-tag-sm border border-line bg-sand/60 px-4 py-3 text-[13px] leading-5 text-ink/70">
