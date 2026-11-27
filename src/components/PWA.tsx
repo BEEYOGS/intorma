@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, X } from "lucide-react";
+import { isInstalledEnvironment, useAppEnvironment } from "@/hooks/useAppEnvironment";
 
 type InstallPrompt = Event & {
   prompt: () => Promise<void>;
@@ -35,12 +36,7 @@ function writeFlag(key: string, scope: StorageScope) {
   }
 }
 
-function isStandalone(): boolean {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
+// Deteksi multi-lapis dipusatkan di useAppEnvironment / isInstalledEnvironment.
 
 export function ServiceWorkerRegister() {
   useEffect(() => {
@@ -65,6 +61,8 @@ export function InstallNavButton({
   iconClassName?: string;
   onOpen?: () => void;
 }) {
+  const env = useAppEnvironment();
+  if (env.isInstalled) return null;
   return (
     <button
       type="button"
@@ -87,6 +85,7 @@ export function InstallButton() {
   const [installed, setInstalled] = useState(false);
   const [platform, setPlatform] = useState<Platform>("desktop");
   const [popupKey, setPopupKey] = useState(0);
+  const env = useAppEnvironment();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearTimer = useCallback(() => {
@@ -95,7 +94,7 @@ export function InstallButton() {
   }, []);
 
   const openPopup = useCallback(() => {
-    if (isStandalone() || readFlag(INSTALLED_KEY, "local")) {
+    if (isInstalledEnvironment() || readFlag(INSTALLED_KEY, "local")) {
       setInstalled(true);
       return;
     }
@@ -134,9 +133,9 @@ export function InstallButton() {
     const android = /android/i.test(navigator.userAgent);
     setPlatform(ios ? "ios" : android ? "android" : "desktop");
 
-    if (!isStandalone() && !readFlag(INSTALLED_KEY, "local") && !readFlag(DISMISSED_KEY, "session")) {
+    if (!isInstalledEnvironment() && !readFlag(INSTALLED_KEY, "local") && !readFlag(DISMISSED_KEY, "session")) {
       timer.current = setTimeout(openPopup, AUTO_SHOW_MS);
-    } else if (isStandalone() || readFlag(INSTALLED_KEY, "local")) {
+    } else if (isInstalledEnvironment() || readFlag(INSTALLED_KEY, "local")) {
       setInstalled(true);
     }
 
@@ -167,6 +166,8 @@ export function InstallButton() {
       setPrompt(null);
     }
   }
+
+  if (env.isInstalled) return null;
 
   return (
     <>

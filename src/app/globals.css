@@ -55,6 +55,11 @@ body {
   color: var(--text);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   line-height: 1.5;
+  overflow-x: clip;
+}
+
+html {
+  overflow-x: clip;
 }
 
 /* Subtle grid background - very faint, not AI-looking */
@@ -241,6 +246,13 @@ body::after {
 
 .input::placeholder {
   color: var(--text-3);
+}
+
+/* Cegah auto-zoom paksa pada iOS Safari saat mengetik di input mobile. */
+@media (max-width: 768px) {
+  .input {
+    font-size: 16px;
+  }
 }
 
 .time-picker-scroll {

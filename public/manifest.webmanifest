@@ -3,7 +3,7 @@
   "short_name": "in.torma",
   "description": "Pesan desain dan cetak, lihat harga langsung, dan pantau status pesanan.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/?source=installed_app",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
