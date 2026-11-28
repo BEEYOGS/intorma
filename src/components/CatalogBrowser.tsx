@@ -22,9 +22,9 @@ const CATEGORIES = [
 ] as const;
 
 type Category = (typeof CATEGORIES)[number]["key"];
-type SortKey = "recommended" | "price-asc" | "price-desc" | "name";
+type SortKey = "recommended" | "price-asc" | "price-desc" | "name" | "days-asc" | "days-desc";
 
-const SORTS: SortKey[] = ["recommended", "price-asc", "price-desc", "name"];
+const SORTS: SortKey[] = ["recommended", "price-asc", "price-desc", "name", "days-asc", "days-desc"];
 const isCategory = (value: string | null): value is Category =>
   !!value && CATEGORIES.some((item) => item.key === value);
 const isSort = (value: string | null): value is SortKey => !!value && SORTS.includes(value as SortKey);
@@ -112,8 +112,27 @@ function ProductCard({
               <Clock3 aria-hidden className="size-3" /> ± {service.days} hari
             </p>
           </div>
-          <span className="inline-flex size-8 shrink-0 place-items-center rounded-tag-sm border border-line text-[var(--text-3)] transition-colors group-hover:border-[var(--border-2)] group-hover:text-[var(--text)]">
-            <ArrowUpRight aria-hidden className="size-4" />
+          <span className="inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                try {
+                  await navigator.clipboard.writeText(`${window.location.origin}/order?layanan=${service.id}`);
+                  toast("Tautan layanan disalin.", "ok");
+                } catch {
+                  toast("Tautan tidak bisa disalin. Salin alamat halaman ini secara manual.", "error");
+                }
+              }}
+              aria-label={`Salin tautan ${service.name}`}
+              className="grid size-8 shrink-0 place-items-center rounded-tag-sm border border-line text-[var(--text-3)] transition-colors hover:border-[var(--border-2)] hover:text-[var(--text)]"
+            >
+              <Link2 aria-hidden className="size-3.5" />
+            </button>
+            <span className="inline-flex size-8 shrink-0 place-items-center rounded-tag-sm border border-line text-[var(--text-3)] transition-colors group-hover:border-[var(--border-2)] group-hover:text-[var(--text)]">
+              <ArrowUpRight aria-hidden className="size-4" />
+            </span>
           </span>
         </div>
       </div>
@@ -358,6 +377,8 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
         if (sort === "price-asc") return a.price_from - b.price_from || a.name.localeCompare(b.name, "id");
         if (sort === "price-desc") return b.price_from - a.price_from || a.name.localeCompare(b.name, "id");
         if (sort === "name") return a.name.localeCompare(b.name, "id");
+       if (sort === "days-asc") return a.days - b.days || a.name.localeCompare(b.name, "id");
+       if (sort === "days-desc") return b.days - a.days || a.name.localeCompare(b.name, "id");
         return a.sort - b.sort || a.name.localeCompare(b.name, "id");
       });
     } else if (!query.trim()) {
@@ -456,6 +477,8 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
               <option value="price-asc">Harga terendah</option>
               <option value="price-desc">Harga tertinggi</option>
               <option value="name">Nama A–Z</option>
+              <option value="days-asc">Paling cepat selesai</option>
+              <option value="days-desc">Paling lama selesai</option>
             </select>
           </label>
         </div>
