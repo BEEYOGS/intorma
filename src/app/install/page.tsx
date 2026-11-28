@@ -7,7 +7,7 @@ export default async function InstallPage() {
   return (
     <div className="animate-in">
       <TopBar />
-      <main id="konten" className="wrap py-10 sm:py-16">
+      <div className="wrap py-10 sm:py-16">
         <p className="eyebrow mb-2">Aplikasi</p>
         <h1 className="display text-3xl sm:text-4xl mb-4">Pasang in.torma di layar utama.</h1>
         <p className="max-w-2xl text-sm leading-6 text-[var(--text-2)]">
@@ -62,7 +62,7 @@ export default async function InstallPage() {
             </a>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

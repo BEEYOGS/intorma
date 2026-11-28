@@ -102,7 +102,7 @@ export default async function DownloadPage() {
   return (
     <div className="animate-in">
       <TopBar />
-      <main id="konten" className="wrap py-10 sm:py-16">
+      <div className="wrap py-10 sm:py-16">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="eyebrow mb-2">Aplikasi</p>
@@ -215,7 +215,7 @@ export default async function DownloadPage() {
           Catatan: installer Windows dan APK dibangun otomatis dari tag rilis. Jika tombol belum aktif,
           buka halaman rilis lalu unduh aset terbaru.
         </p>
-      </main>
+      </div>
     </div>
   );
 }

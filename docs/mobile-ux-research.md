@@ -66,6 +66,9 @@ Audit menyeluruh terhadap komponen customer tidak menemukan P0. Yang sudah baik 
 | Cerdas | Contoh brief sesuai kategori mengisi tujuan/audiens/gaya/elemen wajib | `BriefAssistant.tsx` | Dibangun |
 | Cerdas | Status offline/online tampil sebagai notifikasi pasif di live region yang sama | `Toast.tsx` | Dibangun |
 | Cerdas | Petunjuk pembayaran menyesuaikan sisa waktu dan tetap menjelajahi tiap 5 detik saat aktif | `PaymentPoller.tsx` | Dibangun |
+| Final | Satu `main landmark` global untuk semua halaman; skip link tidak lagi menuju ID ganda | `layout.tsx` + halaman | Dibangun |
+| Final | Target 48px ditegakkan di CSS mobile sehingga `!h-10`/`min-h-9` tidak bisa mengalahkan | `globals.css` | Dibangun |
+| Final | Fallback error global memakai tombol 48px dan sudut tajam | `global-error.tsx` | Dibangun |
 
 ## Baseline QA produksi (28 Nov 2026)
 

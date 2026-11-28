@@ -11,7 +11,7 @@ export function OrderAccessGate({ code }: { code: string }) {
   return (
     <>
       <TopBar />
-      <main id="konten" className="wrap grid gap-8 py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="wrap grid gap-8 py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div>
           <p className="eyebrow">Akses pesanan</p>
           <h1 className="display mt-3 text-3xl sm:text-4xl">Detail pesanan dilindungi.</h1>
@@ -47,7 +47,7 @@ export function OrderAccessGate({ code }: { code: string }) {
             melihat data pribadi dan spesifikasi cetakan kamu.
           </p>
         </aside>
-      </main>
+      </div>
       <Footer />
     </>
   );

@@ -109,5 +109,5 @@ defining per-page colors. Patterns, not new hues, separate adjacent tones.
   customer logos, metrics, testimonials, or delivery promises.
 - Keep pages responsive, keyboard accessible, and readable at high contrast.
   Descriptive alt text for meaningful images; visible ink focus states.
-- PWA: public pages cached by `sw.js` (cache name `intorma-v15`); `/admin` and
+- PWA: public pages cached by `sw.js` (cache name `intorma-v16`); `/admin` and
   `/api` are never cached. Theme color memakai obsidian `#09090b`.

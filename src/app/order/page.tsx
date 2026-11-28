@@ -30,7 +30,7 @@ export default async function OrderPage({
   return (
     <>
       <Nav />
-      <main id="konten">
+      <div>
         <div className="border-b border-line bg-sand/40">
           <div className="wrap py-8 sm:py-12">
             <div className="flex flex-wrap items-end justify-between gap-5">
@@ -75,7 +75,7 @@ export default async function OrderPage({
             />
           )}
         </div>
-      </main>
+      </div>
       <Footer />
     </>
   );

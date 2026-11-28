@@ -582,7 +582,12 @@ button,
   textarea {
     font-size: 16px;
   }
+  /* Utilitas seperti !h-10 atau min-h-9 tidak boleh mengalahkan target 48px. */
   .btn {
+    min-height: 48px !important;
+  }
+  button,
+  [role="button"] {
     min-height: 48px;
   }
   /* Grid/flex tidak boleh melebar karena min-width:auto pada form dan fieldset. */

@@ -135,7 +135,7 @@ export default async function PayPage({
   return (
     <>
       <Nav />
-      <main className="mx-auto w-full max-w-5xl px-5 pb-28 pt-8 sm:pb-12 sm:py-12">
+      <div className="mx-auto w-full max-w-5xl px-5 pb-28 pt-8 sm:pb-12 sm:py-12">
         <Link
           href={trackUrl}
           className="inline-flex min-h-12 items-center gap-1.5 text-xs font-semibold text-mute transition-colors hover:text-ink"
@@ -364,7 +364,7 @@ export default async function PayPage({
             </a>
           </aside>
         </div>
-      </main>
+      </div>
 
       {/* Halaman bayar sengaja tanpa bottom nav agar tidak dua bar bertumpuk. */}
       <nav

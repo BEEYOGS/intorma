@@ -125,7 +125,7 @@ export default async function TrackPage({
   return (
     <>
       <Nav />
-      <main id="konten">
+      <div>
         <RememberOrder code={order.code} label={order.service ?? "Pesanan"} />
         <div className="border-b border-line bg-sand/40">
           <div className="wrap pb-10 pt-8 sm:pb-12 sm:pt-10">
@@ -403,7 +403,7 @@ export default async function TrackPage({
             </p>
           </aside>
         </div>
-      </main>
+      </div>
       <Footer />
     </>
   );

@@ -9,7 +9,7 @@ export default function LacakPage() {
   return (
     <>
       <Nav />
-      <main id="konten">
+      <div>
         <div className="border-b border-line bg-sand/40">
           <div className="wrap py-9 sm:py-12">
             <p className="eyebrow">Lacak pesanan</p>
@@ -51,7 +51,7 @@ export default function LacakPage() {
 
           <LacakForm />
         </div>
-      </main>
+      </div>
       <Footer />
     </>
   );

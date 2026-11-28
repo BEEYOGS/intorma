@@ -39,10 +39,10 @@ export default function GlobalError({
             type="button"
             onClick={reset}
             style={{
-              minHeight: "2.5rem",
+              minHeight: "48px",
               padding: "0 1rem",
               border: "1px solid #27272a",
-              borderRadius: "0.5rem",
+              borderRadius: 0,
               background: "#fafafa",
               color: "#09090b",
               fontWeight: 600,

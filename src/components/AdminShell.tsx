@@ -66,9 +66,9 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
         </div>
       </header>
 
-      <main id="konten" className="wrap pb-[calc(var(--bottom-bar-safe)+1.5rem)] pt-10 sm:pb-12 sm:pt-12">
+      <div className="wrap pb-[calc(var(--bottom-bar-safe)+1.5rem)] pt-10 sm:pb-12 sm:pt-12">
         {children}
-      </main>
+      </div>
 
       <CommandPaletteLazy />
 

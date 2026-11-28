@@ -58,7 +58,7 @@ export default function FaqPage() {
   return (
     <div className="animate-in">
       <TopBar />
-      <main id="konten">
+      <div>
         <section className="pb-10 pt-20 sm:pb-12 sm:pt-28">
           <div className="wrap max-w-3xl">
             <p className="eyebrow mb-4">Pertanyaan yang sering diajukan</p>
@@ -97,7 +97,7 @@ export default function FaqPage() {
             </div>
           </div>
         </section>
-      </main>
+      </div>
       <Footer />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </div>

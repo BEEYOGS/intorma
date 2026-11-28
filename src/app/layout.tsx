@@ -73,8 +73,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#konten" className="skip-link">Lewati ke konten</a>
         <ScrollProgress />
         <PageFade>
-          {/* Setiap halaman punya <main> sendiri; pembungkus ini hanya target skip link. */}
-          <div id="konten" className="main-content">{children}</div>
+          {/* Satu main landmark untuk semua halaman; target skip link. */}
+          <main id="konten" tabIndex={-1} className="main-content">{children}</main>
         </PageFade>
         <StorefrontBottomNav />
         <ServiceWorkerRegister />
