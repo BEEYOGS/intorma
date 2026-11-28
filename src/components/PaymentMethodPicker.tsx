@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { chargePayment, type ActionResult } from "@/app/actions";
 import { PaymentLogo } from "@/components/PaymentLogo";
@@ -16,8 +16,25 @@ export function PaymentMethodPicker({
   accessToken?: string | null;
 }) {
   const [state, action, pending] = useActionState<ActionResult, FormData>(chargePayment, null);
-  const [selected, setSelected] = useState(methods[0]?.id ?? "qris");
+  const [selected, setSelected] = useState<string>(methods[0]?.id ?? "qris");
   const current = methods.find((item) => item.id === selected) ?? methods[0];
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("intorma-last-payment-method");
+      if (saved && methods.some((method) => method.id === saved)) setSelected(saved);
+    } catch {
+      // Abaikan kegagalan penyimpanan.
+    }
+  }, [methods]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("intorma-last-payment-method", selected);
+    } catch {
+      // Abaikan kegagalan penyimpanan.
+    }
+  }, [selected]);
 
   return (
     <form action={action} className="mt-5">

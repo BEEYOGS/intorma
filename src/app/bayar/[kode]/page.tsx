@@ -13,6 +13,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { CopyButton } from "@/components/CopyButton";
+import { CopyPaymentDetailsButton } from "@/components/CopyPaymentDetailsButton";
 import { OrderAccessGate } from "@/components/OrderAccessGate";
 import { Footer, Nav } from "@/components/Chrome";
 import { PaymentMethodPicker } from "@/components/PaymentMethodPicker";
@@ -292,6 +293,14 @@ export default async function PayPage({
                   )}
 
                   <PaymentPoller key={`${order.code}:${raw.orderIdUsed ?? pending.id}`} code={order.code} expiresAt={raw.expiresAt ?? new Date().toISOString()} accessToken={accessToken} />
+                  <CopyPaymentDetailsButton
+                    code={order.code}
+                    method={methodMeta?.label ?? "Pembayaran online"}
+                    amount={order.price}
+                    vaNumber={raw.vaNumber}
+                    bank={raw.bank ?? methodMeta?.bank}
+                    expiresAt={raw.expiresAt}
+                  />
                 </div>
               ) : (
                 <div>
