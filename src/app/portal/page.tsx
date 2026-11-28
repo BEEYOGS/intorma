@@ -5,6 +5,7 @@ import { ProfileForm } from "@/components/ProfileForm";
 import { ReorderButton } from "@/components/ReorderButton";
 import { TopBar } from "@/components/TopBar";
 import { StatusBadge } from "@/components/Chrome";
+import { EmptyState } from "@/components/StateView";
 import { getCustomer } from "@/lib/customer-auth";
 import { sql } from "@/lib/db";
 import { rupiah, tanggal } from "@/lib/format";
@@ -109,9 +110,9 @@ export default async function PortalPage({
               <option value="pending">Menunggu</option>
             </select>
           </label>
-          <button type="submit" className="btn btn-ghost min-h-10 px-4 text-sm">Filter</button>
+          <button type="submit" className="btn btn-ghost min-h-12 px-4 text-sm">Filter</button>
           {(q || (status && status !== "all")) && (
-            <a href="/portal" className="btn btn-ghost min-h-10 px-4 text-sm">Reset</a>
+            <a href="/portal" className="btn btn-ghost min-h-12 px-4 text-sm">Reset</a>
           )}
         </form>
 
@@ -122,17 +123,29 @@ export default async function PortalPage({
               <h2 className="mt-1 text-[15px] font-medium text-[var(--text)]">Pesanan kamu</h2>
             </div>
             {filteredOrders.length === 0 ? (
-              <div className="p-8 text-center">
+              <div className="p-4 sm:p-6">
                 {orders.length === 0 ? (
-                  <>
-                    <p className="text-sm text-mute">Belum ada pesanan yang terhubung ke akun ini.</p>
-                    <Link href="/order" className="btn btn-primary mt-5 !h-10 text-xs">Buat pesanan pertama</Link>
-                  </>
+                  <EmptyState
+                    compact
+                    title="Belum ada pesanan."
+                    description="Pesanan yang terhubung ke akun ini akan tampil di sini."
+                    action={
+                      <Link href="/order" className="btn btn-primary min-h-12 px-4 text-xs">
+                        Buat pesanan pertama
+                      </Link>
+                    }
+                  />
                 ) : (
-                  <>
-                    <p className="text-sm text-mute">Tidak ada pesanan yang cocok dengan filter.</p>
-                    <a href="/portal" className="btn btn-ghost mt-5 !h-10 text-xs">Reset filter</a>
-                  </>
+                  <EmptyState
+                    compact
+                    title="Tidak ada pesanan yang cocok."
+                    description="Ubah kata kunci atau status, lalu cari lagi."
+                    action={
+                      <a href="/portal" className="btn btn-ghost min-h-12 px-4 text-xs">
+                        Reset filter
+                      </a>
+                    }
+                  />
                 )}
               </div>
             ) : (
@@ -160,19 +173,19 @@ export default async function PortalPage({
                           <p className="text-xs text-mute">{order.paid ? "Lunas" : order.price != null ? "Belum dibayar" : "Menunggu harga"}</p>
                         </div>
                         {order.price != null && !order.paid && (
-                          <Link href={`/bayar/${order.code}`} className="btn btn-primary !h-10 !px-3 text-xs">
+                          <Link href={`/bayar/${order.code}`} className="btn btn-primary !h-12 !px-3 text-xs">
                             Bayar
                           </Link>
                         )}
                         <ReorderButton serviceId={order.service_id} qty={order.qty} widthCm={order.width_cm} heightCm={order.height_cm} />
-                        <Link href={`/lacak/${order.code}`} className="btn btn-ghost !h-10 !px-3 text-xs">
+                        <Link href={`/lacak/${order.code}`} className="btn btn-ghost !h-12 !px-3 text-xs">
                           Lacak
                         </Link>
                         <a
                           href={`/api/nota/${order.code}/pdf`}
                           target="_blank"
                           rel="noreferrer"
-                          className="btn btn-ghost !h-10 !px-3 text-xs"
+                          className="btn btn-ghost !h-12 !px-3 text-xs"
                         >
                           Nota PDF
                         </a>

@@ -230,7 +230,7 @@ export default async function TrackPage({
                     <span
                       aria-hidden
                       className="status-dot"
-                      style={{ background: order.paid ? "#0070f3" : "#a1a1aa" }}
+                      style={{ background: order.paid ? "var(--accent)" : "var(--quiet)" }}
                     />
                     {order.paid ? "Lunas" : "Belum dibayar"}
                   </span>

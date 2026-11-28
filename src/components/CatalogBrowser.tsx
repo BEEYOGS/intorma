@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Clock3, Link2, RotateCcw, Search, X } from "lucide-react";
 import { toast } from "@/components/Toast";
+import { EmptyState } from "@/components/StateView";
 import { ProductIllustration } from "@/components/ProductIllustration";
 import type { Service } from "@/lib/db";
 import { priceLabel } from "@/lib/pricing";
@@ -415,11 +416,17 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
       </div>
 
       {visible.length === 0 ? (
-        <div className="rounded-tag-lg border border-dashed border-line bg-panel/40 p-10 text-center">
-          <p className="text-sm font-medium">Tidak ada layanan yang cocok.</p>
-          <p className="mt-1 text-xs text-[var(--text-3)]">Coba kata kunci lain atau reset filter.</p>
+        <EmptyState
+          title="Tidak ada layanan yang cocok."
+          description="Coba kata kunci lain atau reset filter."
+          action={
+            <button type="button" onClick={reset} className="btn btn-ghost min-h-12 px-4 text-sm">
+              Tampilkan semua layanan
+            </button>
+          }
+        >
           {suggestions.length > 0 && (
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <span className="text-xs text-mute">Mungkin maksudmu:</span>
               {suggestions.map((item) => (
                 <button
@@ -433,10 +440,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
               ))}
             </div>
           )}
-          <button type="button" onClick={reset} className="btn btn-ghost mt-5 min-h-10 px-4 text-sm">
-            Tampilkan semua layanan
-          </button>
-        </div>
+        </EmptyState>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((service) => (

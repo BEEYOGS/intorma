@@ -27,25 +27,52 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  useOverlayRegistration("mobile-nav", open, () => setOpen(false));
+  function closeMenu() {
+    setOpen(false);
+    buttonRef.current?.focus();
+  }
+
+  useOverlayRegistration("mobile-nav", open, closeMenu);
 
   useEffect(() => {
     if (!open) return;
+    const focusable = () =>
+      Array.from(
+        menuRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((el) => el.offsetParent !== null);
+
+    const frame = requestAnimationFrame(() => focusable()[0]?.focus());
     const close = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)) closeMenu();
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        setOpen(false);
-        buttonRef.current?.focus();
+        closeMenu();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener("pointerdown", close);
     document.addEventListener("keydown", onKey);
     return () => {
+      cancelAnimationFrame(frame);
       document.removeEventListener("pointerdown", close);
       document.removeEventListener("keydown", onKey);
     };
@@ -70,7 +97,7 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
       className={rowClass}
       iconClassName="size-4 shrink-0 text-accent"
       label="Install aplikasi"
-      onOpen={() => setOpen(false)}
+      onOpen={closeMenu}
     />
   );
 
@@ -89,7 +116,13 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
       </button>
 
       {open && (
-        <div id="mobile-nav-menu" className="absolute right-0 top-14 z-50 max-h-[70dvh] w-[min(17rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-[var(--radius-sharp)] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]">
+        <div
+          ref={menuRef}
+          id="mobile-nav-menu"
+          role="dialog"
+          aria-label="Menu navigasi"
+          className="absolute right-0 top-14 z-50 max-h-[70dvh] w-[min(17rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-[var(--radius-sharp)] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]"
+        >
           <nav aria-label="Navigasi seluler" className="grid">
             {links.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || (href !== "/katalog" && pathname.startsWith(`${href}/`));
@@ -97,7 +130,7 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
                 <Link
                   key={href}
                   href={href}
-                  onClick={() => setOpen(false)}
+                  onClick={closeMenu}
                   aria-current={active ? "page" : undefined}
                   className={`${rowClass} ${active ? "bg-white/[0.05] text-ink" : ""}`}
                 >
@@ -108,7 +141,7 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
             })}
             <WhatsAppLink
               text="Halo in.torma, saya mau tanya soal layanan desain dan cetak."
-              onClick={() => setOpen(false)}
+              onClick={closeMenu}
               className={rowClass}
             >
               <WhatsAppIcon aria-hidden className="size-4 shrink-0 text-[var(--text-3)]" />

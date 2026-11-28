@@ -49,7 +49,10 @@ Audit menyeluruh terhadap komponen customer tidak menemukan P0. Yang sudah baik 
 | P1 | Promo tersedia di ringkasan mobile; ringkasan & sticky menampilkan `finalTotal`; CTA inline hanya tampil di desktop | `OrderForm.tsx` | Dibangun |
 | P1 | `--bottom-overlay-offset` diukur dari action bar aktif via `ResizeObserver` | `OrderForm.tsx` | Dibangun |
 | P2 | Area drag sheet 20px → 40px | `MobileSheet.tsx` | Dibangun |
-| P2 | Komponen state bersama & dokumentasi desain | — | Menunggu prioritas berikutnya |
+| P2 | `EmptyState`/`ErrorState`/`LoadingState` dipakai di katalog, portal, pustaka file | `StateView.tsx` + halaman terkait | Dibangun |
+| P2 | Focus trap & restore fokus menu mobile | `MobileNav.tsx` | Dibangun |
+| P2 | Warna hard-coded kamera/status → token | `CameraCapture.tsx`, `lacak/[kode]/page.tsx` | Dibangun |
+| P2 | `DESIGN.md` diselaraskan dengan komponen yang ada | `DESIGN.md` | Dibangun |
 
 ## Baseline QA produksi (28 Nov 2026)
 

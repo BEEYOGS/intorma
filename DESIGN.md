@@ -71,32 +71,36 @@ defining per-page colors. Patterns, not new hues, separate adjacent tones.
 - Data voice: system monospace stack for codes, prices, labels, eyebrows,
   barcodes captions — uppercase, tracked, tabular-nums.
 
-### Signature elements (`src/components/Press.tsx`)
+### Signature elements (komponen yang benar-benar ada)
 
-- `Barcode` — genuine Code39 SVG (start/stop `*`, quiet zone). Used on tickets,
-  order rows, hero spec sheet, footer. Sanitizes input to the Code39 charset.
-- `RegMark` — crosshair registration mark for eyebrows and section headers.
-- `CropCorners` — four corner crop marks on feature cards and dialogs.
-- `ToneChips` — four tiny grayscale squares (ink/silver/steel/paper) as a brand flourish.
-- `Reveal` — IntersectionObserver fade/rise, once, honors reduced motion.
-- `Ticker` — marquee of service names between hero and services.
-- `PressBackground` — fixed layered white/silver/steel glows (very low alpha),
-  feTurbulence grain, dot grid. `ScrollProgress` — 2px ink→silver→steel top bar.
-- `.ticket` (globals.css) — light paper card with perforated edges (radial-gradient
-  mask) and the signature radius, dark ink text; used for bank payment card and
-  tracking ticket.
+- `ScrollProgress` — 2px progress bar di atas halaman.
+- `StatusBadge` / `STATUS_META` — satu sumber warna status (menunggu, dikerjakan,
+  revisi, selesai, batal); jangan membuat warna status per halaman.
+- `ProductIllustration`, `ServiceIcon`, `BankLogo`, `PaymentLogo` — ilustrasi dan
+  logo layanan/pembayaran, semuanya monokrom atau biru.
+- `MobileSheet` — bottom sheet/drawer dengan backdrop, drag-to-close, focus trap,
+  scroll lock, dan konsumsi tombol back Android lewat `useOverlayRegistration`.
+- `Toast` — notifikasi `aria-live` dengan swipe-to-dismiss; posisinya mengikuti
+  tinggi action bar aktif, bukan asumsi 56px.
+- `CameraCapture` — panduan + contoh baik/buruk, izin setelah tap, galeri sebagai
+  fallback utama, pratinjau sebelum pakai foto.
+- `StateView` — `EmptyState`, `ErrorState`, `LoadingState`: satu ritme untuk
+  katalog, portal, dan pustaka file.
+- Radius khas `8px 8px 8px 0` berasal dari `--radius-sharp`. Tidak ada
+  `Press.tsx` atau `.ticket` di codebase saat ini.
 
 ### Interaction rules
 
-- Primary button: ink fill, near-black text, hover → blue `#0070f3` border/text shift, no glow.
-- Active nav/filter: ink fill or ink underline; scrollspy on home anchors.
-- Status pills (admin): `.status-pill` with `--pill` CSS variable per status and
-  `data-tone` (`solid` / `dashed` / `strike`); checked state tints via `color-mix`.
-- Service radio cards: ink accent for Desain group, silver for Cetak group.
-- Quantity stepper: ± buttons, live total in sticky summary and mobile bottom bar.
-- Destructive actions: dashed silver zone + dialog that requires typing the order code.
-- Error/alert blocks: dashed silver border (pattern = warning, no red).
-- All motion disabled under `prefers-reduced-motion`.
+- Primary button: aksen biru `#0070f3`, teks terang, tanpa glow; hover ke `#3291ff`.
+- Active nav/filter: bidang biru/underline; bottom nav hanya navigasi, bukan aksi.
+- Status pills (admin): `.status-pill` dengan `--pill` dari `STATUS_META` dan
+  `data-tone` (`solid` / `dashed` / `strike`); checked state lewat `color-mix`.
+- Service radio cards: aksen biru untuk Desain, garis putus-putus untuk Cetak.
+- Quantity stepper: ± ber-48px di mobile, total langsung di ringkasan dan bar bawah.
+- Destructive actions: konfirmasi jelas dengan teks danger; tidak memakai hijau.
+- Error/alert blocks: merah hanya untuk danger/error; teks pendukung tetap monokrom.
+- Target sentuh ≥48px dan input ≥16px di ≤640px; semua motion mati dengan
+  `prefers-reduced-motion`.
 
 ## Interface
 
@@ -105,5 +109,5 @@ defining per-page colors. Patterns, not new hues, separate adjacent tones.
   customer logos, metrics, testimonials, or delivery promises.
 - Keep pages responsive, keyboard accessible, and readable at high contrast.
   Descriptive alt text for meaningful images; visible ink focus states.
-- PWA: public pages cached by `sw.js` (cache name `intorma-v9`); `/admin` and
-  `/api` are never cached. Manifest theme matches `paper`.
+- PWA: public pages cached by `sw.js` (cache name `intorma-v11`); `/admin` and
+  `/api` are never cached. Theme color memakai obsidian `#09090b`.

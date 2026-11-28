@@ -6,6 +6,7 @@ import { Archive, Camera, Download, Eye, Upload, X } from "lucide-react";
 import { MobileSheet } from "@/components/MobileSheet";
 import { CameraCapture } from "@/components/CameraCapture";
 import { toast } from "@/components/Toast";
+import { EmptyState } from "@/components/StateView";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useOverlayRegistration } from "@/hooks/useOverlayRegistration";
@@ -191,7 +192,7 @@ export function FileLibrary({
           type="button"
           onClick={() => setPreview(null)}
           aria-label="Tutup pratinjau"
-          className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-mute transition-colors hover:text-[var(--text)]"
+          className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-mute transition-colors hover:text-[var(--text)]"
         >
           <X aria-hidden className="size-4" />
         </button>
@@ -243,7 +244,7 @@ export function FileLibrary({
               <a
                 href={`/api/files/zip?ids=${selected.join(",")}`}
                 download
-                className="btn btn-primary min-h-11 sm:min-h-0 !h-9 text-xs"
+                className="btn btn-primary min-h-12 sm:min-h-0 !h-9 text-xs"
               >
                 <Archive aria-hidden className="size-4" /> Unduh ZIP ({selected.length})
               </a>
@@ -252,12 +253,12 @@ export function FileLibrary({
               type="button"
               onClick={() => setCameraOpen(true)}
               disabled={uploading || !driveReady}
-              className="btn btn-ghost min-h-11 sm:min-h-0 !h-9 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn btn-ghost min-h-12 sm:min-h-0 !h-9 text-xs disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Camera aria-hidden className="size-4" /> Ambil foto
             </button>
             <label
-              className={`btn btn-ghost min-h-11 sm:min-h-0 !h-9 text-xs focus-within:ring-2 focus-within:ring-accent/60 ${driveReady ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+              className={`btn btn-ghost min-h-12 sm:min-h-0 !h-9 text-xs focus-within:ring-2 focus-within:ring-accent/60 ${driveReady ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
             >
               <Upload aria-hidden className="size-4" />
               {uploading ? "Mengunggah…" : driveReady ? "Upload file" : "Drive nonaktif"}
@@ -285,8 +286,12 @@ export function FileLibrary({
         )}
 
         {files.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-sm text-mute">Belum ada file. Upload di sini atau lewat halaman pesan.</p>
+          <div className="p-4 sm:p-6">
+            <EmptyState
+              compact
+              title="Belum ada file."
+              description="Upload di sini atau lewat halaman pesan."
+            />
           </div>
         ) : (
           <ul className="divide-y divide-[var(--border)]">
@@ -294,7 +299,7 @@ export function FileLibrary({
               const meta = fileMeta(file);
               return (
                 <li key={file.id} className="flex items-center gap-3 p-4 transition-colors hover:bg-white/[0.02]">
-                  <label className="grid size-11 shrink-0 place-items-center">
+                  <label className="grid size-12 shrink-0 place-items-center">
                     <input
                       type="checkbox"
                       checked={selected.includes(file.id)}
@@ -321,7 +326,7 @@ export function FileLibrary({
                       <button
                         type="button"
                         onClick={() => setPreview(file)}
-                        className="btn btn-ghost min-h-11 sm:min-h-0 !h-9 !px-3 text-xs"
+                        className="btn btn-ghost min-h-12 sm:min-h-0 !h-9 !px-3 text-xs"
                       >
                         <Eye aria-hidden className="size-3.5" /> Pratinjau
                       </button>
@@ -329,7 +334,7 @@ export function FileLibrary({
                     <a
                       href={`/api/upload/${file.code}?download=1`}
                       download
-                      className="btn btn-ghost min-h-11 sm:min-h-0 !h-9 !px-3 text-xs"
+                      className="btn btn-ghost min-h-12 sm:min-h-0 !h-9 !px-3 text-xs"
                     >
                       <Download aria-hidden className="size-3.5" /> Unduh
                     </a>

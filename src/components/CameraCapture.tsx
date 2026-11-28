@@ -341,7 +341,7 @@ export function CameraCapture({
   const shell = "mx-auto w-full max-w-lg px-5";
   const action =
     "flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sharp)] border border-white/25 px-4 text-sm font-medium transition-colors hover:border-white/60 disabled:opacity-50";
-  const primary = `${action} border-[#0070f3] bg-[#0070f3] font-semibold hover:border-[#3291ff] hover:bg-[#3291ff]`;
+  const primary = `${action} border-accent bg-accent font-semibold hover:border-accent-strong hover:bg-accent-strong`;
   // Setelah penolakan/kegagalan kamera, jangan memaksa izin lagi. Galeri
   // menjadi jalur utama yang bisa langsung dipakai pengguna.
   const galleryFirst =
@@ -413,10 +413,10 @@ export function CameraCapture({
             <div className="pointer-events-none absolute inset-0 grid place-items-center p-5">
               <div className="relative aspect-[4/3] w-[min(86vw,25rem)]">
                 <div className="absolute inset-0 border border-white/25" />
-                <span className="absolute -top-px -left-px h-8 w-8 border-t-2 border-l-2 border-[#3291ff]" />
-                <span className="absolute -top-px -right-px h-8 w-8 border-t-2 border-r-2 border-[#3291ff]" />
-                <span className="absolute -bottom-px -left-px h-8 w-8 border-b-2 border-l-2 border-[#3291ff]" />
-                <span className="absolute -bottom-px -right-px h-8 w-8 border-b-2 border-r-2 border-[#3291ff]" />
+                <span className="absolute -top-px -left-px h-8 w-8 border-t-2 border-l-2 border-accent-strong" />
+                <span className="absolute -top-px -right-px h-8 w-8 border-t-2 border-r-2 border-accent-strong" />
+                <span className="absolute -bottom-px -left-px h-8 w-8 border-b-2 border-l-2 border-accent-strong" />
+                <span className="absolute -bottom-px -right-px h-8 w-8 border-b-2 border-r-2 border-accent-strong" />
                 <span className="absolute left-1/2 top-1/3 h-px w-full -translate-x-1/2 bg-white/10" />
                 <span className="absolute left-1/2 top-2/3 h-px w-full -translate-x-1/2 bg-white/10" />
                 <span className="absolute top-1/2 left-1/3 h-full w-px -translate-y-1/2 bg-white/10" />
@@ -442,7 +442,7 @@ export function CameraCapture({
               {stage === "denied" ? (
                 <div className="mt-4 rounded-[var(--radius-sharp)] border border-white/25 bg-white/5 p-4 text-sm">
                   <p className="flex items-center gap-2 font-medium">
-                    <AlertTriangle aria-hidden className="size-4 shrink-0 text-[#3291ff]" />
+                    <AlertTriangle aria-hidden className="size-4 shrink-0 text-accent-strong" />
                     Kamera tidak diaktifkan
                   </p>
                   <p className="mt-2 text-xs leading-5 text-white/70">
@@ -563,13 +563,13 @@ export function CameraCapture({
 
 function GuideCard({ guide }: { guide: string }) {
   const rules: Array<{ icon: ReactNode; text: string }> = [
-    { icon: <Check aria-hidden className="size-4 shrink-0 text-[#3291ff]" />, text: "Seluruh objek masuk di dalam kotak bidik." },
-    { icon: <Check aria-hidden className="size-4 shrink-0 text-[#3291ff]" />, text: "Cahaya cukup, jangan ada silau atau bayangan." },
-    { icon: <Check aria-hidden className="size-4 shrink-0 text-[#3291ff]" />, text: "Tahan HP sebentar sampai gambar tidak buram." },
+    { icon: <Check aria-hidden className="size-4 shrink-0 text-accent-strong" />, text: "Seluruh objek masuk di dalam kotak bidik." },
+    { icon: <Check aria-hidden className="size-4 shrink-0 text-accent-strong" />, text: "Cahaya cukup, jangan ada silau atau bayangan." },
+    { icon: <Check aria-hidden className="size-4 shrink-0 text-accent-strong" />, text: "Tahan HP sebentar sampai gambar tidak buram." },
   ];
   return (
     <section id="camera-guide" className="pt-5 text-white">
-      <p className="text-xs uppercase tracking-[0.18em] text-[#3291ff]">Panduan</p>
+      <p className="text-xs uppercase tracking-[0.18em] text-accent-strong">Panduan</p>
       <h3 className="mt-1 text-lg font-semibold tracking-tight">{guide}</h3>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <ExampleCard
@@ -619,7 +619,7 @@ function ExampleCard({ good = false, caption, note }: { good?: boolean; caption:
         {!good ? <span className="absolute inset-y-0 left-[8%] w-[22%] bg-white/[0.14]" /> : null}
         <span
           className={`absolute bottom-2 right-2 grid size-6 place-items-center rounded-full border ${
-            good ? "border-[#3291ff] text-[#3291ff]" : "border-[#ff5c5c] text-[#ff5c5c]"
+            good ? "border-accent-strong text-accent-strong" : "border-danger text-danger"
           }`}
         >
           {good ? <Check aria-hidden className="size-3.5" /> : <X aria-hidden className="size-3.5" />}
