@@ -96,6 +96,7 @@ export function OrderForm({
 }) {
   const [state, action, pending] = useActionState<OrderState, FormData>(createOrder, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const actionBarRef = useRef<HTMLDivElement>(null);
   const uploadCodesRef = useRef<HTMLInputElement>(null);
   const printAbortRef = useRef<AbortController | null>(null);
   const refAbortRef = useRef<AbortController | null>(null);
@@ -128,6 +129,25 @@ export function OrderForm({
   const [draft, setDraft] = useState<OrderDraft | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [interacted, setInteracted] = useState(false);
+
+  // Toast dan kartu install mengikuti tinggi bar aksi yang sebenarnya,
+  // termasuk saat baris error menambah tinggi.
+  useEffect(() => {
+    const bar = actionBarRef.current;
+    const root = document.documentElement;
+    if (!bar) return;
+    const sync = () => {
+      const height = bar.getBoundingClientRect().height;
+      root.style.setProperty("--bottom-overlay-offset", `${Math.ceil(height) + 12}px`);
+    };
+    sync();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(sync) : null;
+    observer?.observe(bar);
+    return () => {
+      observer?.disconnect();
+      root.style.removeProperty("--bottom-overlay-offset");
+    };
+  }, []);
 
   // Reset promo bila spesifikasi berubah.
   useEffect(() => {
@@ -539,10 +559,10 @@ export function OrderForm({
             </p>
           </div>
           <div className="flex shrink-0 gap-2">
-            <button type="button" onClick={restoreDraft} className="btn btn-primary min-h-10 px-4 text-sm">
+            <button type="button" onClick={restoreDraft} className="btn btn-primary min-h-12 px-4 text-sm">
               Pulihkan
             </button>
-            <button type="button" onClick={ignoreDraft} className="btn btn-ghost min-h-10 px-4 text-sm">
+            <button type="button" onClick={ignoreDraft} className="btn btn-ghost min-h-12 px-4 text-sm">
               Abaikan
             </button>
           </div>
@@ -654,7 +674,7 @@ export function OrderForm({
                     type="button"
                     onClick={() => setFilter(value)}
                     aria-pressed={filter === value}
-                    className={`min-h-10 rounded-[var(--radius-sharp)] border px-3 text-xs font-medium transition-colors ${
+                    className={`min-h-12 rounded-[var(--radius-sharp)] border px-3 text-xs font-medium transition-colors ${
                       filter === value
                         ? value === "print"
                           ? "border-dashed border-[var(--border-2)] bg-white/[0.06] text-[var(--text)]"
@@ -771,7 +791,7 @@ export function OrderForm({
                             setHeight(String(h));
 setInteracted(true);
                           }}
-                          className="rounded-tag-sm border border-line px-2.5 py-1 text-xs font-semibold text-ink/65 transition-colors hover:border-accent/40 hover:text-accent"
+                          className="inline-flex min-h-12 items-center rounded-tag-sm border border-line px-3 text-xs font-semibold text-ink/65 transition-colors hover:border-accent/40 hover:text-accent"
                         >
                           {label}
                         </button>
@@ -909,9 +929,41 @@ setInteracted(true);
                 <span className="tabular-nums">{rupiah(line.amount)}</span>
               </p>
             ))}
-            <p className="mt-3 text-3xl font-semibold tabular-nums tracking-tight text-accent">
-              {total != null ? rupiah(total) : "Belum dihitung"}
+            {promoDiscount > 0 && (
+              <p className="mt-2 flex justify-between gap-3 text-sm text-mute">
+                <span>Diskon promo</span>
+                <span className="mono font-semibold text-accent">-{rupiah(promoDiscount)}</span>
+              </p>
+            )}
+            <p className="mt-3 text-3xl font-semibold tabular-nums tracking-tight text-accent" aria-live="polite" aria-atomic="true">
+              {finalTotal != null ? rupiah(finalTotal) : "Belum dihitung"}
             </p>
+            <div className="mt-4 border-t border-line pt-4">
+              <label className="block">
+                <span className="label">Punya kode promo?</span>
+                <div className="flex gap-2">
+                  <input
+                    value={promoCode}
+                    onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
+                    placeholder="Kode promo"
+                    className="field min-h-12 text-sm uppercase"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void applyPromo()}
+                    disabled={promoPending || !promoCode.trim() || total == null}
+                    className="btn btn-ghost min-h-12 shrink-0 px-3 text-sm"
+                  >
+                    {promoPending ? "Cek…" : "Terapkan"}
+                  </button>
+                </div>
+              </label>
+              {promoMessage && (
+                <p className={`mt-2 text-xs ${promoDiscount > 0 ? "text-accent" : "text-danger"}`} role="status">
+                  {promoMessage}
+                </p>
+              )}
+            </div>
           </div>
 
           {chosen && activeStep < 2 && (
@@ -1196,7 +1248,7 @@ setInteracted(true);
             </label>
           </fieldset>
 
-          <div className="flex flex-col gap-4 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">
+          <div className="hidden flex-col gap-4 border-t border-line pt-7 lg:flex lg:flex-row lg:items-center lg:justify-between">
             <button
               type="submit"
               disabled={pending || uploading || refUploading || hasPriceError || total == null}
@@ -1328,13 +1380,16 @@ setInteracted(true);
         </aside>
       </div>
 
-      <div data-mobile-chrome className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel/95 px-4 pb-[var(--action-bar-padding)] pt-3 backdrop-blur-xl lg:hidden">
+      <div ref={actionBarRef} data-mobile-chrome className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel/95 px-4 pb-[var(--action-bar-padding)] pt-3 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-xs text-mute">{chosen?.name ?? "Pilih layanan"}</p>
-            <p className="truncate text-xl font-semibold tabular-nums text-accent">
-              {total != null ? rupiah(total) : "Belum dihitung"}
+            <p className="truncate text-xl font-semibold tabular-nums text-accent" aria-live="polite" aria-atomic="true">
+              {finalTotal != null ? rupiah(finalTotal) : "Belum dihitung"}
             </p>
+            {promoDiscount > 0 && (
+              <p className="truncate text-[11px] text-accent/80">Termasuk diskon {rupiah(promoDiscount)}</p>
+            )}
           </div>
           <button
             type="button"

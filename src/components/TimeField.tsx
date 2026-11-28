@@ -91,7 +91,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
           <button
             type="button"
             onClick={() => setMode("hour")}
-            className={`min-h-11 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
+            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
               mode === "hour" ? "bg-accent text-white" : "text-mute hover:text-ink"
             }`}
           >
@@ -100,7 +100,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
           <button
             type="button"
             onClick={() => setMode("minute")}
-            className={`min-h-11 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
+            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
               mode === "minute" ? "bg-accent text-white" : "text-mute hover:text-ink"
             }`}
           >
@@ -111,7 +111,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
           <button
             type="button"
             onClick={() => setPeriod("AM")}
-            className={`min-h-11 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
+            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
               period === "AM" ? "bg-accent text-white" : "text-mute hover:text-ink"
             }`}
           >
@@ -120,7 +120,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
           <button
             type="button"
             onClick={() => setPeriod("PM")}
-            className={`min-h-11 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
+            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
               period === "PM" ? "bg-accent text-white" : "text-mute hover:text-ink"
             }`}
           >
@@ -230,7 +230,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Tutup pilih jam"
-                className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
+                className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
               >
                 <X aria-hidden className="size-4" />
               </button>

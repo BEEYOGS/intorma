@@ -142,13 +142,13 @@ export function DateField({
   const calendar = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <button type="button" onClick={() => moveMonth(-1)} aria-label="Bulan sebelumnya" className="grid size-11 place-items-center rounded-tag-sm text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink sm:size-10">
+        <button type="button" onClick={() => moveMonth(-1)} aria-label="Bulan sebelumnya" className="grid size-12 place-items-center rounded-tag-sm text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink sm:size-10">
           <Arrow dir="left" />
         </button>
         <p aria-live="polite" className="text-sm font-semibold">
           {MONTHS[view.month]} {view.year}
         </p>
-        <button type="button" onClick={() => moveMonth(1)} aria-label="Bulan berikutnya" className="grid size-11 place-items-center rounded-tag-sm text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink sm:size-10">
+        <button type="button" onClick={() => moveMonth(1)} aria-label="Bulan berikutnya" className="grid size-12 place-items-center rounded-tag-sm text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink sm:size-10">
           <Arrow dir="right" />
         </button>
       </div>
@@ -177,7 +177,7 @@ export function DateField({
               aria-pressed={selected}
               aria-current={isToday ? "date" : undefined}
               aria-label={`${day} ${MONTHS[view.month]} ${view.year}${blocked ? " (belum tersedia)" : ""}`}
-              className={`flex h-11 w-full min-w-0 items-center justify-center rounded-tag-sm text-[13px] font-medium tabular-nums transition-colors ${
+              className={`flex h-12 w-full min-w-0 items-center justify-center rounded-tag-sm text-[13px] font-medium tabular-nums transition-colors ${
                 blocked
                   ? "cursor-not-allowed text-ink/25"
                   : selected
@@ -192,13 +192,13 @@ export function DateField({
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
-        <button type="button" onClick={() => choose("")} disabled={!value} className="inline-flex min-h-11 items-center text-xs font-semibold text-ink/55 transition-colors hover:text-ink disabled:opacity-35 sm:min-h-0">
+        <button type="button" onClick={() => choose("")} disabled={!value} className="inline-flex min-h-12 items-center text-xs font-semibold text-ink/55 transition-colors hover:text-ink disabled:opacity-35 sm:min-h-0">
           Hapus
         </button>
         <button
           type="button"
           onClick={() => choose(min && min > todayISO ? min : todayISO)}
-          className="inline-flex min-h-11 items-center text-xs font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink sm:min-h-0"
+          className="inline-flex min-h-12 items-center text-xs font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink sm:min-h-0"
         >
           {min && min > todayISO ? "Tanggal tercepat" : "Hari ini"}
         </button>
@@ -250,7 +250,7 @@ export function DateField({
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Tutup pilih tanggal"
-                className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
+                className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
               >
                 <X aria-hidden className="size-4" />
               </button>

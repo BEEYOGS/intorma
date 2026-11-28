@@ -315,7 +315,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
               type="button"
               onClick={() => setCategory(item.key)}
               aria-pressed={category === item.key}
-              className={`inline-flex min-h-10 items-center gap-2 rounded-tag-sm border px-3 text-xs font-medium transition-colors ${
+              className={`inline-flex min-h-12 items-center gap-2 rounded-tag-sm border px-3 text-xs font-medium transition-colors ${
                 category === item.key
                   ? "border-accent/40 bg-accent/10 text-ink"
                   : "border-line text-mute hover:border-[var(--border-2)] hover:text-ink"
@@ -331,7 +331,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
       {pinned && !compactHidden && (
         <div
           data-mobile-chrome
-          className="fixed inset-x-0 top-14 z-30 border-b border-line bg-[var(--bg)]/95 px-4 pb-2 pt-2 shadow-[0_12px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md sm:hidden"
+          className="fixed inset-x-0 top-[var(--topbar-offset)] z-30 border-b border-line bg-[var(--bg)]/95 px-4 pb-2 pt-2 shadow-[0_12px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md sm:hidden"
         >
           <div className="flex items-center gap-2">
             <label className="relative min-w-0 flex-1">
@@ -370,7 +370,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
                   type="button"
                   onClick={() => setCategory(item.key)}
                   aria-pressed={on}
-                  className={`inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-tag-sm border px-3 text-xs font-medium transition-colors ${
+                  className={`inline-flex min-h-12 shrink-0 snap-start items-center gap-2 rounded-tag-sm border px-3 text-xs font-medium transition-colors ${
                     on
                       ? "border-accent/40 bg-accent/10 text-ink"
                       : "border-line text-mute hover:border-[var(--border-2)] hover:text-ink"
@@ -386,8 +386,8 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
       )}
 
       <div
-        className={`mb-5 flex items-end justify-between gap-4 border-b border-line pb-4 transition-[margin] ${
-          pinned ? "mt-16 sm:mt-0" : ""
+        className={`mb-5 flex items-end justify-between gap-4 border-b border-line pb-4 transition-[padding] ${
+          pinned && !compactHidden ? "pt-[var(--catalog-compact-height)] sm:pt-0" : ""
         }`}
       >
         <p className="text-xs text-[var(--text-3)]" aria-live="polite">
@@ -399,14 +399,14 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
             <button
               type="button"
               onClick={copyLink}
-              className="inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-mute transition-colors hover:text-ink"
+              className="inline-flex min-h-12 items-center gap-1.5 text-xs font-medium text-mute transition-colors hover:text-ink"
             >
               <Link2 aria-hidden className="size-3.5" /> Salin tautan
             </button>
             <button
               type="button"
               onClick={reset}
-              className="inline-flex min-h-10 items-center text-xs font-medium text-[var(--accent-2)] underline underline-offset-4 hover:text-[var(--text)]"
+              className="inline-flex min-h-12 items-center text-xs font-medium text-[var(--accent-2)] underline underline-offset-4 hover:text-[var(--text)]"
             >
               Reset filter
             </button>
@@ -426,7 +426,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
                   key={item}
                   type="button"
                   onClick={() => setQuery(item)}
-                  className="inline-flex min-h-9 items-center rounded-tag-sm border border-accent/30 bg-accent/10 px-3 text-xs font-medium text-ink transition-colors hover:bg-accent/20"
+                  className="inline-flex min-h-12 items-center rounded-tag-sm border border-accent/30 bg-accent/10 px-3 text-xs font-medium text-ink transition-colors hover:bg-accent/20"
                 >
                   {item.charAt(0).toUpperCase() + item.slice(1)}
                 </button>

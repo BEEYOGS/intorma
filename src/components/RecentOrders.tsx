@@ -59,7 +59,7 @@ export function RecentOrders() {
           <button
             type="button"
             onClick={bersihkan}
-            className="inline-flex min-h-10 items-center text-xs font-medium text-mute underline underline-offset-4 hover:text-ink"
+            className="inline-flex min-h-12 items-center text-xs font-medium text-mute underline underline-offset-4 hover:text-ink"
           >
             Hapus riwayat
           </button>
@@ -69,7 +69,7 @@ export function RecentOrders() {
             <li key={item.code} className="flex min-w-0 items-center gap-1 rounded-tag-sm border border-line">
               <Link
                 href={`/lacak/${item.code}`}
-                className="flex min-h-10 min-w-0 flex-1 items-center gap-2.5 px-3 transition-colors hover:bg-white/[0.04]"
+                className="flex min-h-12 min-w-0 flex-1 items-center gap-2.5 px-3 transition-colors hover:bg-white/[0.04]"
               >
                 <span className="mono shrink-0 text-xs text-ink">{item.code}</span>
                 <span className="min-w-0 flex-1 truncate text-xs text-mute">{item.label}</span>
@@ -79,7 +79,7 @@ export function RecentOrders() {
                 type="button"
                 onClick={() => hapus(item.code)}
                 aria-label={`Hapus ${item.code} dari riwayat`}
-                className="grid size-11 shrink-0 place-items-center rounded-tag-sm text-[var(--text-3)] transition-colors hover:text-ink"
+                className="grid size-12 shrink-0 place-items-center rounded-tag-sm text-[var(--text-3)] transition-colors hover:text-ink"
               >
                 <X aria-hidden className="size-4" />
               </button>

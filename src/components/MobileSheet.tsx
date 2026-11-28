@@ -179,7 +179,7 @@ export function MobileSheet({
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
-            className="grid h-5 shrink-0 touch-none cursor-grab place-items-center active:cursor-grabbing sm:hidden"
+            className="grid h-10 shrink-0 touch-none cursor-grab place-items-center active:cursor-grabbing sm:hidden"
             aria-hidden
           >
             <span className="h-1 w-10 rounded-full bg-[var(--border-2)]" />

@@ -21,7 +21,7 @@ export function CustomerAuthForm({ next = "/portal" }: { next?: string }) {
             role="tab"
             aria-selected={mode === value}
             onClick={() => setMode(value)}
-            className={`h-11 text-[13px] font-medium transition-colors ${
+            className={`min-h-12 text-[13px] font-medium transition-colors ${
               mode === value
                 ? "bg-[var(--panel-2)] text-[var(--text)]"
                 : "text-[var(--text-3)] hover:text-[var(--text)]"
@@ -52,7 +52,7 @@ export function CustomerAuthForm({ next = "/portal" }: { next?: string }) {
               Pesanan lama dibuka lewat tautan pribadi dari WhatsApp. Butuh penggabungan akun? Hubungi admin.
             </p>
             {loginState?.error && <p id="login-error" role="alert" className="text-xs text-danger">{loginState.error}</p>}
-            <button type="submit" disabled={loginPending} className="btn btn-primary !h-11 text-sm">
+            <button type="submit" disabled={loginPending} className="btn btn-primary !h-12 text-sm">
               {loginPending ? "Memeriksa…" : "Masuk ke portal"}
             </button>
           </form>
@@ -85,7 +85,7 @@ export function CustomerAuthForm({ next = "/portal" }: { next?: string }) {
               Pesanan lama tidak dihubungkan otomatis hanya dari nomor WhatsApp. Gunakan tautan pribadi yang kami kirim.
             </p>
             {registerState?.error && <p id="register-error" role="alert" className="text-xs text-danger">{registerState.error}</p>}
-            <button type="submit" disabled={registerPending} className="btn btn-primary !h-11 text-sm">
+            <button type="submit" disabled={registerPending} className="btn btn-primary !h-12 text-sm">
               {registerPending ? "Membuat akun…" : "Daftar & masuk"}
             </button>
           </form>

@@ -29,6 +29,11 @@
   /* Overlay tidak ikut dinamis: action bar /order tetap butuh ruang walau nav disembunyikan. */
   --bottom-overlay-offset: calc(var(--bottom-bar-safe) + 0.75rem);
   --action-bar-padding: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  /* Topbar mengikuti safe area supaya logo/menu tidak tertutup status bar APK. */
+  --topbar-height: 56px;
+  --topbar-offset: calc(var(--topbar-height) + env(safe-area-inset-top, 0px));
+  /* Tinggi bar filter mobile saat pinned: input 48 + chip 48 + padding 28. */
+  --catalog-compact-height: 128px;
 }
 
 html {
@@ -36,7 +41,7 @@ html {
   scrollbar-width: thin;
   scrollbar-color: #3a3a3a transparent;
   scroll-behavior: smooth;
-  scroll-padding-top: 84px;
+  scroll-padding-top: calc(var(--topbar-offset) + 28px);
 }
 
 :focus-visible {
@@ -308,13 +313,13 @@ input[type="search"]::-webkit-search-cancel-button {
 
 /* Topbar */
 .topbar {
-  height: 56px;
+  height: var(--topbar-offset);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   border-bottom: 1px solid var(--border);
-  padding: 0 24px;
+  padding: env(safe-area-inset-top, 0px) 24px 0;
 }
 
 /* Table */
@@ -562,7 +567,7 @@ button,
     width: calc(100vw - 32px);
   }
   .topbar {
-    padding: 0 16px;
+    padding: env(safe-area-inset-top, 0px) 16px 0;
   }
   .stat-grid {
     grid-template-columns: 1fr 1fr;

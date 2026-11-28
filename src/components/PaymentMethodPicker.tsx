@@ -35,7 +35,7 @@ export function PaymentMethodPicker({
               role="radio"
               aria-checked={active}
               onClick={() => setSelected(method.id)}
-              className={`flex items-center gap-3 rounded-tag-sm border px-3.5 py-3 text-left transition-colors ${
+              className={`flex min-h-12 items-center gap-3 rounded-tag-sm border px-3.5 py-3 text-left transition-colors ${
                 active
                   ? "border-accent/60 bg-accent/[0.07]"
                   : "border-line bg-panel/40 hover:border-[var(--border-2)]"
