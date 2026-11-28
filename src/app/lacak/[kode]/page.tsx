@@ -172,7 +172,7 @@ export default async function TrackPage({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <CopyButton value={order.code} label="Salin kode" />
-                <ShareStatusButton />
+                <ShareStatusButton code={order.code} status={meta.label} deadline={deadlineLabel(order.deadline_at, order.deadline)} />
               </div>
             </div>
           </div>
