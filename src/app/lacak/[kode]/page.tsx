@@ -5,6 +5,7 @@ import { Footer, Nav, StatusBadge } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
 import { OrderAccessGate } from "@/components/OrderAccessGate";
 import { ShareStatusButton } from "@/components/ShareStatusButton";
+import { CalendarButton } from "@/components/CalendarButton";
 import { ReviewForm } from "@/components/ReviewForm";
 import { NotaQrCard } from "@/components/NotaQrCard";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
@@ -149,6 +150,7 @@ export default async function TrackPage({
                     >
                       <WhatsAppIcon aria-hidden className="size-4" /> Buka WhatsApp
                     </WhatsAppLink>
+                    <CalendarButton code={order.code} deadline={order.deadline_at ? String(order.deadline_at) : null} title={order.service} />
                   </div>
                 </div>
               </div>
