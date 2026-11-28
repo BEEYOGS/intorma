@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Calculator,
   FolderOpen,
   LayoutDashboard,
   LayoutGrid,
@@ -30,6 +31,9 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
       <nav className="hidden items-center gap-1 sm:flex">
         <Link href="/katalog" className={linkClass}>
           <LayoutGrid aria-hidden className={iconClass} /> Katalog
+        </Link>
+        <Link href="/kalkulator" className={linkClass}>
+          <Calculator aria-hidden className={iconClass} /> Hitung cetak
         </Link>
         <Link href="/order" className={linkClass}>
           <PenLine aria-hidden className={iconClass} /> Pesan

@@ -47,6 +47,7 @@ Rp10.000/lembar, dan kaos sablon DTF Rp65.000/pcs. Angka bisa diubah admin per l
 Halaman yang dipakai pelanggan:
 
 - `/katalog` — semua produk dengan ilustrasi monokrom unik per layanan (SVG, bukan foto).
+- `/kalkulator` — hitung bleed, area aman, resolusi, rasio, ukuran pixel, dan estimasi ukuran file.
 - `/order` — pilih layanan, atur bahan/ukuran/finishing/jumlah, lihat total, lalu kirim pesanan.
 - `/lacak` dan `/lacak/INT-DDMMYY001` — cek status, rincian harga, dan instruksi transfer.
 
@@ -65,6 +66,13 @@ layar sama dengan tagihan yang tersimpan. Model harganya:
 Kolom lama `services.pricing_mode` sengaja tidak diubah agar aplikasi yang sudah live tetap jalan;
 model baru ada di `services.pricing_model`. Rincian pesanan disimpan sebagai snapshot di
 `orders.options`, jadi pesanan lama tetap menampilkan harga yang saat itu disepakati.
+
+Halaman `/kalkulator` memakai perhitungan sisi klien yang sama dengan panduan produksi: ukuran jadi
+ditambah bleed di semua sisi, area aman dipotong dari ukuran jadi, lalu pixel dihitung dari
+`cm ÷ 2,54 × dpi`. Preset kartu, A4/A3, stiker, spanduk, dan kaos bisa diubah; hasilnya mencakup
+rasio, luas per lembar, total luas untuk sejumlah cetakan, estimasi TIFF/PDF, dan pemeriksaan
+mode warna serta resolusi minimum. Tombol “Salin spesifikasi” memudahkan pelanggan mengirim
+spesifikasi ke admin sebelum order dibuat.
 
 Untuk produk cetak, pelanggan bisa **upload langsung** atau menempel link Google Drive/WeTransfer.
 Google Drive wajib aktif untuk tombol upload: file tidak pernah disimpan di database ataupun

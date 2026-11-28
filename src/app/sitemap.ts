@@ -5,6 +5,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://intorma-psi.vercel
 const ROUTES = [
   "",
   "/katalog",
+  "/kalkulator",
   "/order",
   "/lacak",
   "/install",

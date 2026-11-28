@@ -3,6 +3,7 @@ const CACHE = "intorma-v9";
 const SHELL = [
   "/",
   "/order",
+  "/kalkulator",
   "/lacak",
   "/offline.html",
   "/icon.svg?v=4",
@@ -19,6 +20,7 @@ const SHELL = [
 const PUBLIC_PAGES = new Set([
   "/",
   "/order",
+  "/kalkulator",
   "/lacak",
   "/offline.html",
   "/tentang",
