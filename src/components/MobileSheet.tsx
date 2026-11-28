@@ -32,7 +32,9 @@ export function MobileSheet({
   children,
   side = "bottom",
   titleId,
+  descriptionId,
   ariaLabel,
+  initialFocusSelector,
   panelClassName = "",
   bodyClassName = "",
 }: {
@@ -42,7 +44,9 @@ export function MobileSheet({
   children: ReactNode;
   side?: "bottom" | "right";
   titleId?: string;
+  descriptionId?: string;
   ariaLabel?: string;
+  initialFocusSelector?: string;
   panelClassName?: string;
   bodyClassName?: string;
 }) {
@@ -71,11 +75,13 @@ export function MobileSheet({
 
     const frame = requestAnimationFrame(() => {
       const panel = panelRef.current;
-      const first = Array.from(
-        panel?.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ) ?? [],
-      ).find((el) => el.offsetParent !== null);
+      const first = initialFocusSelector
+        ? panel?.querySelector<HTMLElement>(initialFocusSelector) ?? null
+        : Array.from(
+            panel?.querySelectorAll<HTMLElement>(
+              'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            ) ?? [],
+          ).find((el) => el.offsetParent !== null);
       (first ?? panel)?.focus();
     });
 
@@ -112,7 +118,7 @@ export function MobileSheet({
       document.removeEventListener("keydown", onKey);
       restoreFocusRef.current?.focus();
     };
-  }, [close, open]);
+  }, [close, initialFocusSelector, open]);
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (!swipeable || !event.isPrimary || event.pointerType === "mouse") return;
@@ -152,7 +158,9 @@ export function MobileSheet({
 
   if (!open) return null;
 
-  const labelProps = titleId ? { "aria-labelledby": titleId } : { "aria-label": ariaLabel ?? "Dialog" };
+  const labelProps = titleId
+    ? { "aria-labelledby": titleId, ...(descriptionId ? { "aria-describedby": descriptionId } : {}) }
+    : { "aria-label": ariaLabel ?? "Dialog", ...(descriptionId ? { "aria-describedby": descriptionId } : {}) };
 
   return (
     <div data-mobile-chrome className="fixed inset-0 z-50 flex items-end justify-end sm:items-stretch">

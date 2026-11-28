@@ -119,7 +119,6 @@ export function MobileNav({ loggedIn }: { loggedIn: boolean }) {
         <div
           ref={menuRef}
           id="mobile-nav-menu"
-          role="dialog"
           aria-label="Menu navigasi"
           className="absolute right-0 top-14 z-50 max-h-[70dvh] w-[min(17rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain rounded-[var(--radius-sharp)] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]"
         >

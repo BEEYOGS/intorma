@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
+import { ConfirmSheet } from "@/components/ConfirmSheet";
 import {
   saveOption,
   saveOptionGroup,
@@ -132,16 +133,47 @@ export function DeleteActionButton({
   label: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(action, null);
+  const [confirming, setConfirming] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const closeConfirm = useCallback(() => setConfirming(false), []);
+  const confirmDelete = useCallback(() => {
+    const form = formRef.current;
+    if (!form) return;
+    startTransition(() => formAction(new FormData(form)));
+  }, [formAction]);
+
+  useEffect(() => {
+    if (state?.ok) setConfirming(false);
+  }, [state]);
+
   return (
-    <form action={formAction} onSubmit={(event) => {
-      if (!window.confirm(`${label}? Tindakan ini tidak bisa dibatalkan.`)) event.preventDefault();
-    }} className="inline-flex">
-      <input type="hidden" name="id" value={id} />
-      <button type="submit" disabled={pending} className="btn btn-danger !h-10 !px-3 text-xs">
-        <Trash2 aria-hidden className="size-3.5" /> {pending ? "Menghapus…" : label}
-      </button>
-      <Result state={state} />
-    </form>
+    <>
+      <form
+        ref={formRef}
+        action={formAction}
+        onSubmit={(event) => {
+          event.preventDefault();
+          setConfirming(true);
+        }}
+        className="inline-flex"
+      >
+        <input type="hidden" name="id" value={id} />
+        <button type="submit" disabled={pending} className="btn btn-danger min-h-12 px-4 text-sm sm:min-h-10">
+          <Trash2 aria-hidden className="size-4" /> {pending ? "Menghapus…" : label}
+        </button>
+      </form>
+      <ConfirmSheet
+        open={confirming}
+        onClose={closeConfirm}
+        onConfirm={confirmDelete}
+        title={`${label}?`}
+        description="Tindakan ini tidak bisa dibatalkan."
+        confirmLabel={label}
+        pending={pending}
+        error={state?.error}
+        initialFocusSelector="[data-confirm]"
+      />
+    </>
   );
 }
 

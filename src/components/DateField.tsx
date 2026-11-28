@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { MobileSheet } from "@/components/MobileSheet";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -71,35 +71,59 @@ export function DateField({
   const isMobile = useIsMobile();
   const [value, setValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);
-  useOverlayRegistration("date-field", open && !isMobile, () => setOpen(false));
+  const popoverId = useId();
+  const close = useCallback(() => setOpen(false), []);
+  useOverlayRegistration("date-field", open && !isMobile, close);
   const start = parseISO(defaultValue) ?? (min ? parseISO(min) : null) ?? new Date();
   const [view, setView] = useState({ year: start.getFullYear(), month: start.getMonth() });
   const rootRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open || isMobile) return;
+    const restoreFocus = document.activeElement as HTMLElement | null;
+    const focusablesSelector =
+      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const frame = requestAnimationFrame(() => {
+      (selectedRef.current ?? popoverRef.current?.querySelector<HTMLElement>(focusablesSelector) ?? popoverRef.current)?.focus();
+    });
     const onPointer = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)) close();
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
+        event.preventDefault();
+        close();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const panel = popoverRef.current;
+      if (!panel) return;
+      const focusables = Array.from(panel.querySelectorAll<HTMLElement>(focusablesSelector)).filter(
+        (el) => el.offsetParent !== null,
+      );
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener("pointerdown", onPointer);
     document.addEventListener("keydown", onKey);
     return () => {
+      cancelAnimationFrame(frame);
       document.removeEventListener("pointerdown", onPointer);
       document.removeEventListener("keydown", onKey);
+      restoreFocus?.focus();
     };
-  }, [isMobile, open]);
-
-  useEffect(() => {
-    if (open && !isMobile) selectedRef.current?.focus();
-  }, [isMobile, open]);
+  }, [close, isMobile, open]);
 
   // Semua perhitungan tanggal memakai WIB supaya sama dengan validasi server.
   const todayISO = wibToday();
@@ -192,13 +216,13 @@ export function DateField({
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
-        <button type="button" onClick={() => choose("")} disabled={!value} className="inline-flex min-h-12 items-center text-xs font-semibold text-ink/55 transition-colors hover:text-ink disabled:opacity-35 sm:min-h-0">
+        <button type="button" onClick={() => choose("")} disabled={!value} className="inline-flex min-h-12 items-center text-xs font-semibold text-ink/55 transition-colors hover:text-ink disabled:opacity-35 sm:min-h-10">
           Hapus
         </button>
         <button
           type="button"
           onClick={() => choose(min && min > todayISO ? min : todayISO)}
-          className="inline-flex min-h-12 items-center text-xs font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink sm:min-h-0"
+          className="inline-flex min-h-12 items-center text-xs font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink sm:min-h-10"
         >
           {min && min > todayISO ? "Tanggal tercepat" : "Hari ini"}
         </button>
@@ -215,6 +239,7 @@ export function DateField({
         onClick={toggle}
         aria-haspopup="dialog"
         aria-expanded={open}
+        aria-controls={open && !isMobile ? popoverId : undefined}
         className="field flex items-center justify-between gap-3 text-left"
       >
         <span className={value ? "tabular-nums" : "text-ink/50"}>{value ? formatDisplay(value) : placeholder}</span>
@@ -225,10 +250,13 @@ export function DateField({
 
       {open && !isMobile && (
         <div
+          ref={popoverRef}
+          id={popoverId}
           role="dialog"
           aria-modal="true"
           aria-label="Pilih tanggal"
-          className="absolute left-0 right-0 z-30 mt-2 rounded-tag-sm border border-line bg-panel p-4 shadow-[0_18px_40px_-24px_rgba(11,11,11,0.45)]"
+          tabIndex={-1}
+          className="absolute left-0 right-0 z-30 mt-2 rounded-tag-sm border border-line bg-panel p-4 shadow-[0_18px_40px_-24px_rgba(11,11,11,0.45)] outline-none"
         >
           {calendar}
         </div>
@@ -237,7 +265,7 @@ export function DateField({
       {open && isMobile && (
         <MobileSheet
           open
-          onClose={() => setOpen(false)}
+          onClose={close}
           titleId="date-field-title"
           bodyClassName="!pt-4"
           header={
@@ -248,7 +276,7 @@ export function DateField({
               </div>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={close}
                 aria-label="Tutup pilih tanggal"
                 className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
               >

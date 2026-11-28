@@ -69,6 +69,11 @@ Audit menyeluruh terhadap komponen customer tidak menemukan P0. Yang sudah baik 
 | Final | Satu `main landmark` global untuk semua halaman; skip link tidak lagi menuju ID ganda | `layout.tsx` + halaman | Dibangun |
 | Final | Target 48px ditegakkan di CSS mobile sehingga `!h-10`/`min-h-9` tidak bisa mengalahkan | `globals.css` | Dibangun |
 | Final | Fallback error global memakai tombol 48px dan sudut tajam | `global-error.tsx` | Dibangun |
+| Final | Konfirmasi hapus akun/opsi pakai sheet dengan fokus terjebak, Escape, dan restore fokus; tanpa `window.confirm` | `ConfirmSheet.tsx`, `AdminAccountManager.tsx`, `OptionForms.tsx`, `MobileSheet.tsx` | Dibangun |
+| Final | Popover tanggal/jam desktop memakai dialog modal, fokus awal, jebakan Tab, Escape, dan restore fokus | `DateField.tsx`, `TimeField.tsx` | Dibangun |
+| Final | Status manual pembayaran diumumkan lewat live region; error ditampilkan merah dan hitung mundur dibaca jelas | `PaymentPoller.tsx` | Dibangun |
+| Final | Kontrol admin/pustaka file/lacak dan pratinjau file disamakan ke target 48px, label dialog, serta token warna | `admin/*`, `FileLibrary.tsx`, `lacak/[kode]`, `LoginForm.tsx`, `LacakForm.tsx` | Dibangun |
+| Final | Menu navigasi mobile memakai pola disclosure, bukan dialog | `MobileNav.tsx` | Dibangun |
 
 ## Baseline QA produksi (28 Nov 2026)
 

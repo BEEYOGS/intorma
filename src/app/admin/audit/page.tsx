@@ -111,13 +111,13 @@ export default async function AuditPage({
       {totalPages > 1 && (
         <nav className="mt-6 flex items-center justify-center gap-2" aria-label="Halaman audit">
           {page > 1 && (
-            <a href={`/admin/audit?page=${page - 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="btn btn-outline min-h-9 px-3 text-xs">
+            <a href={`/admin/audit?page=${page - 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="btn btn-outline min-h-12 px-4 text-sm sm:min-h-10">
               Sebelumnya
             </a>
           )}
           <span className="text-xs text-mute">Halaman {page} dari {totalPages}</span>
           {page < totalPages && (
-            <a href={`/admin/audit?page=${page + 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="btn btn-outline min-h-9 px-3 text-xs">
+            <a href={`/admin/audit?page=${page + 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className="btn btn-outline min-h-12 px-4 text-sm sm:min-h-10">
               Berikutnya
             </a>
           )}

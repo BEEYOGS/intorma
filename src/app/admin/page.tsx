@@ -327,17 +327,17 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       )}
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <Link href={returnTo} className={boardView ? "btn btn-ghost min-h-9 px-4 text-xs" : "btn btn-primary min-h-9 px-4 text-xs"}>
+        <Link href={returnTo} className={boardView ? "btn btn-ghost min-h-12 px-4 text-sm sm:min-h-10" : "btn btn-primary min-h-12 px-4 text-sm sm:min-h-10"}>
           Tabel
         </Link>
-        <Link href={boardUrl} className={boardView ? "btn btn-primary min-h-9 px-4 text-xs" : "btn btn-ghost min-h-9 px-4 text-xs"}>
+        <Link href={boardUrl} className={boardView ? "btn btn-primary min-h-12 px-4 text-sm sm:min-h-10" : "btn btn-ghost min-h-12 px-4 text-sm sm:min-h-10"}>
           Papan produksi
         </Link>
         <span aria-hidden className="mx-1 hidden w-px bg-line sm:block" />
-        <Link href={deadlineUrl} className={sort === "deadline" ? "btn btn-primary min-h-9 px-4 text-xs" : "btn btn-ghost min-h-9 px-4 text-xs"}>
+        <Link href={deadlineUrl} className={sort === "deadline" ? "btn btn-primary min-h-12 px-4 text-sm sm:min-h-10" : "btn btn-ghost min-h-12 px-4 text-sm sm:min-h-10"}>
           Urut deadline
         </Link>
-        <Link href={newestUrl} className={sort === "newest" ? "btn btn-primary min-h-9 px-4 text-xs" : "btn btn-ghost min-h-9 px-4 text-xs"}>
+        <Link href={newestUrl} className={sort === "newest" ? "btn btn-primary min-h-12 px-4 text-sm sm:min-h-10" : "btn btn-ghost min-h-12 px-4 text-sm sm:min-h-10"}>
           Terbaru
         </Link>
       </div>

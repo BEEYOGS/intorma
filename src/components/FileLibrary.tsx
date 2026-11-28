@@ -244,7 +244,7 @@ export function FileLibrary({
               <a
                 href={`/api/files/zip?ids=${selected.join(",")}`}
                 download
-                className="btn btn-primary min-h-12 sm:min-h-0 !h-9 text-xs"
+                className="btn btn-primary min-h-12 px-4 text-sm sm:min-h-10"
               >
                 <Archive aria-hidden className="size-4" /> Unduh ZIP ({selected.length})
               </a>
@@ -253,12 +253,12 @@ export function FileLibrary({
               type="button"
               onClick={() => setCameraOpen(true)}
               disabled={uploading || !driveReady}
-              className="btn btn-ghost min-h-12 sm:min-h-0 !h-9 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-10 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Camera aria-hidden className="size-4" /> Ambil foto
             </button>
             <label
-              className={`btn btn-ghost min-h-12 sm:min-h-0 !h-9 text-xs focus-within:ring-2 focus-within:ring-accent/60 ${driveReady ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+              className={`btn btn-ghost min-h-12 px-4 text-sm sm:min-h-10 focus-within:ring-2 focus-within:ring-accent/60 ${driveReady ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
             >
               <Upload aria-hidden className="size-4" />
               {uploading ? "Mengunggah…" : driveReady ? "Upload file" : "Drive nonaktif"}
@@ -326,7 +326,7 @@ export function FileLibrary({
                       <button
                         type="button"
                         onClick={() => setPreview(file)}
-                        className="btn btn-ghost min-h-12 sm:min-h-0 !h-9 !px-3 text-xs"
+                        className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-10"
                       >
                         <Eye aria-hidden className="size-3.5" /> Pratinjau
                       </button>
@@ -334,7 +334,7 @@ export function FileLibrary({
                     <a
                       href={`/api/upload/${file.code}?download=1`}
                       download
-                      className="btn btn-ghost min-h-12 sm:min-h-0 !h-9 !px-3 text-xs"
+                      className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-10"
                     >
                       <Download aria-hidden className="size-3.5" /> Unduh
                     </a>
@@ -350,7 +350,7 @@ export function FileLibrary({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Pratinjau ${preview.name}`}
+          aria-labelledby="file-preview-title"
           onClick={() => setPreview(null)}
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
         >

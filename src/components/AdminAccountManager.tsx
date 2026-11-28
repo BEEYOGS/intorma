@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, KeyRound, Plus, Trash2, UserCog } from "lucide-react";
 import {
@@ -9,6 +9,7 @@ import {
   updateAdminAccount,
   type ActionResult,
 } from "@/app/actions";
+import { ConfirmSheet } from "@/components/ConfirmSheet";
 import { PasswordField } from "@/components/PasswordField";
 import { toast } from "@/components/Toast";
 import type { AdminAccount } from "@/lib/auth";
@@ -79,7 +80,17 @@ function AccountRow({ account }: { account: AdminAccount }) {
   const [editing, setEditing] = useState(false);
   const [editState, editAction, editPending] = useActionState<ActionResult, FormData>(updateAdminAccount, null);
   const [deleteState, deleteAction, deletePending] = useActionState<ActionResult, FormData>(async (_prev, f) => deleteAdminAccount(f), null);
+  const [confirming, setConfirming] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const formId = useId();
   const router = useRouter();
+
+  const closeConfirm = useCallback(() => setConfirming(false), []);
+  const confirmDelete = useCallback(() => {
+    const form = formRef.current;
+    if (!form || !form.reportValidity()) return;
+    startTransition(() => deleteAction(new FormData(form)));
+  }, [deleteAction]);
 
   useEffect(() => {
     if (editState?.ok) {
@@ -89,9 +100,10 @@ function AccountRow({ account }: { account: AdminAccount }) {
     }
     if (deleteState?.ok) {
       toast("Akun dihapus.", "ok");
+      closeConfirm();
       router.refresh();
     }
-  }, [deleteState, editState, router]);
+  }, [closeConfirm, deleteState, editState, router]);
 
   return (
     <li className="rounded-tag-lg border border-line bg-panel/40">
@@ -159,26 +171,47 @@ function AccountRow({ account }: { account: AdminAccount }) {
           </form>
 
           <form
+            ref={formRef}
+            id={formId}
             action={deleteAction}
             onSubmit={(event) => {
-              if (!window.confirm(`Hapus akun ${account.username}? Tindakan ini tidak bisa dibatalkan.`)) {
-                event.preventDefault();
-              }
+              event.preventDefault();
+              setConfirming(true);
             }}
             className="flex flex-wrap items-end gap-3 border-t border-line pt-4"
           >
             <input type="hidden" name="id" value={account.id} />
-            <label className="block min-w-0 flex-1">
-              <span className="eyebrow">Password akun ini</span>
-              <PasswordField name="current" required className="input mt-1.5" placeholder="Untuk konfirmasi hapus" />
-            </label>
-            <div>
-              <FormError error={deleteState?.error ?? undefined} />
-              <button type="submit" disabled={deletePending} className="btn btn-ghost min-h-10 px-4 text-sm text-danger">
-                <Trash2 aria-hidden className="size-4" /> {deletePending ? "Menghapus..." : "Hapus akun"}
-              </button>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs leading-5 text-mute">
+                Perlu password akun ini untuk menghapus. Kata sandi diminta di dalam dialog konfirmasi.
+              </p>
             </div>
+            <button type="submit" disabled={deletePending} className="btn btn-ghost min-h-12 px-4 text-sm text-danger sm:min-h-10">
+              <Trash2 aria-hidden className="size-4" /> {deletePending ? "Menghapus..." : "Hapus akun"}
+            </button>
           </form>
+          <ConfirmSheet
+            open={confirming}
+            onClose={closeConfirm}
+            onConfirm={confirmDelete}
+            title={`Hapus akun ${account.username}?`}
+            description="Akun akan dinonaktifkan permanen dan sesinya dicabut. Tindakan ini tidak bisa dibatalkan."
+            confirmLabel="Hapus akun"
+            pending={deletePending}
+            error={deleteState?.error ?? undefined}
+            initialFocusSelector="input:not([type='hidden'])"
+          >
+            <label className="block">
+              <span className="eyebrow">Password akun ini</span>
+              <PasswordField
+                form={formId}
+                name="current"
+                required
+                className="input mt-1.5"
+                placeholder="Untuk konfirmasi hapus"
+              />
+            </label>
+          </ConfirmSheet>
         </div>
       )}
     </li>

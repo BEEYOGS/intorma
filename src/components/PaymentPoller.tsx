@@ -38,6 +38,7 @@ export function PaymentPoller({
   const [expired, setExpired] = useState(false);
   const [checking, setChecking] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [notice, setNotice] = useState("");
   const done = useRef(false);
   const expiryHandled = useRef(false);
 
@@ -145,6 +146,7 @@ export function PaymentPoller({
   async function checkNow() {
     if (done.current) return;
     setChecking(true);
+    setNotice("Memeriksa status pembayaran…");
     try {
       const response = await fetch(statusUrl, {
         cache: "no-store",
@@ -153,14 +155,20 @@ export function PaymentPoller({
       if (data.paid) {
         done.current = true;
         setPaid(true);
+        setNotice("Pembayaran diterima.");
         router.refresh();
       } else if (data.expired) {
         done.current = true;
         setExpired(true);
+        setNotice("Tagihan kedaluwarsa.");
         router.refresh();
+      } else if (data.error) {
+        setNotice(data.error);
+      } else {
+        setNotice("Pembayaran masih menunggu.");
       }
     } catch {
-      // Diamkan; pengguna bisa mencoba lagi.
+      setNotice("Gagal memeriksa status. Coba lagi.");
     } finally {
       setChecking(false);
     }
@@ -216,10 +224,20 @@ export function PaymentPoller({
           Cek status
         </button>
       </div>
-      <p className={`mt-2 text-[11px] leading-4 ${remaining != null && remaining > 0 && remaining < 60_000 ? "text-danger" : "text-mute"}`}>
-        {remaining != null && remaining > 0 && remaining < 60_000
-          ? "Segera kedaluwarsa. Selesaikan pembayaran sekarang."
-          : "Status dicek otomatis tiap 5 detik saat halaman aktif."}
+      <span
+        className="sr-only"
+        role={notice.startsWith("Gagal") ? "alert" : "status"}
+        aria-live={notice.startsWith("Gagal") ? "assertive" : "polite"}
+        aria-atomic="true"
+      >
+        {notice}
+      </span>
+      <p className={`mt-2 text-xs leading-5 ${notice.startsWith("Gagal") || (remaining != null && remaining > 0 && remaining < 60_000) ? "text-danger" : "text-mute"}`}>
+        {notice.startsWith("Gagal")
+          ? notice
+          : remaining != null && remaining > 0 && remaining < 60_000
+            ? "Segera kedaluwarsa. Selesaikan pembayaran sekarang."
+            : "Status dicek otomatis tiap 5 detik saat halaman aktif."}
       </p>
     </div>
   );

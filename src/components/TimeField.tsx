@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Clock, ChevronDown, X } from "lucide-react";
 import { MobileSheet } from "@/components/MobileSheet";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -49,27 +49,59 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
   const [minute, setMinute] = useState(m);
   const [mode, setMode] = useState<"hour" | "minute">("hour");
   const [open, setOpen] = useState(false);
-  useOverlayRegistration("time-field", open && !isMobile, () => setOpen(false));
+  const popoverId = useId();
+  const close = useCallback(() => setOpen(false), []);
+  useOverlayRegistration("time-field", open && !isMobile, close);
   const rootRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   const hour24 = to24(hour12, period);
   const value = `${String(hour24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 
   useEffect(() => {
     if (!open || isMobile) return;
+    const restoreFocus = document.activeElement as HTMLElement | null;
+    const focusablesSelector =
+      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const frame = requestAnimationFrame(() => {
+      const panel = popoverRef.current;
+      (panel?.querySelector<HTMLElement>(focusablesSelector) ?? panel)?.focus();
+    });
     const onPointer = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)) close();
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const panel = popoverRef.current;
+      if (!panel) return;
+      const focusables = Array.from(panel.querySelectorAll<HTMLElement>(focusablesSelector)).filter(
+        (el) => el.offsetParent !== null,
+      );
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("pointerdown", onPointer);
     window.addEventListener("keydown", onKey);
     return () => {
+      cancelAnimationFrame(frame);
       window.removeEventListener("pointerdown", onPointer);
       window.removeEventListener("keydown", onKey);
+      restoreFocus?.focus();
     };
-  }, [isMobile, open]);
+  }, [close, isMobile, open]);
 
   function selectHour(next: number) {
     setHour12(next);
@@ -91,7 +123,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
           <button
             type="button"
             onClick={() => setMode("hour")}
-            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
+            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-10 ${
               mode === "hour" ? "bg-accent text-white" : "text-mute hover:text-ink"
             }`}
           >
@@ -100,7 +132,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
           <button
             type="button"
             onClick={() => setMode("minute")}
-            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
+            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-10 ${
               mode === "minute" ? "bg-accent text-white" : "text-mute hover:text-ink"
             }`}
           >
@@ -111,7 +143,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
           <button
             type="button"
             onClick={() => setPeriod("AM")}
-            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
+            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-10 ${
               period === "AM" ? "bg-accent text-white" : "text-mute hover:text-ink"
             }`}
           >
@@ -120,7 +152,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
           <button
             type="button"
             onClick={() => setPeriod("PM")}
-            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-8 ${
+            className={`min-h-12 rounded-tag-sm px-3 text-xs font-semibold transition-colors sm:min-h-10 ${
               period === "PM" ? "bg-accent text-white" : "text-mute hover:text-ink"
             }`}
           >
@@ -181,7 +213,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
 
       <div className="mt-4 flex items-center justify-between border-t border-line pt-3">
         <span className="mono text-sm font-semibold tabular-nums">{value}</span>
-        <button type="button" onClick={() => setOpen(false)} className="btn btn-primary min-h-12 px-3 text-xs sm:min-h-9">
+        <button type="button" onClick={close} className="btn btn-primary min-h-12 px-4 text-sm sm:min-h-10">
           Selesai
         </button>
       </div>
@@ -195,6 +227,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
+        aria-controls={open && !isMobile ? popoverId : undefined}
         className="field flex min-h-12 items-center justify-between gap-3 text-left"
       >
         <span className="mono tabular-nums text-lg font-semibold">{value}</span>
@@ -206,9 +239,13 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
 
       {open && !isMobile && (
         <div
+          ref={popoverRef}
+          id={popoverId}
           role="dialog"
+          aria-modal="true"
           aria-label="Pilih jam"
-          className="absolute left-0 z-30 mt-2 w-[17rem] rounded-tag-sm border border-line bg-panel p-4 shadow-[0_18px_40px_-24px_rgba(11,11,11,0.45)]"
+          tabIndex={-1}
+          className="absolute left-0 z-30 mt-2 w-[17rem] rounded-tag-sm border border-line bg-panel p-4 shadow-[0_18px_40px_-24px_rgba(11,11,11,0.45)] outline-none"
         >
           {clock}
         </div>
@@ -217,7 +254,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
       {open && isMobile && (
         <MobileSheet
           open
-          onClose={() => setOpen(false)}
+          onClose={close}
           titleId="time-field-title"
           bodyClassName="!pt-4"
           header={
@@ -228,7 +265,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
               </div>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={close}
                 aria-label="Tutup pilih jam"
                 className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
               >

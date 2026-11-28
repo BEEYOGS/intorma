@@ -145,7 +145,7 @@ export default async function TrackPage({
                     <CopyButton value={order.code} label="Salin kode" />
                     <WhatsAppLink
                       text={`status ${order.code}`}
-                      className="btn-wa min-h-9 px-4 text-sm"
+                      className="btn-wa min-h-12 px-4 text-sm sm:min-h-10"
                     >
                       <WhatsAppIcon aria-hidden className="size-4" /> Buka WhatsApp
                     </WhatsAppLink>
@@ -156,7 +156,7 @@ export default async function TrackPage({
 
             <div className="flex flex-wrap items-end justify-between gap-5">
               <div>
-                <Link href="/lacak" className="btn btn-ghost min-h-9 px-3 text-xs">
+                <Link href="/lacak" className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-10">
                   <ArrowLeft aria-hidden className="size-3.5" /> Lacak kode lain
                 </Link>
                 <div className="mt-4 flex flex-wrap items-center gap-3">

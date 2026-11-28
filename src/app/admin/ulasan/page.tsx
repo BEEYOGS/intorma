@@ -106,12 +106,12 @@ function ReviewCard({ review, approved = false }: { review: Review; approved?: b
         {!approved && (
           <form action={approveReview}>
             <input type="hidden" name="id" value={review.id} />
-            <button type="submit" className="btn btn-primary min-h-9 px-3 text-xs">Setujui</button>
+            <button type="submit" className="btn btn-primary min-h-12 px-4 text-sm sm:min-h-10">Setujui</button>
           </form>
         )}
         <form action={deleteReview}>
           <input type="hidden" name="id" value={review.id} />
-          <button type="submit" className="btn btn-ghost min-h-9 px-3 text-xs text-danger">Hapus</button>
+          <button type="submit" className="btn btn-ghost min-h-12 px-4 text-sm text-danger sm:min-h-10">Hapus</button>
         </form>
       </div>
     </div>

@@ -21,7 +21,7 @@ export function LacakForm() {
             autoCapitalize="characters"
             autoComplete="off"
             spellCheck={false}
-            className="field font-mono text-[15px] font-semibold uppercase tracking-[0.16em]"
+            className="field font-mono text-base font-semibold uppercase tracking-[0.16em] sm:text-[15px]"
             required
           />
         </label>

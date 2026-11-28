@@ -120,7 +120,7 @@ export function ProductionBoard({ orders, returnTo }: { orders: Order[]; returnT
                         const next = event.target.value;
                         if (isStatus(next) && next !== st) move(order.id, next);
                       }}
-                      className="field min-h-9 flex-1 text-xs"
+                      className="field min-h-12 flex-1 text-sm sm:min-h-10"
                       aria-label={`Ubah status ${order.code}`}
                     >
                       {STATUSES.map((s) => (
@@ -133,7 +133,7 @@ export function ProductionBoard({ orders, returnTo }: { orders: Order[]; returnT
                       type="button"
                       disabled={pending || (order.price == null && !order.paid)}
                       onClick={() => togglePaid(order.id, order.paid, order.price)}
-                      className="btn btn-ghost min-h-9 !px-2 text-xs"
+                      className="btn btn-ghost min-h-12 px-3 text-sm sm:min-h-10"
                       aria-label={order.paid ? "Tandai belum dibayar" : "Tandai lunas"}
                     >
                       {order.paid ? "Batalkan lunas" : "Tandai lunas"}
