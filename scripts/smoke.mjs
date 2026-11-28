@@ -12,7 +12,7 @@ const checks = [
   { name: "wa secret path", path: "/api/wa/webhook/invalidsecret", method: "POST", expect: 401 },
   { name: "wa outbox private", path: "/api/wa/outbox", expect: 401 },
   { name: "db migrate private", path: "/api/db/migrate", method: "POST", expect: 401 },
-  { name: "upload token private", path: "/api/upload/token", expect: 401 },
+  { name: "upload token retired", path: "/api/upload/token", expect: 410 },
 ];
 
 let failed = 0;

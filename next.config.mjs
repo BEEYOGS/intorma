@@ -21,6 +21,7 @@ const nextConfig = {
       `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
+      "media-src 'self' blob:",
       "font-src 'self' data:",
       "connect-src 'self' https://*.googleapis.com",
       "worker-src 'self' blob:",
@@ -35,7 +36,7 @@ const nextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), payment=(self)",
+            value: "camera=(self), microphone=(), geolocation=(), payment=(self)",
           },
           {
             key: "Strict-Transport-Security",

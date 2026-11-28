@@ -8,6 +8,7 @@ export type { UploadProgress };
 
 export type UploadResult = {
   id: number;
+  code: string;
   url: string;
   name: string;
   size: number;

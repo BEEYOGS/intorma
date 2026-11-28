@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Archive, Download, Eye, Upload, X } from "lucide-react";
+import { Archive, Camera, Download, Eye, Upload, X } from "lucide-react";
 import { MobileSheet } from "@/components/MobileSheet";
+import { CameraCapture } from "@/components/CameraCapture";
+import { toast } from "@/components/Toast";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useOverlayRegistration } from "@/hooks/useOverlayRegistration";
@@ -28,18 +30,22 @@ const formatSize = (bytes: number) => {
 
 function fileMeta(file: FileItem) {
   const ext = (file.name.split(".").pop() ?? "file").toLowerCase();
-  const imageExts = ["jpg", "jpeg", "png", "webp", "gif"];
-  const designExts = ["ai", "psd", "cdr", "eps"];
+  const previewExts = ["jpg", "jpeg", "png", "webp", "gif"];
+  const imageExts = [...previewExts, "bmp", "tif", "tiff", "heic", "heif", "svg"];
   const kind = imageExts.includes(ext) || file.mime.startsWith("image/")
     ? "image"
     : ext === "pdf" || file.mime === "application/pdf"
       ? "pdf"
-      : designExts.includes(ext)
+      : ["ai", "psd", "cdr", "eps"].includes(ext)
         ? "design"
         : ext === "zip"
           ? "zip"
           : "other";
-  return { ext, kind, previewable: kind === "image" || kind === "pdf" };
+  // HEIC/HEIF dan SVG tidak bisa dirender <img> di banyak browser.
+  const previewable =
+    kind === "pdf" ||
+    (kind === "image" && (previewExts.includes(ext) || ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.mime)));
+  return { ext, kind, previewable };
 }
 
 function FileThumb({ file }: { file: FileItem }) {
@@ -80,6 +86,7 @@ export function FileLibrary({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [progress, setProgress] = useState<UploadProgress | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [preview, setPreview] = useState<FileItem | null>(null);
   useOverlayRegistration("file-preview", Boolean(preview) && !isMobile, () => setPreview(null));
   const previewRef = useRef<HTMLDivElement>(null);
@@ -130,9 +137,7 @@ export function FileLibrary({
     );
   }
 
-  async function upload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  async function uploadFile(file: File) {
     setUploading(true);
     setError("");
     setProgress(null);
@@ -143,14 +148,22 @@ export function FileLibrary({
         onProgress: setProgress,
       });
       setProgress(null);
+      toast("File tersimpan", "ok");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal mengunggah file.");
+      const message = err instanceof Error ? err.message : "Gagal mengunggah file.";
+      setError(message);
+      toast(message, "error");
       setProgress(null);
     } finally {
       setUploading(false);
-      event.target.value = "";
     }
+  }
+
+  function upload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) void uploadFile(file);
   }
 
   const previewMeta = preview ? fileMeta(preview) : null;
@@ -235,8 +248,16 @@ export function FileLibrary({
                 <Archive aria-hidden className="size-4" /> Unduh ZIP ({selected.length})
               </a>
             )}
+            <button
+              type="button"
+              onClick={() => setCameraOpen(true)}
+              disabled={uploading || !driveReady}
+              className="btn btn-ghost min-h-11 sm:min-h-0 !h-9 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Camera aria-hidden className="size-4" /> Ambil foto
+            </button>
             <label
-              className={`btn btn-ghost min-h-11 sm:min-h-0 !h-9 text-xs ${driveReady ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+              className={`btn btn-ghost min-h-11 sm:min-h-0 !h-9 text-xs focus-within:ring-2 focus-within:ring-accent/60 ${driveReady ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
             >
               <Upload aria-hidden className="size-4" />
               {uploading ? "Mengunggah…" : driveReady ? "Upload file" : "Drive nonaktif"}
@@ -351,6 +372,14 @@ export function FileLibrary({
           {previewBody}
         </MobileSheet>
       )}
+
+      <CameraCapture
+        open={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onCapture={(file) => void uploadFile(file)}
+        title="Ambil foto file"
+        guide="Foto seluruh permukaan dokumen dengan cahaya cukup dan teks terbaca."
+      />
     </>
   );
 }

@@ -185,6 +185,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     selection: str(f, "selection"),
     file: str(f, "file"),
     files: str(f, "files"),
+    uploadCodes: str(f, "uploadCodes"),
     promo: str(f, "promo"),
     requestId: str(f, "requestId"),
   };
@@ -250,9 +251,27 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   // Simpan kode upload sebelum URL diubah absolut, supaya relasi uploads
   // ke order tidak hilang saat admin hendak menyertakan tautan Drive.
   // Token akses ikut disertakan karena endpoint unduh kini memeriksa kepemilikan.
-  const uploadCode = values.file.startsWith("/api/upload/")
+  const codeFromLink = values.file.startsWith("/api/upload/")
     ? values.file.slice("/api/upload/".length).split("?")[0]
-    : null;
+    : "";
+  const uploadCode = /^[A-Za-z0-9]{20,80}$/.test(codeFromLink) ? codeFromLink : null;
+  if (codeFromLink && !uploadCode) {
+    return { error: "Kode file tidak valid. Unggah ulang file kamu.", values };
+  }
+  // Kode upload bukan capability bearer: harus milik sesi ini, belum dipakai,
+  // dan masih segar (token upload hanya berlaku 6 jam).
+  if (uploadCode) {
+    const owned = (await sql`
+      select 1 from uploads
+      where code = ${uploadCode}
+        and order_id is null
+        and created_at >= now() - interval '6 hours'
+        and customer_id is not distinct from ${customer?.id ?? null}
+      limit 1`) as Array<{ "?column?": number }>;
+    if (!owned.length) {
+      return { error: "File upload tidak valid atau sudah dipakai. Unggah ulang file kamu.", values };
+    }
+  }
   const fileUrl = uploadCode
     ? `${siteUrl()}/api/upload/${uploadCode}${accessQuery(accessToken)}`
     : values.file || null;
@@ -374,6 +393,9 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
       update uploads set order_id = ${order.id},
         customer_id = coalesce(customer_id, ${customer?.id ?? null})
       where code = ${uploadCode}
+        and order_id is null
+        and created_at >= now() - interval '6 hours'
+        and customer_id is not distinct from ${customer?.id ?? null}
       returning drive_file_id, drive_web_link`) as Array<{
       drive_file_id: string | null;
       drive_web_link: string | null;
@@ -402,6 +424,42 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
       await drive.attachOrderFiles(order.id, order.code, uploadedFiles).catch((error) => {
         console.error("attachOrderFiles failed", error);
       });
+    }
+  }
+
+  // Referensi dari kamera/file picker dikirim sebagai kode baris `uploads`,
+  // bukan ID Drive dari form. Nama/ukuran/MIME diambil dari database supaya
+  // klien tidak bisa menyisipkan metadata atau file orang lain.
+  const referenceCodes = Array.from(
+    new Set(
+      values.uploadCodes
+        .split(";")
+        .map((code) => code.trim())
+        .filter((code) => /^[A-Za-z0-9]{20,80}$/.test(code)),
+    ),
+  ).slice(0, 12);
+  if (referenceCodes.length) {
+    const rows = (await sql`
+      select id, file_name, mime, size, drive_file_id
+      from uploads
+      where code = any(${referenceCodes})
+        and order_id is null
+        and created_at >= now() - interval '6 hours'
+        and customer_id is not distinct from ${customer?.id ?? null}
+      limit 12`) as Array<{
+      id: number;
+      file_name: string;
+      mime: string | null;
+      size: string | number;
+      drive_file_id: string | null;
+    }>;
+    for (const row of rows) {
+      await sql`update uploads set order_id = ${order.id} where id = ${row.id} and order_id is null`;
+      if (row.drive_file_id) {
+        await sql`
+          insert into order_files (order_id, name, size, mime, drive_id)
+          values (${order.id}, ${row.file_name.slice(0, 200)}, ${Number(row.size) || 0}, ${row.mime}, ${row.drive_file_id})`;
+      }
     }
   }
 

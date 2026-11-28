@@ -15,11 +15,12 @@ import { UploadProgressBar } from "@/components/UploadProgressBar";
 import { BriefAssistant } from "@/components/BriefAssistant";
 import { TimeField } from "@/components/TimeField";
 import { ServiceIcon } from "@/components/ServiceIcon";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Camera, Check } from "lucide-react";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
 import { haptic } from "@/lib/haptics";
 import { ACCEPT_ATTR } from "@/lib/upload-rules";
-import type { UploadedFile } from "@/lib/drive";
+import { CameraCapture } from "@/components/CameraCapture";
+import { toast } from "@/components/Toast";
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
@@ -95,7 +96,9 @@ export function OrderForm({
 }) {
   const [state, action, pending] = useActionState<OrderState, FormData>(createOrder, null);
   const formRef = useRef<HTMLFormElement>(null);
-  const filesFieldRef = useRef<HTMLInputElement>(null);
+  const uploadCodesRef = useRef<HTMLInputElement>(null);
+  const printAbortRef = useRef<AbortController | null>(null);
+  const refAbortRef = useRef<AbortController | null>(null);
   const bypassRef = useRef(false);
   const v = state?.values ?? {};
   const initial = services.find((service) => service.id === (v.service ?? preselect)) ?? services[0];
@@ -114,6 +117,7 @@ export function OrderForm({
   const [refUploading, setRefUploading] = useState(false);
   const [refProgress, setRefProgress] = useState(0);
   const [refError, setRefError] = useState("");
+  const [cameraFor, setCameraFor] = useState<"print" | "reference" | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "design" | "print" | "other">("all");
   const [brief, setBrief] = useState(v.brief || "");
@@ -318,6 +322,8 @@ export function OrderForm({
     const formName = formRef.current
       ? String(new FormData(formRef.current).get("name") ?? "").trim()
       : "";
+    const controller = new AbortController();
+    printAbortRef.current = controller;
     setUploading(true);
     setUploadError("");
     setUploadProgress(null);
@@ -327,80 +333,52 @@ export function OrderForm({
         customerName: formName || customer?.name || "",
         uploadToken,
         onProgress: setUploadProgress,
+        signal: controller.signal,
       });
       setFileLink(data.url);
       setUploadedName(data.name || file.name);
       setUploadProgress(null);
+      toast(`File tersimpan: ${data.name || file.name}`, "ok");
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "Gagal mengunggah file.");
+      const message = error instanceof Error ? error.message : "Gagal mengunggah file.";
+      if (!controller.signal.aborted) {
+        setUploadError(message);
+        toast(message, "error");
+      }
       setUploadProgress(null);
     } finally {
+      printAbortRef.current = null;
       setUploading(false);
       if (!(fileOrEvent instanceof File) && fileOrEvent.target) fileOrEvent.target.value = "";
     }
   }
 
-  function addReferenceFiles(list: FileList | null) {
-    if (!list?.length) return;
+  function cancelPrintUpload() {
+    printAbortRef.current?.abort();
+    printAbortRef.current = null;
+    setUploadProgress(null);
+    setUploading(false);
+  }
+
+  function addReferenceFiles(list: FileList | null | File[]) {
+    const incoming = Array.from(list ?? []);
+    if (!incoming.length) return;
     setRefError("");
-    setRefFiles((previous) => [...previous, ...Array.from(list)].slice(0, 12));
+    setRefFiles((previous) => {
+      const room = 12 - previous.length;
+      if (room <= 0) {
+        setRefError("Maksimal 12 file referensi. Hapus salah satu dulu ya.");
+        return previous;
+      }
+      if (incoming.length > room) {
+        setRefError(`Hanya ${room} file yang ditambahkan—maksimal 12 file referensi.`);
+      }
+      return [...previous, ...incoming.slice(0, room)];
+    });
   }
 
   function removeReferenceFile(index: number) {
     setRefFiles((previous) => previous.filter((_, i) => i !== index));
-  }
-
-  /** Unggah langsung ke Google Drive memakai token singkat dari /api/upload/token. */
-  async function uploadReferenceOne(file: File, token: string, folder: string): Promise<UploadedFile> {
-    const init = await fetch(
-      "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true",
-      {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${token}`,
-          "content-type": "application/json",
-          "x-upload-content-type": file.type || "application/octet-stream",
-          "x-upload-content-length": String(file.size),
-        },
-        body: JSON.stringify({ name: file.name, parents: [folder] }),
-      },
-    );
-    if (!init.ok) throw new Error(`Gagal memulai unggahan (HTTP ${init.status}).`);
-    const sessionUrl = init.headers.get("location");
-    if (!sessionUrl) throw new Error("Sesi unggahan tidak dibuat.");
-
-    if (file.size === 0) {
-      const response = await fetch(sessionUrl, {
-        method: "PUT",
-        headers: { "content-range": "bytes */0" },
-      });
-      if (!response.ok) throw new Error(`Unggahan gagal (HTTP ${response.status}).`);
-      const data = (await response.json().catch(() => null)) as { id?: string } | null;
-      if (!data?.id) throw new Error("Unggahan selesai tanpa id file.");
-      return { id: data.id, name: file.name, size: 0, mime: file.type };
-    }
-
-    const chunkSize = Math.max(4 * 1024 * 1024, Math.ceil(file.size / 30));
-    let offset = 0;
-    while (offset < file.size) {
-      const end = Math.min(offset + chunkSize, file.size);
-      const response = await fetch(sessionUrl, {
-        method: "PUT",
-        headers: { "content-range": `bytes ${offset}-${end - 1}/${file.size}` },
-        body: file.slice(offset, end),
-      });
-      if (response.status === 308) {
-        offset = end;
-        continue;
-      }
-      if (response.ok) {
-        const data = (await response.json().catch(() => null)) as { id?: string } | null;
-        if (!data?.id) throw new Error("Unggahan selesai tanpa id file.");
-        return { id: data.id, name: file.name, size: file.size, mime: file.type };
-      }
-      throw new Error(`Unggahan gagal (HTTP ${response.status}).`);
-    }
-    throw new Error("Unggahan tidak selesai.");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -418,35 +396,48 @@ export function OrderForm({
     setRefUploading(true);
     setRefError("");
     setRefProgress(0);
+    const controller = new AbortController();
+    refAbortRef.current = controller;
+    const formName = formRef.current
+      ? String(new FormData(formRef.current).get("name") ?? "").trim()
+      : "";
     const totalBytes = refFiles.reduce((sum, file) => sum + file.size, 0);
     try {
-      const response = await fetch("/api/upload/token", {
-        cache: "no-store",
-        headers: { "x-upload-token": uploadToken },
-      });
-      if (!response.ok) throw new Error("Upload belum tersedia. Pakai kolom link referensi, atau coba lagi nanti.");
-      const { token, folder } = (await response.json()) as { token: string; folder: string };
-      if (!token || !folder) throw new Error("Sesi upload tidak valid. Coba lagi.");
-
+      const codes: string[] = [];
       let done = 0;
-      const uploaded: UploadedFile[] = [];
       for (const file of refFiles) {
-        uploaded.push(await uploadReferenceOne(file, token, folder));
+        if (controller.signal.aborted) throw new Error("Upload dibatalkan.");
+        // Sesi resumable dibuat server; token Google tidak pernah dikirim ke browser.
+        const result = await uploadFileToStorage(file, {
+          customerName: formName || customer?.name || "",
+          uploadToken,
+          signal: controller.signal,
+        });
+        codes.push(result.code);
         done += file.size;
         setRefProgress(totalBytes ? Math.round((done / totalBytes) * 100) : 100);
       }
-      if (filesFieldRef.current) {
-        filesFieldRef.current.value = uploaded
-          .map((file) => [file.id, file.name.replace(/[|;]/g, "_"), file.size, file.mime].join("|"))
-          .join(";");
-      }
+      if (uploadCodesRef.current) uploadCodesRef.current.value = codes.join(";");
+      toast(`${codes.length} file referensi tersimpan`, "ok");
       bypassRef.current = true;
       formRef.current?.requestSubmit();
-      setRefUploading(false);
     } catch (error) {
-      setRefError(error instanceof Error ? error.message : "Gagal mengunggah file referensi.");
+      const message = error instanceof Error ? error.message : "Gagal mengunggah file referensi.";
+      if (!controller.signal.aborted) {
+        setRefError(message);
+        toast(message, "error");
+      }
+    } finally {
+      refAbortRef.current = null;
       setRefUploading(false);
     }
+  }
+
+  function cancelReferenceUpload() {
+    refAbortRef.current?.abort();
+    refAbortRef.current = null;
+    setRefUploading(false);
+    setRefProgress(0);
   }
 
   async function applyPromo() {
@@ -571,7 +562,7 @@ export function OrderForm({
           }}
           className="space-y-10"
         >
-          <input ref={filesFieldRef} type="hidden" name="files" defaultValue="" />
+          <input ref={uploadCodesRef} type="hidden" name="uploadCodes" defaultValue="" />
           <input type="hidden" name="service" value={selectedId} />
           <input type="hidden" name="qty" value={isPerUnit ? qty : ""} />
           <input type="hidden" name="width" value={isArea ? width : ""} />
@@ -975,7 +966,7 @@ setInteracted(true);
                     : "border-line bg-panel/30 hover:border-accent/40"
                 } ${!driveReady ? "opacity-50" : ""}`}
               >
-                <label className="block">
+                <label className="block rounded-[var(--radius-sharp)] focus-within:ring-2 focus-within:ring-accent/60 focus-within:ring-offset-2 focus-within:ring-offset-[var(--bg)]">
                   <span className="label">Upload dari perangkat</span>
                   <input
                     type="file"
@@ -984,17 +975,36 @@ setInteracted(true);
                     accept={ACCEPT_ATTR}
                     className="sr-only"
                   />
-                  <span className="mt-2 flex cursor-pointer items-center justify-center rounded-[var(--radius-sharp)] border border-line bg-sand px-4 py-3 text-xs font-medium transition-colors hover:border-accent/40">
+                  <span className="mt-2 flex min-h-12 cursor-pointer items-center justify-center rounded-[var(--radius-sharp)] border border-line bg-sand px-4 py-3 text-xs font-medium transition-colors hover:border-accent/40">
                     {uploading ? "Mengunggah…" : "Pilih file atau seret ke sini"}
                   </span>
-                  <span className="mt-1.5 block text-xs text-mute">
+                </label>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCameraFor("print")}
+                    disabled={uploading || !driveReady}
+                    className="btn btn-ghost min-h-11 !h-auto px-3 text-xs disabled:opacity-50"
+                  >
+                    <Camera aria-hidden className="size-4" /> Ambil foto
+                  </button>
+                  <span aria-live="polite" className="min-w-0 flex-1 text-xs text-mute">
                     {uploading
                       ? "Mengunggah langsung ke Google Drive…"
                       : fileLink.startsWith("/api/upload/") && uploadedName
                         ? `Tersimpan: ${uploadedName}`
-                        : "File kecil maupun besar didukung. Format PDF, gambar, atau file desain."}
+                        : "Atau pakai kamera dengan panduan bidik di ponsel."}
                   </span>
-                </label>
+                  {uploading && (
+                    <button
+                      type="button"
+                      onClick={cancelPrintUpload}
+                      className="min-h-11 px-2 text-xs font-medium text-danger underline underline-offset-4"
+                    >
+                      Batalkan
+                    </button>
+                  )}
+                </div>
                 <UploadProgressBar
                   progress={uploadProgress}
                   label={
@@ -1044,7 +1054,7 @@ setInteracted(true);
                 Google Drive saat pesanan dibuat.
               </p>
               <label
-                className={`flex min-h-12 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-tag-sm border border-dashed px-6 py-8 text-center transition-colors ${
+                className={`flex min-h-12 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-tag-sm border border-dashed px-6 py-8 text-center transition-colors focus-within:ring-2 focus-within:ring-accent/60 focus-within:ring-offset-2 focus-within:ring-offset-[var(--bg)] ${
                   refFiles.length ? "border-accent/50 bg-accent/[0.05]" : "border-line hover:border-accent/40"
                 }`}
               >
@@ -1061,6 +1071,19 @@ setInteracted(true);
                 </span>
                 <span className="text-xs text-mute">Gambar, PDF, atau ZIP — tersimpan di Drive studio.</span>
               </label>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCameraFor("reference")}
+                  disabled={refUploading || pending || refFiles.length >= 12}
+                  className="btn btn-ghost min-h-11 !h-auto px-3 text-xs disabled:opacity-50"
+                >
+                  <Camera aria-hidden className="size-4" /> Ambil foto
+                </button>
+                <span className="text-xs text-mute">
+                  Foto dari kamera otomatis jadi JPG, tanpa metadata lokasi.
+                </span>
+              </div>
 
               {refFiles.length > 0 && (
                 <ul className="mt-3 divide-y divide-line rounded-tag-sm border border-line bg-panel/30 px-4">
@@ -1092,6 +1115,13 @@ setInteracted(true);
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
                     <div className="h-full bg-accent transition-all duration-200" style={{ width: `${refProgress}%` }} />
                   </div>
+                  <button
+                    type="button"
+                    onClick={cancelReferenceUpload}
+                    className="mt-2 min-h-11 text-xs font-medium text-danger underline underline-offset-4"
+                  >
+                    Batalkan upload
+                  </button>
                 </div>
               )}
               {refError && <p role="alert" className="mt-3 text-sm text-danger">{refError}</p>}
@@ -1320,6 +1350,21 @@ setInteracted(true);
           <p className="mt-1.5 truncate text-xs text-danger">{quote?.error}</p>
         )}
       </div>
+
+      <CameraCapture
+        open={cameraFor !== null}
+        onClose={() => setCameraFor(null)}
+        onCapture={(file) => {
+          if (cameraFor === "print") void uploadFile(file);
+          else addReferenceFiles([file]);
+        }}
+        title={cameraFor === "print" ? "Foto file siap cetak" : "Foto referensi"}
+        guide={
+          cameraFor === "print"
+            ? "Foto seluruh halaman/file dengan teks terbaca dan tidak terpotong."
+            : "Bidik produk atau logo utuh, jangan terlalu dekat."
+        }
+      />
     </>
   );
 }

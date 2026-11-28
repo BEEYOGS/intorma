@@ -144,9 +144,10 @@ hanya muncul setelah pengguna mengetuknya; tidak ada auto-modal. Penolakan disim
 
 **Status rilis saat ini:** installer Windows v1.0.2 sudah ditandatangani dengan sertifikat
 self-signed `CN=in.torma` + timestamp DigiCert, tetapi root-nya tidak trusted sehingga SmartScreen
-tetap bisa muncul; untuk distribusi luas tetap diperlukan sertifikat OV/EV dari CA. APK v1.0.2 sekarang sudah
+tetap bisa muncul; untuk distribusi luas tetap diperlukan sertifikat OV/EV dari CA. APK v1.0.3 sekarang sudah
 dibangun sebagai `release` dan ditandatangani dengan keypair RSA 2048 milik sendiri (v2/v3 terverifikasi);
-ini build sideload, bukan artifact Play Store. keystore ada di `android/intorma-release.jks`, sertifikat Windows di
+build ini menambah izin kamera untuk tombol **Ambil foto** yang meminta izin setelah ditekan, lengkap dengan
+panduan, contoh baik/buruk, dan fallback galeri. Ini build sideload, bukan artifact Play Store. keystore ada di `android/intorma-release.jks`, sertifikat Windows di
 `certs/intorma-code-signing.pfx`, dan kredensialnya di `.env.signing`—semuanya di-ignore git.
 Untuk naik ke sertifikat OV/EV, CSR ada di `certs/in.torma-codesign.csr` (private key terenkripsi di
 `certs/in.torma-codesign.key`, password di `.env.signing`). Ajukan CSR tersebut ke CA, lalu simpan
