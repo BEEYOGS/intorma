@@ -1,15 +1,18 @@
 import PDFDocument, { registerStdFonts } from "pdfkit";
+import QRCode from "qrcode";
 import Courier from "pdfkit/standard-fonts/Courier";
 import Helvetica from "pdfkit/standard-fonts/Helvetica";
 import HelveticaBold from "pdfkit/standard-fonts/HelveticaBold";
 import TimesItalic from "pdfkit/standard-fonts/TimesItalic";
 import { guardRate } from "@/lib/api-rate-limit";
+import { isValidCode, normalizeCode } from "@/lib/codes";
 import { sql } from "@/lib/db";
-import { jam, tanggal } from "@/lib/format";
-import { cleanAccessToken, hasOrderAccess } from "@/lib/order-access";
+import { deadlineLabel, jam, tanggal } from "@/lib/format";
+import { cleanAccessToken, hasOrderAccess, withAccess } from "@/lib/order-access";
 import { notaRows, notaTotal, type NotaOrder, type NotaSnapshot } from "@/lib/nota";
 import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, asStatus } from "@/lib/status";
+import { siteUrl } from "@/lib/wa";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -24,6 +27,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ kode: st
   if (limited) return limited;
 
   const { kode } = await params;
+  const code = normalizeCode(kode);
+  if (!isValidCode(code)) return new Response("Nota tidak ditemukan.", { status: 404 });
   const accessToken = cleanAccessToken(new URL(req.url).searchParams.get("t"));
   const order = (
     await sql`
@@ -32,7 +37,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ kode: st
         o.promo_code, o.discount_amount, o.access_token, o.customer_id,
         coalesce(s.name, o.service_label) as service
       from orders o left join services s on s.id = o.service_id
-      where o.code = ${kode.toUpperCase()}`
+      where o.code = ${code}`
   )[0] as NotaOrder | undefined;
   if (!order) return new Response("Nota tidak ditemukan.", { status: 404 });
   if (!(await hasOrderAccess(order, accessToken))) {
@@ -50,6 +55,18 @@ export async function GET(req: Request, { params }: { params: Promise<{ kode: st
   ]);
   const meta = STATUS_META[asStatus(String(order.status))];
   const rows = notaRows(order, snapshot);
+
+  // QR di tengah kotak mengarah ke nota web. Saat PDF diunduh admin tanpa ?t=,
+  // token tersimpan dipakai agar QR tetap bisa dipindai dari ponsel klien.
+  const qrToken = accessToken || cleanAccessToken(order.access_token);
+  const qrUrl = siteUrl() + withAccess(`/nota/${encodeURIComponent(order.code)}`, qrToken);
+  const qrPng = await QRCode.toBuffer(qrUrl, {
+    type: "png",
+    margin: 1,
+    width: 320,
+    errorCorrectionLevel: "M",
+    color: { dark: "#111111", light: "#FFFFFF" },
+  });
 
   const doc = new PDFDocument({ size: "A4", margin: M, bufferPages: true });
   const chunks: Buffer[] = [];
@@ -95,16 +112,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ kode: st
   y += 15;
   doc.font("Helvetica-Bold").fontSize(9).fillColor("#111111");
   doc.text(tanggal(order.created_at), M, y, { width: quarter - 6 });
-  doc.text(
-    order.deadline_at
-      ? jam(order.deadline_at)
-      : order.deadline
-        ? tanggal(order.deadline)
-        : "Fleksibel",
-    M + quarter,
-    y,
-    { width: quarter - 6 },
-  );
+  doc.text(deadlineLabel(order.deadline_at, order.deadline), M + quarter, y, {
+    width: quarter - 6,
+  });
   doc.fillColor(meta.printColor);
   doc.text(meta.label, M + quarter * 2, y, { width: quarter - 6 });
   doc.fillColor("#111111");
@@ -173,6 +183,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ kode: st
   doc.moveTo(rightX, y + 52).lineTo(M + width, y + 52).stroke("#111111");
   doc.font("Helvetica-Bold").fontSize(10);
   doc.text("in.torma", rightX, y + 57, { width: half, align: "right" });
+
+  // QR nota di tengah kotak, tidak melekat ke tepi halaman.
+  const qrSize = 92;
+  const qrX = (doc.page.width - qrSize) / 2;
+  const qrTop = Math.min(
+    doc.page.height - M - qrSize - 54,
+    Math.max(y + 70, doc.page.height - M - qrSize - 150),
+  );
+  if (qrTop > y + 40) {
+    doc.rect(qrX - 8, qrTop - 8, qrSize + 16, qrSize + 16).stroke("#C9C9C9");
+    doc.image(qrPng, qrX, qrTop, { fit: [qrSize, qrSize], align: "center", valign: "center" });
+    doc.fillColor("#555555").font("Helvetica").fontSize(8);
+    doc.text("Pindai untuk membuka nota", M, qrTop + qrSize + 14, { width, align: "center" });
+  }
 
   const footerY = doc.page.height - 52;
   doc.moveTo(M, footerY - 12).lineTo(M + width, footerY - 12).stroke("#C9C9C9");

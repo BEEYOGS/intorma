@@ -5,7 +5,7 @@ import { adminLogout } from "@/app/actions";
 import { SITE_NAME } from "@/lib/site";
 import { adminTabs, type AdminTab } from "@/lib/admin-tabs";
 import { AdminBottomNav } from "@/components/AdminBottomNav";
-import { CommandPalette } from "@/components/CommandPalette";
+import { CommandPaletteLazy } from "@/components/CommandPaletteLazy";
 
 export type { AdminTab } from "@/lib/admin-tabs";
 
@@ -70,7 +70,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
         {children}
       </main>
 
-      <CommandPalette />
+      <CommandPaletteLazy />
 
       <AdminBottomNav active={active} />
     </div>

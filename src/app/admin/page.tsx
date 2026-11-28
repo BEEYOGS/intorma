@@ -12,7 +12,7 @@ import { CopySpecButton, SyncPaymentButton } from "@/components/AdminOrderAction
 import { ChevronRight, ClipboardCheck, Clock, Eye, MessageCircle, Printer, RotateCcw, Search, Wallet, X, type LucideIcon } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { jam, normalizeWA, rupiah, tanggal, tanggalJam } from "@/lib/format";
+import { deadlineLabel, deadlineWib, jam, normalizeWA, rupiah, tanggal, tanggalJam } from "@/lib/format";
 import { STATUSES, STATUS_META, isStatus, type Status } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
@@ -48,10 +48,12 @@ function buildReturn(
 }
 
 /** SLA produksi: merah kalau lewat, biru kalau kurang dari 6 jam. */
-function deadlineBadge(value: string | Date | null | undefined) {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
+function deadlineBadge(
+  deadlineAt: string | Date | null | undefined,
+  deadline: string | Date | null | undefined,
+) {
+  const date = deadlineWib(deadlineAt, deadline);
+  if (!date) return null;
   const diff = date.getTime() - Date.now();
   const overdue = diff < 0;
   const soon = !overdue && diff <= 6 * 3600_000;
@@ -63,11 +65,51 @@ function deadlineBadge(value: string | Date | null | undefined) {
   };
 }
 
-/** Ringkasan snapshot harga self-service: ukuran, opsi, dan rincian. */
+/** Spesifikasi produksi siap paste: ringkasan ukuran, rincian biaya, dan opsi. */
 function snapshotSummary(value: unknown): string | null {
   if (!value || typeof value !== "object") return null;
-  const summary = (value as { summary?: unknown }).summary;
-  return typeof summary === "string" && summary.trim() ? summary : null;
+  const snap = value as {
+    summary?: unknown;
+    lines?: Array<{ label?: unknown; detail?: unknown; amount?: unknown }>;
+    options?: Array<{ group_label?: unknown; group?: unknown; label?: unknown; amount?: unknown }>;
+  };
+  const amount = (raw: unknown) => {
+    const n = Number(raw);
+    return Number.isFinite(n) ? rupiah(n) : null;
+  };
+  const parts: string[] = [];
+
+  if (typeof snap.summary === "string" && snap.summary.trim()) parts.push(snap.summary.trim());
+
+  if (Array.isArray(snap.lines)) {
+    const lines = snap.lines
+      .map((line) => {
+        const label = typeof line?.label === "string" ? line.label.trim() : "";
+        const detail = typeof line?.detail === "string" ? line.detail.trim() : "";
+        const cost = amount(line?.amount);
+        if (!label && !detail && !cost) return null;
+        return [label || detail, detail && label ? detail : "", cost ?? ""].filter(Boolean).join(" — ");
+      })
+      .filter((line): line is string => Boolean(line));
+    if (lines.length) parts.push(`Rincian:\n${lines.join("\n")}`);
+  }
+
+  if (Array.isArray(snap.options)) {
+    const options = snap.options
+      .map((option) => {
+        const group = typeof option?.group_label === "string" && option.group_label.trim()
+          ? option.group_label.trim()
+          : typeof option?.group === "string" ? option.group.trim() : "";
+        const label = typeof option?.label === "string" ? option.label.trim() : "";
+        const cost = amount(option?.amount);
+        if (!label && !group && !cost) return null;
+        return [group, label, cost ?? ""].filter(Boolean).join(" — ");
+      })
+      .filter((line): line is string => Boolean(line));
+    if (options.length) parts.push(`Opsi:\n${options.join("\n")}`);
+  }
+
+  return parts.length ? parts.join("\n\n") : null;
 }
 
 export default async function Admin({ searchParams }: { searchParams: Promise<Params> }) {
@@ -457,7 +499,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           {orders.map((o) => {
             const st = (isStatus(o.status) ? o.status : "menunggu") as Status;
             const price = o.price == null ? null : Number(o.price);
-            const dl = deadlineBadge(o.deadline_at);
+            const dl = deadlineBadge(o.deadline_at, o.deadline);
             return (
               <li key={o.id} className="border-b border-line">
                 <OrderInspection
@@ -560,13 +602,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                         </div>
                         <div>
                           <dt className="text-mute">Target selesai</dt>
-                          <dd className="mt-1 font-medium">
-                            {o.deadline_at
-                              ? tanggalJam(o.deadline_at)
-                              : o.deadline
-                                ? tanggal(o.deadline)
-                                : "Fleksibel"}
-                          </dd>
+                          <dd className="mt-1 font-medium">{deadlineLabel(o.deadline_at, o.deadline)}</dd>
                         </div>
                         <div>
                           <dt className="text-mute">Referensi</dt>
@@ -595,7 +631,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       </dl>
 
                       <div className="flex flex-wrap gap-2 pt-1">
-                        <CopySpecButton text={[o.brief, snapshotSummary(o.options)].filter(Boolean).join("\\n\\n")} />
+                        <CopySpecButton text={[o.brief, snapshotSummary(o.options)].filter(Boolean).join("\n\n")} />
                         <SyncPaymentButton code={o.code} />
                         {normalizeWA(String(o.wa ?? "")) ? (
                           <a

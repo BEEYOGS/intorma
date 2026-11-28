@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { guardRate } from "@/lib/api-rate-limit";
+import { isAdmin } from "@/lib/auth";
 import { isValidCode, normalizeCode } from "@/lib/codes";
 import { cleanAccessToken, hasOrderAccess } from "@/lib/order-access";
 import { sql } from "@/lib/db";
@@ -37,6 +38,8 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = normalizeCode(url.searchParams.get("code") ?? "");
   const accessToken = cleanAccessToken(url.searchParams.get("t"));
+  // Tombol admin "Sync Midtrans" meminta bypass cache 10 detik.
+  const force = url.searchParams.get("force") === "1" && (await isAdmin());
   if (!isValidCode(code)) {
     return NextResponse.json({ ok: false, error: "Kode tidak valid." }, { status: 400 });
   }
@@ -76,7 +79,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, paid: false, orderStatus: order.status, pending: false });
   }
 
-  const status = await coreStatusCached(pending.order_id_used);
+  let status: CoreStatus | null;
+  if (force) {
+    status = await getCoreStatus(pending.order_id_used).catch(() => null);
+    statusCache.set(pending.order_id_used, { at: Date.now(), value: status });
+  } else {
+    status = await coreStatusCached(pending.order_id_used);
+  }
   if (!status) {
     return NextResponse.json({
       ok: true,

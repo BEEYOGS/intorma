@@ -249,7 +249,7 @@ export default async function ProductPage() {
                         key={i}
                         aria-hidden
                         className="text-sm"
-                        style={{ color: i < review.rating ? "#facc15" : "var(--text-3)" }}
+                        style={{ color: i < review.rating ? "var(--accent)" : "var(--text-3)" }}
                       >
                         ★
                       </span>

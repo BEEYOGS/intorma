@@ -267,7 +267,7 @@ export function FileLibrary({
             ref={previewRef}
             tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
-            className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[var(--radius-sharp)] border border-[var(--border-2)] bg-[var(--panel)] shadow-[0_30px_90px_-30px_rgba(0,0,0,0.95)] outline-none"
+            className="flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-[var(--radius-sharp)] border border-[var(--border-2)] bg-[var(--panel)] shadow-[0_30px_90px_-30px_rgba(0,0,0,0.95)] outline-none"
           >
             <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -304,13 +304,13 @@ export function FileLibrary({
                 <img
                   src={`/api/upload/${preview.code}`}
                   alt={preview.name}
-                  className="max-h-[70vh] max-w-full object-contain"
+                  className="max-h-[70dvh] max-w-full object-contain"
                 />
               ) : previewMeta.kind === "pdf" ? (
                 <iframe
                   src={`/api/upload/${preview.code}`}
                   title={preview.name}
-                  className="h-[70vh] w-full rounded-[var(--radius-sharp)] border border-[var(--border)]"
+                  className="h-[70dvh] w-full rounded-[var(--radius-sharp)] border border-[var(--border)]"
                 />
               ) : (
                 <div className="py-16 text-center">

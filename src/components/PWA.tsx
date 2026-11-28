@@ -13,8 +13,10 @@ type Platform = "ios" | "android" | "desktop";
 
 const POPUP_MS = 15_000;
 const DISMISS_MS = 30 * 24 * 60 * 60 * 1000;
+const LATER_MS = 7 * 24 * 60 * 60 * 1000;
 const OPEN_EVENT = "intorma:open-install";
 const DISMISSED_KEY = "intorma-install-dismissed";
+const LATER_KEY = "intorma-install-later";
 const INSTALLED_KEY = "intorma-install-installed";
 
 function readInstalledFlag(): boolean {
@@ -25,13 +27,18 @@ function readInstalledFlag(): boolean {
   }
 }
 
-/** Penolakan dipatuhi 30 hari. Flag lama berbasis session juga dimigrasi. */
+/** Penolakan tegas 30 hari; "Nanti" hanya 7 hari. Flag session lama tetap dimigrasi. */
 function dismissedRecently(): boolean {
   try {
-    const raw = window.localStorage.getItem(DISMISSED_KEY);
-    if (raw) {
-      const at = Number(raw);
-      if (Number.isFinite(at)) return Date.now() - at < DISMISS_MS;
+    for (const [key, ttl] of [
+      [DISMISSED_KEY, DISMISS_MS],
+      [LATER_KEY, LATER_MS],
+    ] as const) {
+      const raw = window.localStorage.getItem(key);
+      if (raw) {
+        const at = Number(raw);
+        if (Number.isFinite(at) && Date.now() - at < ttl) return true;
+      }
     }
     return window.sessionStorage.getItem(DISMISSED_KEY) === "1";
   } catch {
@@ -42,6 +49,16 @@ function dismissedRecently(): boolean {
 function rememberDismissal() {
   try {
     window.localStorage.setItem(DISMISSED_KEY, String(Date.now()));
+    window.localStorage.removeItem(LATER_KEY);
+    window.sessionStorage.removeItem(DISMISSED_KEY);
+  } catch {
+    /* storage bisa diblokir; popup tetap tertutup untuk sesi ini. */
+  }
+}
+
+function rememberLater() {
+  try {
+    window.localStorage.setItem(LATER_KEY, String(Date.now()));
     window.sessionStorage.removeItem(DISMISSED_KEY);
   } catch {
     /* storage bisa diblokir; popup tetap tertutup untuk sesi ini. */
@@ -59,10 +76,7 @@ function rememberInstalled() {
 export function ServiceWorkerRegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator) || process.env.NODE_ENV !== "production") return;
-    const register = () => navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-    if (document.readyState === "complete") register();
-    else window.addEventListener("load", register, { once: true });
-    return () => window.removeEventListener("load", register);
+    navigator.serviceWorker.register("/sw.js").catch(() => undefined);
   }, []);
   return null;
 }
@@ -80,13 +94,15 @@ export function InstallNavButton({
   onOpen?: () => void;
 }) {
   const env = useAppEnvironment();
+  const [ready, setReady] = useState(false);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     setHidden(isInstalledEnvironment() || readInstalledFlag() || dismissedRecently());
+    setReady(true);
   }, []);
 
-  if (env.isInstalled || hidden) return null;
+  if (!ready || env.isInstalled || hidden) return null;
 
   return (
     <button
@@ -108,6 +124,7 @@ export function InstallButton() {
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [installed, setInstalled] = useState(false);
+  const [ready, setReady] = useState(false);
   const [platform, setPlatform] = useState<Platform>("desktop");
   const [popupKey, setPopupKey] = useState(0);
   const env = useAppEnvironment();
@@ -154,6 +171,13 @@ export function InstallButton() {
   }, [showPopup, closePopup]);
 
   useEffect(() => {
+    // Di app terinstal tidak boleh ada listener install sama sekali.
+    if (isInstalledEnvironment() || readInstalledFlag()) {
+      setInstalled(true);
+      setReady(true);
+      return;
+    }
+
     const onPrompt = (event: Event) => {
       // Simpan prompt untuk aksi eksplisit; jangan tampilkan modal otomatis.
       event.preventDefault();
@@ -177,6 +201,7 @@ export function InstallButton() {
     setPlatform(ios ? "ios" : android ? "android" : "desktop");
 
     if (isInstalledEnvironment() || readInstalledFlag()) setInstalled(true);
+    setReady(true);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
@@ -206,16 +231,10 @@ export function InstallButton() {
     }
   }
 
-  if (env.isInstalled) return null;
+  if (!ready || env.isInstalled || installed) return null;
 
   return (
     <>
-      {installed && (
-        <span className="sr-only" role="status">
-          Aplikasi in.torma sudah terpasang.
-        </span>
-      )}
-
       {showPopup && (
         <div
           key={popupKey}
@@ -255,7 +274,15 @@ export function InstallButton() {
                 <button type="button" onClick={install} className="btn btn-primary min-h-10 flex-1 px-4 text-sm">
                   Install sekarang <Download aria-hidden className="size-4" />
                 </button>
-                <button type="button" onClick={closePopup} className="btn btn-ghost min-h-10 px-4 text-sm">
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearTimer();
+                    setShowPopup(false);
+                    rememberLater();
+                  }}
+                  className="btn btn-ghost min-h-10 px-4 text-sm"
+                >
                   Nanti
                 </button>
               </div>

@@ -22,7 +22,8 @@ import { ToastHost } from "@/components/Toast";
 import { PageFade } from "@/components/PageFade";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StorefrontBottomNav } from "@/components/StorefrontBottomNav";
-import { ServiceWorkerRegister, InstallButton } from "@/components/PWA";
+import { ServiceWorkerRegister } from "@/components/PWA";
+import { InstallButtonLazy } from "@/components/InstallButtonLazy";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://intorma-psi.vercel.app"),
@@ -75,7 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </PageFade>
         <StorefrontBottomNav />
         <ServiceWorkerRegister />
-        <InstallButton />
+        <InstallButtonLazy />
         <ToastHost />
       </body>
     </html>

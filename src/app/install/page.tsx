@@ -12,7 +12,8 @@ export default async function InstallPage() {
         <h1 className="display text-3xl sm:text-4xl mb-4">Pasang in.torma di layar utama.</h1>
         <p className="max-w-2xl text-sm leading-6 text-[var(--text-2)]">
           in.torma adalah Progressive Web App. Tidak perlu download dari toko aplikasi; cukup pasang dari browser.
-          Pop-up pemasangan otomatis muncul beberapa detik, lalu hilang sendiri.
+          Pemasangan sepenuhnya pasif: tidak ada pop-up otomatis. Buka menu browser lalu pilih Install aplikasi atau
+          Add to Home screen. Jika Anda menolak, pilihan itu diingat selama 30 hari.
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <InstallNavButton

@@ -1,17 +1,11 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 /**
- * Bungkus konten halaman dengan animasi fade+naik saat pathname berubah.
- * Keyed per route supaya animasi jalan tiap navigasi.
+ * Bungkus konten dengan animasi fade+naik tanpa mengganti key.
+ * Subtree tidak di-remount saat navigasi, sehingga efek klien tidak dijalankan ulang.
  */
 export function PageFade({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  return (
-    <div key={pathname} className="page-fade">
-      {children}
-    </div>
-  );
+  return <div className="page-fade">{children}</div>;
 }

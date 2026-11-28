@@ -31,7 +31,9 @@ export function SyncPaymentButton({ code }: { code: string }) {
   async function sync() {
     setPending(true);
     try {
-      const response = await fetch(`/api/payment/status?code=${encodeURIComponent(code)}`, { cache: "no-store" });
+      const response = await fetch(`/api/payment/status?code=${encodeURIComponent(code)}&force=1`, {
+        cache: "no-store",
+      });
       const data = (await response.json().catch(() => ({}))) as { paid?: boolean; orderStatus?: string; error?: string };
       if (!response.ok) {
         toast(data.error || "Gagal mengecek status pembayaran.", "error");

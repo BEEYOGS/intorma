@@ -14,8 +14,9 @@ import { LiveRefresh } from "@/components/LiveRefresh";
 import { RememberOrder } from "@/components/RememberOrder";
 import { IconForStatus } from "@/components/StatusIcon";
 import { ArrowLeft } from "lucide-react";
+import { isValidCode, normalizeCode } from "@/lib/codes";
 import { sql } from "@/lib/db";
-import { rupiah, tanggal, tanggalJam } from "@/lib/format";
+import { deadlineLabel, deadlineWib, rupiah, tanggal, tanggalJam } from "@/lib/format";
 import { cleanAccessToken, hasOrderAccess, withAccess } from "@/lib/order-access";
 import { priceBreakdown } from "@/lib/pricing";
 import { gatewayEnabled } from "@/lib/payment";
@@ -33,6 +34,8 @@ export default async function TrackPage({
   searchParams: Promise<{ baru?: string; t?: string }>;
 }) {
   const [{ kode }, { baru, t }] = await Promise.all([params, searchParams]);
+  const code = normalizeCode(kode);
+  if (!isValidCode(code)) notFound();
   const order = (
     await sql`
       select o.id, o.code, o.name, o.status, o.price, o.note, o.paid, o.deadline, o.deadline_at, o.brief,
@@ -40,7 +43,7 @@ export default async function TrackPage({
         o.file_url, o.payment_status, o.payment_method, o.access_token, o.customer_id,
         coalesce(s.name, o.service_label) as service, s.unit_label as unit_label
       from orders o left join services s on s.id = o.service_id
-      where o.code = ${kode.toUpperCase()}`
+      where o.code = ${code}`
   )[0];
   if (!order) notFound();
 
@@ -73,11 +76,7 @@ export default async function TrackPage({
   const st = (isStatus(order.status) ? order.status : "menunggu") as Status;
   const meta = STATUS_META[st];
 
-  const deadlineDate = order.deadline_at
-    ? new Date(order.deadline_at)
-    : order.deadline
-      ? new Date(order.deadline)
-      : null;
+  const deadlineDate = deadlineWib(order.deadline_at, order.deadline);
   const createdDate = new Date(order.created_at);
   const now = new Date();
   const isFinal = st === "selesai" || st === "batal";
@@ -352,13 +351,7 @@ export default async function TrackPage({
                 )}
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-mute">Target selesai</dt>
-                  <dd className="text-right font-medium">
-                    {order.deadline_at
-                      ? tanggalJam(order.deadline_at)
-                      : order.deadline
-                        ? tanggal(order.deadline)
-                        : "Fleksibel"}
-                  </dd>
+                  <dd className="text-right font-medium">{deadlineLabel(order.deadline_at, order.deadline)}</dd>
                 </div>
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-mute">Dibuat</dt>

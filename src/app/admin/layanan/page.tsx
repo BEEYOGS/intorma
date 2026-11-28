@@ -73,7 +73,7 @@ export default async function ServicesAdmin() {
                   {s.pricing_model === "area" ? "Per m┬▓" : s.pricing_model === "per_unit" ? "Per item" : "Paket"}
                 </span>
                 <span className="text-xs text-mute">┬▒ {s.days} hari</span>
-                <span className={`tag ${s.active ? "!border-[#0070f3]/35 !text-[#0070f3]" : ""}`}>
+                <span className={`tag ${s.active ? "!border-[#0070f3]/35 !text-[#3291ff]" : ""}`}>
                   <span aria-hidden className="status-dot !mr-0" style={{ background: s.active ? "#0070f3" : "var(--text-3)" }} />
                   {s.active ? "Aktif" : "Nonaktif"}
                 </span>

@@ -73,7 +73,7 @@ export function ReviewForm({
                 <Star
                   aria-hidden
                   className="size-5"
-                  style={{ color: value <= rating ? "#facc15" : "var(--text-3)", fill: value <= rating ? "#facc15" : "transparent" }}
+                  style={{ color: value <= rating ? "var(--accent)" : "var(--text-3)", fill: value <= rating ? "var(--accent)" : "transparent" }}
                 />
               </button>
             );

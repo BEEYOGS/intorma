@@ -89,7 +89,7 @@ function ReviewCard({ review, approved = false }: { review: Review; approved?: b
                 key={index}
                 aria-hidden
                 className="size-3.5"
-                style={{ color: index < review.rating ? "#facc15" : "var(--text-3)", fill: index < review.rating ? "#facc15" : "transparent" }}
+                style={{ color: index < review.rating ? "var(--accent)" : "var(--text-3)", fill: index < review.rating ? "var(--accent)" : "transparent" }}
               />
             ))}
           </span>

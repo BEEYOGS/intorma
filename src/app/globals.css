@@ -256,7 +256,7 @@ body::after {
   color: var(--text);
   border-radius: var(--radius-sharp);
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: 16px;
   outline: none;
   transition: border-color 0.15s ease;
   width: 100%;
@@ -575,7 +575,7 @@ button,
   }
 }
 
-/* Mobile: target sentuh minimal 44px, teks 16px agar iOS tidak zoom otomatis. */
+/* Mobile: target sentuh minimal 48px, teks 16px agar iOS tidak zoom otomatis. */
 @media (max-width: 640px) {
   html {
     -webkit-tap-highlight-color: transparent;
@@ -584,11 +584,11 @@ button,
   .field,
   textarea.input,
   textarea.field {
-    min-height: 44px;
+    min-height: 48px;
     font-size: 16px;
   }
   .btn {
-    min-height: 44px;
+    min-height: 48px;
   }
 }
 

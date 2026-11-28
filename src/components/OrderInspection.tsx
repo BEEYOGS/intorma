@@ -71,7 +71,7 @@ export function OrderInspection({
             aria-modal="true"
             aria-labelledby={`inspection-${code}`}
             tabIndex={-1}
-            className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[12px] border border-line bg-[var(--bg)] shadow-[0_24px_80px_-24px_rgba(0,0,0,0.9)] outline-none sm:h-dvh sm:max-h-none sm:w-[min(34rem,100vw)] sm:rounded-l-[12px] sm:rounded-tr-none"
+            className="relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[12px] border border-line bg-[var(--bg)] shadow-[0_24px_80px_-24px_rgba(0,0,0,0.9)] outline-none sm:h-dvh sm:max-h-none sm:w-[min(34rem,100vw)] sm:rounded-tl-[12px] sm:rounded-tr-none sm:rounded-bl-none sm:rounded-br-none"
           >
             <header className="flex shrink-0 items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
               <div className="min-w-0">

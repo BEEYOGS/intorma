@@ -9,12 +9,36 @@ export function LiveRefresh({ intervalMs = 30000 }: { intervalMs?: number }) {
   const [last, setLast] = useState<Date | null>(null);
 
   useEffect(() => {
-    setLast(new Date());
-    const id = setInterval(() => {
+    let id: number | null = null;
+    const refresh = () => {
       router.refresh();
       setLast(new Date());
-    }, intervalMs);
-    return () => clearInterval(id);
+    };
+    const stop = () => {
+      if (id !== null) {
+        window.clearInterval(id);
+        id = null;
+      }
+    };
+    const start = () => {
+      if (id === null) id = window.setInterval(refresh, intervalMs);
+    };
+    const onVisibility = () => {
+      if (document.hidden) {
+        stop();
+        return;
+      }
+      refresh();
+      start();
+    };
+
+    setLast(new Date());
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [router, intervalMs]);
 
   return (

@@ -31,6 +31,34 @@ export const tanggalJam = (d: string | Date | null | undefined) =>
         timeZone: "Asia/Jakarta",
       });
 
+/**
+ * Deadline wajib tanggal + jam WIB. Data lama hanya menyimpan tanggal;
+ * untuk itu dipakai akhir hari WIB (23:59), bukan UTC midnight.
+ */
+export function deadlineWib(
+  deadlineAt: string | Date | null | undefined,
+  deadline: string | Date | null | undefined,
+): Date | null {
+  if (deadlineAt) {
+    const explicit = new Date(deadlineAt);
+    return Number.isNaN(explicit.getTime()) ? null : explicit;
+  }
+  if (!deadline) return null;
+  const raw = typeof deadline === "string" ? deadline : deadline.toISOString();
+  const [year, month, day] = raw.slice(0, 10).split("-").map(Number);
+  if (!year || !month || !day) return null;
+  // WIB = UTC+7, jadi 23:59 lokal sama dengan 16:59 UTC.
+  return new Date(Date.UTC(year, month - 1, day, 16, 59, 0));
+}
+
+export const deadlineLabel = (
+  deadlineAt: string | Date | null | undefined,
+  deadline: string | Date | null | undefined,
+) => {
+  const date = deadlineWib(deadlineAt, deadline);
+  return date ? jam(date) : "Fleksibel";
+};
+
 /** Tanggal hari ini di WIB, format YYYY-MM-DD. Dipakai kunci idempoten cron. */
 export const tanggalHariIni = () =>
   new Intl.DateTimeFormat("en-CA", {

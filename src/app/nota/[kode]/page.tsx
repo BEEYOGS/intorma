@@ -6,6 +6,7 @@ import { NotaQrCard } from "@/components/NotaQrCard";
 import { OrderAccessGate } from "@/components/OrderAccessGate";
 import { PrintButton } from "@/components/PrintButton";
 import { isAdmin } from "@/lib/auth";
+import { isValidCode, normalizeCode } from "@/lib/codes";
 import { cleanAccessToken, hasOrderAccess, withAccess } from "@/lib/order-access";
 import { sql } from "@/lib/db";
 import { jam, rupiah, tanggal } from "@/lib/format";
@@ -24,6 +25,8 @@ export default async function NotaPage({
   searchParams: Promise<{ t?: string }>;
 }) {
   const [{ kode }, { t }] = await Promise.all([params, searchParams]);
+  const code = normalizeCode(kode);
+  if (!isValidCode(code)) notFound();
   const order = (
     await sql`
       select o.id, o.code, o.name, o.status, o.price, o.options, o.brief, o.created_at,
@@ -31,7 +34,7 @@ export default async function NotaPage({
         o.promo_code, o.discount_amount, o.access_token, o.customer_id,
         coalesce(s.name, o.service_label) as service, s.unit_label as unit_label
       from orders o left join services s on s.id = o.service_id
-      where o.code = ${kode.toUpperCase()}`
+      where o.code = ${code}`
   )[0];
   if (!order) notFound();
 

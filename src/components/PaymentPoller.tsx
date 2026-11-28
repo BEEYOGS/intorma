@@ -43,6 +43,7 @@ export function PaymentPoller({
 
   useEffect(() => {
     const deadline = new Date(expiresAt).getTime();
+    let timer: number | null = null;
     const tick = () => {
       const left = Math.max(0, deadline - Date.now());
       setRemaining(left);
@@ -51,9 +52,27 @@ export function PaymentPoller({
         router.refresh();
       }
     };
-    tick();
-    const timer = setInterval(tick, 1000);
-    return () => clearInterval(timer);
+    const stop = () => {
+      if (timer !== null) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+    };
+    const start = () => {
+      tick();
+      if (timer === null) timer = window.setInterval(tick, 1000);
+    };
+    const onVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [expiresAt, router]);
 
   useEffect(() => {
@@ -63,21 +82,27 @@ export function PaymentPoller({
     setPaid(false);
     setExpired(false);
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let activeController: AbortController | null = null;
 
-    // Status PENDING dicek tiap 5 detik. Endpoint status punya cache 10 detik,
-    // jadi Midtrans tidak dibombardir walau halaman dibiarkan terbuka.
+    // Status PENDING tetap dicek tiap 5 detik saat tab aktif. Saat tab tersembunyi,
+    // timer dan request dibatalkan supaya tidak menyedot baterai/kuota.
     function schedule() {
+      if (document.hidden || done.current) return;
       timer = setTimeout(() => void check(), 5_000);
     }
 
     async function check() {
-      if (done.current) return;
+      if (done.current || document.hidden) return;
+      activeController?.abort();
+      const controller = new AbortController();
+      activeController = controller;
       try {
         const response = await fetch(statusUrl, {
           cache: "no-store",
+          signal: controller.signal,
         });
         const data = (await response.json()) as StatusResponse;
-        if (!alive) return;
+        if (!alive || controller.signal.aborted) return;
         if (data.paid) {
           done.current = true;
           setPaid(true);
@@ -88,16 +113,32 @@ export function PaymentPoller({
           router.refresh();
         }
       } catch {
-        // Jaringan sedang buruk; polling berikutnya akan mencoba lagi.
+        // Jaringan buruk atau dibatalkan saat tab hidden; polling aktif berikutnya mencoba lagi.
       } finally {
-        if (alive && !done.current) schedule();
+        activeController = null;
+        if (alive && !done.current && !document.hidden) schedule();
       }
     }
 
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (timer) {
+          clearTimeout(timer);
+          timer = undefined;
+        }
+        activeController?.abort();
+        return;
+      }
+      if (alive && !done.current) void check();
+    };
+
     schedule();
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       alive = false;
       if (timer) clearTimeout(timer);
+      activeController?.abort();
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [statusUrl, expiresAt, router]);
 
