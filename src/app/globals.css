@@ -597,6 +597,12 @@ button,
   .btn {
     min-height: 48px;
   }
+  /* Grid/flex tidak boleh melebar karena min-width:auto pada form dan fieldset. */
+  form,
+  fieldset,
+  label {
+    min-width: 0;
+  }
 }
 
 /* Baris chip horizontal: bisa digeser, tidak menggulung halaman, tanpa scrollbar. */
