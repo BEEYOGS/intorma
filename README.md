@@ -143,10 +143,11 @@ hanya muncul setelah pengguna mengetuknya; tidak ada auto-modal. Penolakan disim
 “Nanti” 7 hari di localStorage.
 
 **Status rilis saat ini:** installer Windows v1.0.2 sudah nyata tetapi **belum di-code-sign**
-(SmartScreen masih bisa muncul). APK v1.0.2 juga nyata tetapi masih `app-debug.apk`, sehingga
-`debuggable` dan memakai debug key. Workflow sudah disiapkan untuk menghasilkan `.apk` release
-signed pada tag berikutnya bila secret keystore diisi; sampai saat itu, anggap APK sebagai build
-sideload, bukan artifact Play Store.
+(SmartScreen masih bisa muncul) karena belum ada sertifikat code signing. APK v1.0.2 sekarang sudah
+dibangun sebagai `release` dan ditandatangani dengan keypair RSA 2048 milik sendiri (v2/v3 terverifikasi);
+ini build sideload, bukan artifact Play Store. keystore ada di `android/intorma-release.jks` dan
+kredensialnya di `.env.signing`—keduanya di-ignore git. Workflow CI tetap bisa memakai secret
+`ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, dan `KEY_PASSWORD` bila dipakai.
 
 Tauri dan Capacitor adalah **wrapper online** ke `https://intorma-psi.vercel.app`, bukan static
 export Next.js (SSR/API/server action tidak bisa diekspor ke `public`). Konsekuensinya:
