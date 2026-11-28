@@ -54,4 +54,5 @@ Riset singkat (28 Nov 2026) untuk menetapkan logika tampilan mobile in.tarma. Su
 - Integrasi: `src/components/OrderForm.tsx` dan `src/components/FileLibrary.tsx`.
 - CSP/Permissions-Policy: `next.config.mjs` (`camera=(self)`, `media-src 'self' blob:`).
 - Native: `android/app/src/main/AndroidManifest.xml` (izin `CAMERA` opsional).
+- Service worker: `public/sw.js`; naikkan versi `CACHE` setiap kali UI berubah agar PWA tidak menyajikan chunk lama.
 - Jika kelak ingin memakai kamera sistem penuh di wrapper native, pertimbangkan `@capacitor/camera` agar tidak perlu izin kamera in-app; ini perubahan terpisah dan perlu bump versi APK.
