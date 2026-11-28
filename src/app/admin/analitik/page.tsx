@@ -5,6 +5,7 @@ import { sql } from "@/lib/db";
 import { rupiah, tanggal, tanggalJam } from "@/lib/format";
 import { STATUS_META, asStatus } from "@/lib/status";
 import { Download } from "lucide-react";
+import { DailyChart } from "@/components/DailyChart";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Analitik", robots: { index: false } };
@@ -134,7 +135,6 @@ export default async function AnalitikPage({
   const aging814 = Number(a.d8_14 ?? 0);
   const aging15 = Number(a.d15_plus ?? 0);
 
-  const maxDay = Math.max(1, ...byDay.map((r) => Number(r.n)));
   const maxSvc = Math.max(1, ...byService.map((r) => Number(r.revenue)));
 
   const ranges: { key: RangeKey; label: string }[] = [
@@ -186,32 +186,13 @@ export default async function AnalitikPage({
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <section className="rounded-tag-lg border border-line bg-panel/40 p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Pesanan per hari</h2>
-            <span className="text-xs text-mute">{byDay.length} hari</span>
-          </div>
-          {byDay.length === 0 ? (
-            <p className="mt-6 text-sm text-mute">Belum ada data.</p>
-          ) : (
-            <div className="mt-6 flex items-end gap-1.5 overflow-x-auto pb-2">
-              {byDay.map((r) => {
-                const n = Number(r.n);
-                const h = Math.max(4, Math.round((n / maxDay) * 96));
-                return (
-                  <div key={String(r.day)} className="flex min-w-[2rem] flex-col items-center gap-1">
-                    <div
-                      className="w-full rounded-t bg-accent/70"
-                      style={{ height: `${h}px` }}
-                      title={`${tanggal(r.day)}: ${n} pesanan`}
-                    />
-                    <span className="text-xs text-mute">{String(r.day).slice(5)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
+        <DailyChart
+          rows={byDay.map((r) => ({
+            day: String(r.day),
+            n: Number(r.n),
+            revenue: Number(r.revenue),
+          }))}
+        />
 
         <section className="rounded-tag-lg border border-line bg-panel/40 p-5">
           <h2 className="text-sm font-semibold">Pendapatan per layanan</h2>

@@ -8,6 +8,7 @@ import { ProductionBoard } from "@/components/ProductionBoard";
 import { BulkOrderForm } from "@/components/BulkOrderForm";
 import { QuickActions } from "@/components/QuickActions";
 import { OrderInspection } from "@/components/OrderInspection";
+import { AdminSelectCode, AdminSelectionProvider } from "@/components/AdminSelection";
 import { CopySpecButton, SyncPaymentButton } from "@/components/AdminOrderActions";
 import { ChevronRight, ClipboardCheck, Clock, Eye, MessageCircle, Printer, RotateCcw, Search, Wallet, X, type LucideIcon } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
@@ -483,7 +484,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       </div>
 
 ...
-      <div className="mt-6"><BulkOrderForm /></div>
+      <AdminSelectionProvider>
+      <div id="aksi-massal" className="mt-6 scroll-mt-24"><BulkOrderForm /></div>
 
       <div className="mt-6 flex flex-wrap items-baseline justify-between gap-2 text-sm text-mute">
         <p>
@@ -544,6 +546,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
             const dl = deadlineBadge(o.deadline_at, o.deadline);
             return (
               <li key={o.id} className="border-b border-line">
+                <AdminSelectCode code={o.code} />
                 <OrderInspection
                   code={o.code}
                   initialOpen={o.code === openCode}
@@ -765,6 +768,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           </ul>
         </>
       )}
+      </AdminSelectionProvider>
     </AdminShell>
   );
 }

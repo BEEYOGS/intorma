@@ -1,35 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
-import { ChevronRight, MessageCircle, Search, UsersRound, X } from "lucide-react";
+import { Search, UsersRound, X } from "lucide-react";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { normalizeWA, rupiah, tanggal } from "@/lib/format";
-import { STATUS_META, isStatus } from "@/lib/status";
+import { rupiah } from "@/lib/format";
+import { CustomerList, type CustomerHistoryRow, type CustomerRow } from "@/components/CustomerList";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Pelanggan", robots: { index: false } };
 
-type Customer = {
-  wa: string;
-  name: string;
-  orders: number;
-  paid_orders: number;
-  spent: number;
-  due: number;
-  last_at: string;
-  first_at: string;
-};
-
-type HistoryRow = {
-  wa: string;
-  code: string;
-  status: string;
-  price: number | null;
-  paid: boolean;
-  created_at: string;
-  service: string | null;
-};
+type Customer = CustomerRow;
+type HistoryRow = CustomerHistoryRow;
 
 export default async function Pelanggan({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   if (!(await isAdmin())) redirect("/admin/login");
@@ -142,102 +124,9 @@ export default async function Pelanggan({ searchParams }: { searchParams: Promis
           </Link>
         </div>
       ) : (
-        <ul className="mt-4 space-y-2.5">
-          {list.map((c, index) => {
-            const wa = normalizeWA(String(c.wa));
-            const items = history.get(String(c.wa)) ?? [];
-            const orders = Number(c.orders ?? 0);
-            const spent = Number(c.spent ?? 0);
-            const due = Number(c.due ?? 0);
-            return (
-              <li key={`${c.wa}-${index}`} className="rounded-tag-lg border border-line bg-panel/40">
-                <details className="group">
-                  <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-2 p-4 transition-colors hover:bg-white/[0.02]">
-                    <span className="grid size-9 shrink-0 place-items-center rounded-tag-sm border border-line bg-white/[0.03] text-[var(--text-2)]">
-                      <UsersRound aria-hidden className="size-4" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold">{c.name || "Tanpa nama"}</span>
-                      <span className="mono block text-xs text-mute">{c.wa}</span>
-                    </span>
-                    <span className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="rounded-tag-sm border border-line px-2.5 py-1 text-mute">
-                        {orders} pesanan
-                      </span>
-                      {spent > 0 && (
-                        <span className="rounded-tag-sm border border-line px-2.5 py-1 tabular-nums">
-                          {rupiah(spent)}
-                        </span>
-                      )}
-                      {due > 0 && (
-                        <span className="rounded-tag-sm border border-danger/30 bg-danger/[0.05] px-2.5 py-1 font-semibold tabular-nums text-danger">
-                          Piutang {rupiah(due)}
-                        </span>
-                      )}
-                    </span>
-                    <ChevronRight aria-hidden className="size-4 shrink-0 text-ink/30 transition-transform group-open:rotate-90" />
-                  </summary>
-
-                  <div className="grid gap-5 border-t border-line px-4 pb-5 pt-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5">
-                    <div>
-                      <p className="eyebrow">Riwayat pesanan</p>
-                      {items.length === 0 ? (
-                        <p className="mt-2 text-sm text-mute">Riwayat tidak tersedia.</p>
-                      ) : (
-                        <ul className="mt-3 divide-y divide-line">
-                          {items.map((o) => {
-                            const st = isStatus(o.status) ? o.status : "menunggu";
-                            return (
-                              <li key={o.code} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm">
-                                <span aria-hidden className="status-dot shrink-0" style={{ background: STATUS_META[st].color }} />
-                                <Link
-                                  href={`/admin?open=${encodeURIComponent(o.code)}`}
-                                  className="mono font-semibold underline decoration-line underline-offset-4 hover:decoration-ink"
-                                >
-                                  {o.code}
-                                </Link>
-                                <span className="min-w-0 flex-1 truncate text-mute">{o.service ?? "—"}</span>
-                                <span className="text-xs text-mute">{tanggal(o.created_at)}</span>
-                                <span className="tabular-nums">{o.price == null ? "—" : rupiah(Number(o.price))}</span>
-                                <span className="text-xs text-mute">{o.paid ? "Lunas" : "Belum bayar"}</span>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                      <p className="mt-3 text-xs text-mute">
-                        Pelanggan sejak {tanggal(c.first_at)} · terakhir {tanggal(c.last_at)}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col gap-2 sm:w-44">
-                      {wa ? (
-                        <a
-                          href={`https://wa.me/${wa}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn btn-wa min-h-10 justify-center px-4 text-sm"
-                        >
-                          <MessageCircle aria-hidden className="size-4" /> Chat WhatsApp
-                        </a>
-                      ) : (
-                        <span className="btn btn-ghost min-h-10 cursor-not-allowed justify-center px-4 text-sm opacity-50">
-                          Nomor tidak tersedia
-                        </span>
-                      )}
-                      <Link
-                        href={`/admin?q=${encodeURIComponent(String(c.wa))}`}
-                        className="btn btn-outline min-h-10 justify-center px-4 text-sm"
-                      >
-                        Lihat di pesanan
-                      </Link>
-                    </div>
-                  </div>
-                </details>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="mt-4">
+          <CustomerList customers={list} history={Object.fromEntries(history)} />
+        </div>
       )}
     </AdminShell>
   );

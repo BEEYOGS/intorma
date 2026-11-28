@@ -1,5 +1,6 @@
 import { TopBar } from "@/components/TopBar";
 import { InstallNavButton } from "@/components/PWA";
+import { InstallChecklist } from "@/components/InstallChecklist";
 
 export const metadata = { title: "Pasang aplikasi", robots: { index: false } };
 
@@ -26,7 +27,11 @@ export default async function InstallPage() {
           </a>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="mt-8">
+          <InstallChecklist />
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div className="card p-5">
             <p className="font-semibold mb-2">Android (Chrome)</p>
             <ol className="list-decimal space-y-1 pl-5 text-sm text-[var(--text-2)]">

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, CornerDownRight, GitBranch } from "lucide-react";
 import { IconForStatus } from "@/components/StatusIcon";
+import { CopyTextButton } from "@/components/CopyTextButton";
 import { jam } from "@/lib/format";
-import { STATUS_META, type Status } from "@/lib/status";
+import { STATUS_META, asStatus, type Status } from "@/lib/status";
 
 type EventRow = { status: string; note: string | null; created_at: string | Date };
 
@@ -32,6 +33,12 @@ export function StatusTree({
   // Revisi dan batal tetap menempel pada cabangnya masing-masing.
   const activeIndex = status === "revisi" ? 1 : status === "batal" ? 0 : mainIndex;
   const [showEvents, setShowEvents] = useState(events.length <= 2);
+  const historyText = events
+    .map((event) => {
+      const label = STATUS_META[asStatus(event.status)].label;
+      return `${jam(event.created_at)} · ${label}${event.note ? ` — ${event.note}` : ""}`;
+    })
+    .join("\n");
 
   return (
     <div className="mt-6">
@@ -39,17 +46,20 @@ export function StatusTree({
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-mute">
           <GitBranch aria-hidden className="size-3.5" /> Alur pesanan
         </div>
-        {events.length > 2 && (
-          <button
-            type="button"
-            onClick={() => setShowEvents((value) => !value)}
-            aria-expanded={showEvents}
-            className="inline-flex min-h-12 items-center gap-1 text-xs font-medium text-[var(--text-3)] underline underline-offset-4 hover:text-[var(--text)]"
-          >
-            {showEvents ? "Sembunyikan riwayat" : `Tampilkan ${events.length} riwayat`}
-            {showEvents ? <ChevronUp aria-hidden className="size-3.5" /> : <ChevronDown aria-hidden className="size-3.5" />}
-          </button>
-        )}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {events.length > 0 && <CopyTextButton value={historyText} label="Salin riwayat status" />}
+          {events.length > 2 && (
+            <button
+              type="button"
+              onClick={() => setShowEvents((value) => !value)}
+              aria-expanded={showEvents}
+              className="inline-flex min-h-12 items-center gap-1 text-xs font-medium text-[var(--text-3)] underline underline-offset-4 hover:text-[var(--text)]"
+            >
+              {showEvents ? "Sembunyikan riwayat" : `Tampilkan ${events.length} riwayat`}
+              {showEvents ? <ChevronUp aria-hidden className="size-3.5" /> : <ChevronDown aria-hidden className="size-3.5" />}
+            </button>
+          )}
+        </div>
       </div>
       <ol className="relative ml-1 animate-in">
         {MAIN.map((step, index) => {

@@ -6,6 +6,7 @@ import { SITE_NAME } from "@/lib/site";
 import { adminTabs, type AdminTab } from "@/lib/admin-tabs";
 import { AdminBottomNav } from "@/components/AdminBottomNav";
 import { CommandPaletteLazy } from "@/components/CommandPaletteLazy";
+import { AdminShortcuts } from "@/components/AdminShortcuts";
 
 export type { AdminTab } from "@/lib/admin-tabs";
 
@@ -71,6 +72,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
       </div>
 
       <CommandPaletteLazy />
+      <AdminShortcuts />
 
       <AdminBottomNav active={active} />
     </div>

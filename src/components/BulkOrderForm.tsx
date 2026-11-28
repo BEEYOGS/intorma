@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { bulkUpdateOrders, type ActionResult } from "@/app/actions";
 import { STATUSES, STATUS_META } from "@/lib/status";
 
@@ -28,6 +28,15 @@ export function BulkOrderForm() {
   const [state, action, pending] = useActionState<ActionResult, FormData>(bulkUpdateOrders, null);
   const [codes, setCodes] = useState("");
   const parsed = parseCodes(codes);
+
+  useEffect(() => {
+    const onCodes = (event: Event) => {
+      const detail = (event as CustomEvent<string>).detail;
+      if (typeof detail === "string") setCodes(detail);
+    };
+    window.addEventListener("intorma:bulk-codes", onCodes);
+    return () => window.removeEventListener("intorma:bulk-codes", onCodes);
+  }, []);
 
   return (
     <details className="rounded-tag-lg border border-line bg-panel/40 p-4">

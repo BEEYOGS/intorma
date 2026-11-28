@@ -42,6 +42,27 @@ export function PaymentPoller({
   const done = useRef(false);
   const expiryHandled = useRef(false);
 
+  // Tanda final juga terlihat di judul tab saat use membuka beberapa pesanan.
+  // Getar hanya bila diizinkan dan tidak dimatikan lewat intorma-haptics=0.
+  useEffect(() => {
+    if (!paid && !expired) return;
+    const original = document.title;
+    document.title = paid ? `Lunas · ${code}` : `Kedaluwarsa · ${code}`;
+    try {
+      if (
+        window.localStorage.getItem("intorma-haptics") !== "0" &&
+        typeof navigator.vibrate === "function"
+      ) {
+        navigator.vibrate(paid ? [40, 60, 40] : 60);
+      }
+    } catch {
+      // Abaikan bila getar tidak didukung.
+    }
+    return () => {
+      document.title = original;
+    };
+  }, [paid, expired, code]);
+
   useEffect(() => {
     const deadline = new Date(expiresAt).getTime();
     let timer: number | null = null;

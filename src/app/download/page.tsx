@@ -1,5 +1,6 @@
 import { TopBar } from "@/components/TopBar";
 import { InstallNavButton } from "@/components/PWA";
+import { CopyTextButton } from "@/components/CopyTextButton";
 import { CheckCircle2, Clock3, Download, ExternalLink, Monitor, Smartphone } from "lucide-react";
 
 export const metadata = { title: "Download aplikasi", robots: { index: false } };
@@ -71,20 +72,28 @@ function fileSize(bytes: number) {
 }
 
 function AssetButton({ asset, label }: { asset: ReleaseAsset; label: string }) {
-  const checksum = asset.digest?.replace(/^sha256:/, "").slice(0, 12);
+  const checksum = asset.digest?.replace(/^sha256:/, "") ?? "";
+  const short = checksum.slice(0, 12);
   return (
-    <a
-      href={asset.browser_download_url}
-      target="_blank"
-      className="btn btn-primary min-h-10 px-4 text-sm"
-      rel="noreferrer"
-      title={checksum ? `SHA-256: ${asset.digest?.replace(/^sha256:/, "")}` : undefined}
-    >
-      <Download aria-hidden className="size-4" />
-      {label}
-      {asset.size > 0 && <span className="text-xs font-normal opacity-70">{fileSize(asset.size)}</span>}
-      {checksum && <span className="font-mono text-xs font-normal opacity-60">{checksum}</span>}
-    </a>
+    <div className="flex flex-wrap items-center gap-2">
+      <a
+        href={asset.browser_download_url}
+        target="_blank"
+        className="btn btn-primary min-h-10 px-4 text-sm"
+        rel="noreferrer"
+        title={checksum ? `SHA-256: ${checksum}` : undefined}
+      >
+        <Download aria-hidden className="size-4" />
+        {label}
+        {asset.size > 0 && <span className="text-xs font-normal opacity-70">{fileSize(asset.size)}</span>}
+        {short && <span className="font-mono text-xs font-normal opacity-60">{short}</span>}
+      </a>
+      {checksum && <CopyTextButton value={checksum} label={`Salin SHA-256 ${asset.name}`} />}
+      <CopyTextButton
+        value={asset.browser_download_url}
+        label={`Salin tautan ${asset.name}`}
+      />
+    </div>
   );
 }
 
