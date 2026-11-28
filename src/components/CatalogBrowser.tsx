@@ -11,6 +11,8 @@ import { priceLabel } from "@/lib/pricing";
 import { highlightTerms, searchServices, searchSuggestions } from "@/lib/catalog-search";
 
 const RECENT_KEY = "intorma-catalog-recent";
+const FAVORITES_KEY = "intorma-catalog-favorites";
+const VIEWED_KEY = "intorma-catalog-viewed";
 
 const CATEGORIES = [
   { key: "all", label: "Semua" },
@@ -50,10 +52,23 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
-function ProductCard({ service, query }: { service: Service; query: string }) {
+function ProductCard({
+  service,
+  query,
+  favorite,
+  onToggleFavorite,
+  onView,
+}: {
+  service: Service;
+  query: string;
+  favorite: boolean;
+  onToggleFavorite: (id: string) => void;
+  onView: (id: string) => void;
+}) {
   return (
     <Link
       href={`/order?layanan=${service.id}`}
+      onClick={() => onView(service.id)}
       className="card card-lift cv-auto group flex flex-col overflow-hidden"
     >
       <div className="relative grid h-40 place-items-center overflow-hidden border-b border-line bg-white/[0.015] px-5 text-[var(--text-2)] transition-colors group-hover:text-[var(--text)]">
@@ -66,6 +81,19 @@ function ProductCard({ service, query }: { service: Service; query: string }) {
           }}
         />
         <ProductIllustration service={service} className="relative h-28 w-full max-w-[250px]" />
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onToggleFavorite(service.id);
+          }}
+          aria-label={favorite ? `Hapus ${service.name} dari favorit` : `Tambah ${service.name} ke favorit`}
+          aria-pressed={favorite}
+          className="absolute right-3 top-3 grid size-10 place-items-center rounded-tag-sm border border-line bg-[var(--bg)]/80 text-[var(--text-3)] backdrop-blur transition-colors hover:text-[var(--text)]"
+        >
+          <span aria-hidden className={favorite ? "text-accent" : ""}>★</span>
+        </button>
       </div>
       <div className="flex flex-1 flex-col p-5">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-3)]">
@@ -97,6 +125,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category>("all");
   const [budget, setBudget] = useState<"all" | "low" | "mid" | "high">("all");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>("recommended");
   const [hydrated, setHydrated] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -106,6 +135,10 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
   const [compactHidden, setCompactHidden] = useState(false);
   const [recent, setRecent] = useState<string[]>([]);
   const [recentReady, setRecentReady] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favoritesReady, setFavoritesReady] = useState(false);
+  const [viewed, setViewed] = useState<string[]>([]);
+  const [viewedReady, setViewedReady] = useState(false);
 
   // Bar ringkas hanya muncul setelah kartu filter utama terlewat di layar.
   useEffect(() => {
@@ -168,6 +201,30 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     setRecentReady(true);
   }, []);
 
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(FAVORITES_KEY) || "[]") as unknown;
+      if (Array.isArray(parsed)) {
+        setFavorites(parsed.filter((item): item is string => typeof item === "string").slice(0, 20));
+      }
+    } catch {
+      /* Data rusak diabaikan. */
+    }
+    setFavoritesReady(true);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(VIEWED_KEY) || "[]") as unknown;
+      if (Array.isArray(parsed)) {
+        setViewed(parsed.filter((item): item is string => typeof item === "string").slice(0, 6));
+      }
+    } catch {
+      /* Data rusak diabaikan. */
+    }
+    setViewedReady(true);
+  }, []);
+
   function rememberQuery(value: string) {
     const clean = value.trim().slice(0, 60);
     if (clean.length < 2) return;
@@ -186,6 +243,48 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     setRecent([]);
     try {
       window.localStorage.removeItem(RECENT_KEY);
+    } catch {
+      /* Abaikan. */
+    }
+  }
+
+  function toggleFavorite(id: string) {
+    setFavorites((current) => {
+      const next = current.includes(id) ? current.filter((item) => item !== id) : [id, ...current].slice(0, 20);
+      try {
+        window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
+      } catch {
+        /* Abaikan. */
+      }
+      return next;
+    });
+  }
+
+  function recordViewed(id: string) {
+    setViewed((current) => {
+      const next = [id, ...current.filter((item) => item !== id)].slice(0, 6);
+      try {
+        window.localStorage.setItem(VIEWED_KEY, JSON.stringify(next));
+      } catch {
+        /* Abaikan. */
+      }
+      return next;
+    });
+  }
+
+  function clearFavorites() {
+    setFavorites([]);
+    try {
+      window.localStorage.removeItem(FAVORITES_KEY);
+    } catch {
+      /* Abaikan. */
+    }
+  }
+
+  function clearViewed() {
+    setViewed([]);
+    try {
+      window.localStorage.removeItem(VIEWED_KEY);
     } catch {
       /* Abaikan. */
     }
@@ -251,7 +350,8 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
         (budget === "low" && service.price_from < 100000) ||
         (budget === "mid" && service.price_from >= 100000 && service.price_from <= 300000) ||
         (budget === "high" && service.price_from > 300000);
-      return matchCategory && matchBudget;
+      const matchFavorite = !favoritesOnly || favorites.includes(service.id);
+      return matchCategory && matchBudget && matchFavorite;
     });
     if (sort !== "recommended") {
       list.sort((a, b) => {
@@ -264,7 +364,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
       list.sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name, "id"));
     }
     return list;
-  }, [searched, category, budget, sort, query]);
+  }, [searched, category, budget, sort, query, favorites, favoritesOnly]);
   const suggestions = useMemo(
     () => (query.trim() && visible.length === 0 ? searchSuggestions(query) : []),
     [query, visible.length],
@@ -408,6 +508,19 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
               <span className="mono text-xs">{String(counts[item.key]).padStart(2, "0")}</span>
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setFavoritesOnly((value) => !value)}
+            aria-pressed={favoritesOnly}
+            className={`inline-flex min-h-12 items-center gap-2 rounded-tag-sm border px-3 text-xs font-medium transition-colors ${
+              favoritesOnly
+                ? "border-accent/40 bg-accent/10 text-ink"
+                : "border-line text-mute hover:border-[var(--border-2)] hover:text-ink"
+            }`}
+          >
+            Favorit
+            <span className="mono text-xs">{String(favorites.length).padStart(2, "0")}</span>
+          </button>
         </div>
       </div>
 
@@ -524,11 +637,70 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
           )}
         </EmptyState>
       ) : (
+        <>
+        {favoritesReady && favorites.length > 0 && (
+          <div className="mb-6 rounded-tag-lg border border-line bg-panel/40 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold">Favoritmu</p>
+              <button type="button" onClick={clearFavorites} className="text-xs font-medium text-mute underline underline-offset-4 hover:text-ink">
+                Hapus semua
+              </button>
+            </div>
+            <div className="chip-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              {favorites.map((id) => {
+                const service = services.find((item) => item.id === id);
+                if (!service) return null;
+                return (
+                  <Link
+                    key={id}
+                    href={`/order?layanan=${service.id}`}
+                    className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-tag-sm border border-accent/30 bg-accent/10 px-3 text-xs font-medium text-ink transition-colors hover:bg-accent/20"
+                  >
+                    {service.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {viewedReady && viewed.length > 0 && (
+          <div className="mb-6 rounded-tag-lg border border-line bg-panel/40 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold">Terakhir dilihat</p>
+              <button type="button" onClick={clearViewed} className="text-xs font-medium text-mute underline underline-offset-4 hover:text-ink">
+                Hapus
+              </button>
+            </div>
+            <div className="chip-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              {viewed.map((id) => {
+                const service = services.find((item) => item.id === id);
+                if (!service) return null;
+                return (
+                  <Link
+                    key={id}
+                    href={`/order?layanan=${service.id}`}
+                    className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-tag-sm border border-line px-3 text-xs font-medium text-mute transition-colors hover:border-[var(--border-2)] hover:text-ink"
+                  >
+                    {service.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((service) => (
-            <ProductCard key={service.id} service={service} query={query} />
+            <ProductCard
+              key={service.id}
+              service={service}
+              query={query}
+              favorite={favorites.includes(service.id)}
+              onToggleFavorite={toggleFavorite}
+              onView={recordViewed}
+            />
           ))}
         </div>
+        </>
       )}
 
       <div className="mt-10 flex justify-center">
