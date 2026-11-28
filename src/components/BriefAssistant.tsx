@@ -125,7 +125,7 @@ export function BriefAssistant({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between gap-3 text-left"
+        className="flex min-h-12 w-full items-center justify-between gap-3 text-left"
         aria-expanded={open}
       >
         <span className="flex items-center gap-2 text-sm font-semibold">
