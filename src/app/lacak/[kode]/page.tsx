@@ -282,7 +282,7 @@ export default async function TrackPage({
 
                     {payment.enabled && payment.bankAccount && (
                       <details className="mt-4 border-t border-line pt-4">
-                        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.14em] text-mute">
+                        <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs font-semibold uppercase tracking-[0.14em] text-mute">
                           {gateway ? "Transfer manual (opsional)" : "Transfer bank"}
                         </summary>
                         <div className="mt-3 rounded-tag-sm border border-line bg-sand/60 p-4">
@@ -375,7 +375,7 @@ export default async function TrackPage({
                 </div>
               )}
               <details className="mt-5 border-t border-line pt-4">
-                <summary className="cursor-pointer text-sm font-semibold">Lihat brief asli</summary>
+                <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold">Lihat brief asli</summary>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-mute">{order.brief}</p>
               </details>
             </section>

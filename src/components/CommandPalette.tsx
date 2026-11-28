@@ -149,7 +149,8 @@ export function CommandPalette() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="command-palette-title"
-      className="fixed inset-0 z-[60] flex items-start justify-center bg-black/60 px-4 pt-[12vh] backdrop-blur-sm"
+      data-mobile-chrome
+      className="fixed inset-0 z-[60] flex items-start justify-center bg-black/60 px-4 pb-[env(safe-area-inset-bottom)] pt-[12vh] backdrop-blur-sm"
       onClick={close}
     >
       <div

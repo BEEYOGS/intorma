@@ -292,6 +292,7 @@ export default async function ProductPage() {
             <p className="eyebrow mb-2">Aktivitas terbaru</p>
             <h2 className="display text-2xl sm:text-3xl mb-8">Pesanan terbaru.</h2>
             <div className="border border-[var(--border)] rounded-[var(--radius-sharp)] overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="table">
                 <thead>
                   <tr>
@@ -319,6 +320,7 @@ export default async function ProductPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         </section>

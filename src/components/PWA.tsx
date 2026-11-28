@@ -240,6 +240,7 @@ export function InstallButton() {
         <div
           key={popupKey}
           ref={dialogRef}
+          data-mobile-chrome
           role="dialog"
           aria-modal="true"
           aria-label="Pasang aplikasi in.torma"

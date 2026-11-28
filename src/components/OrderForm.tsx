@@ -1262,7 +1262,7 @@ setInteracted(true);
                     <Link
                       key={service.id}
                       href={`/order?layanan=${service.id}`}
-                      className="flex items-center justify-between gap-3 rounded-tag-sm border border-line px-3 py-2 text-xs transition-colors hover:border-accent/40 hover:bg-white/[0.03]"
+                      className="flex min-h-11 items-center justify-between gap-3 rounded-tag-sm border border-line px-3 py-2 text-xs transition-colors hover:border-accent/40 hover:bg-white/[0.03]"
                     >
                       <span className="font-medium">{service.name}</span>
                       <span className="mono text-mute">{priceLabel(service)}</span>

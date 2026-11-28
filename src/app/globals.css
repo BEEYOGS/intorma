@@ -710,6 +710,20 @@ button,
   vertical-align: top;
 }
 
+/* Nota di layar kecil: kertas lebih tipis dan tabel bisa digeser, tanpa mengubah hasil cetak. */
+@media screen and (max-width: 640px) {
+  .nota-paper {
+    width: calc(100vw - 16px);
+    padding: 16px;
+  }
+  .nota-table {
+    min-width: 30rem;
+  }
+  .nota-caption {
+    font-size: 12px;
+  }
+}
+
 @media print {
   @page {
     size: A4;

@@ -153,7 +153,7 @@ export function MobileSheet({
   const labelProps = titleId ? { "aria-labelledby": titleId } : { "aria-label": ariaLabel ?? "Dialog" };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-end sm:items-stretch">
+    <div data-mobile-chrome className="fixed inset-0 z-50 flex items-end justify-end sm:items-stretch">
       <button
         type="button"
         aria-label="Tutup dialog"

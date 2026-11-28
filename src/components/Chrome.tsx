@@ -15,15 +15,15 @@ export function Footer() {
       <div className="wrap flex flex-wrap items-center justify-between gap-4 py-8 text-xs text-[var(--text-3)]">
         <span className="mono">{SITE_NAME} — {TAGLINE}</span>
         <div className="flex flex-wrap items-center gap-5">
-          <Link href="/order" className="transition-colors hover:text-[var(--text)]">Pesan</Link>
-          <Link href="/lacak" className="transition-colors hover:text-[var(--text)]">Lacak</Link>
-          <Link href="/#layanan" className="transition-colors hover:text-[var(--text)]">Layanan &amp; harga</Link>
-          <Link href="/#pembayaran" className="transition-colors hover:text-[var(--text)]">Pembayaran</Link>
-          <Link href="/faq" className="transition-colors hover:text-[var(--text)]">FAQ</Link>
-          <a href={`mailto:${CONTACT_EMAIL}`} className="transition-colors hover:text-[var(--text)]">{CONTACT_EMAIL}</a>
+          <Link href="/order" className="inline-flex min-h-11 items-center transition-colors hover:text-[var(--text)]">Pesan</Link>
+          <Link href="/lacak" className="inline-flex min-h-11 items-center transition-colors hover:text-[var(--text)]">Lacak</Link>
+          <Link href="/#layanan" className="inline-flex min-h-11 items-center transition-colors hover:text-[var(--text)]">Layanan &amp; harga</Link>
+          <Link href="/#pembayaran" className="inline-flex min-h-11 items-center transition-colors hover:text-[var(--text)]">Pembayaran</Link>
+          <Link href="/faq" className="inline-flex min-h-11 items-center transition-colors hover:text-[var(--text)]">FAQ</Link>
+          <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex min-h-11 items-center transition-colors hover:text-[var(--text)]">{CONTACT_EMAIL}</a>
           <WhatsAppLink
             text="Halo in.torma, saya mau tanya soal layanan desain dan cetak."
-            className="inline-flex items-center gap-1.5 transition-colors hover:text-[var(--text)]"
+            className="inline-flex min-h-11 items-center gap-1.5 transition-colors hover:text-[var(--text)]"
             title={waDisplay}
           >
             <WhatsAppIcon aria-hidden className="size-3.5" /> WhatsApp

@@ -153,7 +153,7 @@ export function DateField({
         </button>
       </div>
 
-      <div className="mt-3 grid grid-cols-7 gap-1">
+      <div className="mt-3 grid grid-cols-7 gap-0.5 sm:gap-1">
         {WEEKDAYS.map((day) => (
           <span key={day} aria-hidden="true" className="grid h-7 place-items-center text-[11px] font-semibold uppercase tracking-[0.06em] text-mute">
             {day}
@@ -177,7 +177,7 @@ export function DateField({
               aria-pressed={selected}
               aria-current={isToday ? "date" : undefined}
               aria-label={`${day} ${MONTHS[view.month]} ${view.year}${blocked ? " (belum tersedia)" : ""}`}
-              className={`grid size-9 place-items-center rounded-tag-sm text-[13px] font-medium tabular-nums transition-colors ${
+              className={`flex h-11 w-full min-w-0 items-center justify-center rounded-tag-sm text-[13px] font-medium tabular-nums transition-colors ${
                 blocked
                   ? "cursor-not-allowed text-ink/25"
                   : selected

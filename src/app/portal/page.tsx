@@ -72,11 +72,11 @@ export default async function PortalPage({
             <h1 className="display text-2xl sm:text-3xl">Halo, {customer.name.split(" ")[0]}.</h1>
             <p className="mt-1 text-sm text-mute">Pantau dan kelola pesananmu dari sini.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/portal/files" className="btn btn-ghost !h-10 text-xs">File saya</Link>
-            <Link href="/order" className="btn btn-primary !h-10 text-xs">+ Pesan baru</Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/portal/files" className="btn btn-ghost min-h-12 text-xs sm:min-h-10">File saya</Link>
+            <Link href="/order" className="btn btn-primary min-h-12 text-xs sm:min-h-10">+ Pesan baru</Link>
             <form action={logoutCustomer}>
-              <button className="btn btn-ghost !h-10 text-xs">Keluar</button>
+              <button className="btn btn-ghost min-h-12 text-xs sm:min-h-10">Keluar</button>
             </form>
           </div>
         </div>

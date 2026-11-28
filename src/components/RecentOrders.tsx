@@ -79,7 +79,7 @@ export function RecentOrders() {
                 type="button"
                 onClick={() => hapus(item.code)}
                 aria-label={`Hapus ${item.code} dari riwayat`}
-                className="grid size-10 shrink-0 place-items-center rounded-tag-sm text-[var(--text-3)] transition-colors hover:text-ink"
+                className="grid size-11 shrink-0 place-items-center rounded-tag-sm text-[var(--text-3)] transition-colors hover:text-ink"
               >
                 <X aria-hidden className="size-4" />
               </button>

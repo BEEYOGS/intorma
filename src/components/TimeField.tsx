@@ -82,7 +82,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
   const selectedMinuteIndex = minuteNumbers.indexOf(minute);
   const hourPos = selectedHourIndex >= 0 ? polar(selectedHourIndex, 12) : null;
   const minutePos = selectedMinuteIndex >= 0 ? polar(selectedMinuteIndex, 12) : null;
-  const buttonSize = isMobile ? 40 : BTN;
+  const buttonSize = isMobile ? 44 : BTN;
 
   const clock = (
     <>

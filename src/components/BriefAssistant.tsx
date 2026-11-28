@@ -104,7 +104,7 @@ export function BriefAssistant({
                   type="button"
                   onClick={() => setStyle((current) => (current === item ? "" : item))}
                   aria-pressed={style === item}
-                  className={`min-h-9 rounded-tag-sm border px-3 text-xs font-medium transition-colors ${
+                  className={`min-h-11 rounded-tag-sm border px-3 text-xs font-medium transition-colors ${
                     style === item
                       ? "border-accent/40 bg-accent/10 text-ink"
                       : "border-line text-mute hover:border-[var(--border-2)] hover:text-ink"

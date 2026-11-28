@@ -138,7 +138,7 @@ export default async function PayPage({
       <main className="mx-auto w-full max-w-5xl px-5 pb-28 pt-8 sm:pb-12 sm:py-12">
         <Link
           href={trackUrl}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-mute transition-colors hover:text-ink"
+          className="inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-mute transition-colors hover:text-ink"
         >
           <ArrowLeft aria-hidden className="size-3.5" />
           Kembali ke status pesanan

@@ -18,6 +18,7 @@ export function LatestJobs({ jobs }: { jobs: LatestJob[] }) {
         <p className="eyebrow">Aktivitas terbaru</p>
         <h2 className="text-[15px] font-medium text-[var(--text)] mt-1">Pesanan terbaru</h2>
       </div>
+      <div className="overflow-x-auto">
       <table className="table">
         <thead>
           <tr>
@@ -53,6 +54,7 @@ export function LatestJobs({ jobs }: { jobs: LatestJob[] }) {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

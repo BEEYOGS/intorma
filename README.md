@@ -206,6 +206,13 @@ ketukan di luar, dan mengembalikan fokus ke tombol pembuka.
 - Halaman `/bayar` punya action bar bawah sendiri (Cek status / Lihat nota) karena nav global sengaja
   disembunyikan di alur transaksional. Semua tombol aksi pembayaran dan tombol poller minimal 48px
   di ponsel.
+- Pratinjau file dan dialog konfirmasi hapus (pesanan/layanan) kini memakai `MobileSheet` di ponsel dan
+  drawer kanan di desktop; tombol back Android menutupnya lebih dulu. Focus trap tidak dobel karena
+  modal desktop dan sheet punya jalur masing-masing.
+- Tabel nota, aktivitas terbaru, dan tabel beranda bisa digeser horizontal pada layar <640px. Kertas
+  nota memakai padding 16px di layar, sedangkan hasil cetak tetap A4/12mm.
+- Target sentuh non-`.btn` disamakan ke 44–48px: bintang ulasan, tanggal kalender, jam picker,
+  checkbox file, chip gaya, status admin, filter analitik, summary `<details>`, dan tautan footer.
 
 ### WhatsApp
 

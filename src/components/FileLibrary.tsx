@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Archive, Download, Eye, Upload, X } from "lucide-react";
+import { MobileSheet } from "@/components/MobileSheet";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useOverlayRegistration } from "@/hooks/useOverlayRegistration";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
 import { ACCEPT_ATTR } from "@/lib/upload-rules";
@@ -73,17 +75,19 @@ export function FileLibrary({
   customerName?: string;
 }) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [selected, setSelected] = useState<number[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [preview, setPreview] = useState<FileItem | null>(null);
-  useOverlayRegistration("file-preview", Boolean(preview), () => setPreview(null));
+  useOverlayRegistration("file-preview", Boolean(preview) && !isMobile, () => setPreview(null));
   const previewRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!preview) {
+    // MobileSheet sudah mengurus focus trap, Escape, dan fokus kembali di ponsel.
+    if (!preview || isMobile) {
       if (previousFocusRef.current) {
         previousFocusRef.current.focus();
         previousFocusRef.current = null;
@@ -118,7 +122,7 @@ export function FileLibrary({
       (focusables?.[0] ?? panel)?.focus();
     }, 50);
     return () => document.removeEventListener("keydown", onKey);
-  }, [preview]);
+  }, [isMobile, preview]);
 
   function toggle(id: number) {
     setSelected((current) =>
@@ -150,6 +154,63 @@ export function FileLibrary({
   }
 
   const previewMeta = preview ? fileMeta(preview) : null;
+
+  const previewHead = preview && previewMeta ? (
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <FileThumb file={preview} />
+        <div className="min-w-0">
+          <h3 id="file-preview-title" className="truncate text-sm font-medium text-[var(--text)]">{preview.name}</h3>
+          <p className="mono text-[11px] uppercase text-mute">
+            {previewMeta.ext} · {formatSize(preview.size)}
+          </p>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <a
+          href={`/api/upload/${preview.code}?download=1`}
+          download
+          className="btn btn-ghost min-h-12 !h-auto !px-3 text-xs sm:min-h-10"
+        >
+          <Download aria-hidden className="size-3.5" /> Unduh
+        </a>
+        <button
+          type="button"
+          onClick={() => setPreview(null)}
+          aria-label="Tutup pratinjau"
+          className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-mute transition-colors hover:text-[var(--text)]"
+        >
+          <X aria-hidden className="size-4" />
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  const previewBody = preview && previewMeta ? (
+    <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[var(--bg)] p-4">
+      {previewMeta.kind === "image" ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`/api/upload/${preview.code}`}
+          alt={preview.name}
+          className="max-h-[70dvh] max-w-full object-contain"
+        />
+      ) : previewMeta.kind === "pdf" ? (
+        <iframe
+          src={`/api/upload/${preview.code}`}
+          title={preview.name}
+          className="h-[70dvh] w-full rounded-[var(--radius-sharp)] border border-[var(--border)]"
+        />
+      ) : (
+        <div className="py-16 text-center">
+          <p className="text-sm font-medium text-[var(--text)]">Pratinjau tidak tersedia</p>
+          <p className="mt-1 text-xs text-mute">
+            Format {previewMeta.ext.toUpperCase()} tidak bisa ditampilkan di browser. Silakan download.
+          </p>
+        </div>
+      )}
+    </div>
+  ) : null;
 
   return (
     <>
@@ -212,13 +273,15 @@ export function FileLibrary({
               const meta = fileMeta(file);
               return (
                 <li key={file.id} className="flex items-center gap-3 p-4 transition-colors hover:bg-white/[0.02]">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(file.id)}
-                    onChange={() => toggle(file.id)}
-                    aria-label={`Pilih ${file.name}`}
-                    className="size-4 shrink-0 accent-[var(--text)]"
-                  />
+                  <label className="grid size-11 shrink-0 place-items-center">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(file.id)}
+                      onChange={() => toggle(file.id)}
+                      aria-label={`Pilih ${file.name}`}
+                      className="size-5 accent-[var(--text)]"
+                    />
+                  </label>
                   <button type="button" onClick={() => setPreview(file)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                     <FileThumb file={file} />
                     <span className="min-w-0">
@@ -257,7 +320,7 @@ export function FileLibrary({
         )}
       </div>
 
-      {preview && previewMeta && (
+      {preview && previewMeta && !isMobile && (
         <div
           role="dialog"
           aria-modal="true"
@@ -271,60 +334,22 @@ export function FileLibrary({
             onClick={(event) => event.stopPropagation()}
             className="flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-[var(--radius-sharp)] border border-[var(--border-2)] bg-[var(--panel)] shadow-[0_30px_90px_-30px_rgba(0,0,0,0.95)] outline-none"
           >
-            <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <FileThumb file={preview} />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-[var(--text)]">{preview.name}</p>
-                  <p className="mono text-[11px] uppercase text-mute">
-                    {previewMeta.ext} · {formatSize(preview.size)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <a
-                  href={`/api/upload/${preview.code}?download=1`}
-                  download
-                  className="btn btn-ghost min-h-11 sm:min-h-0 !h-9 !px-3 text-xs"
-                >
-                  <Download aria-hidden className="size-3.5" /> Unduh
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setPreview(null)}
-                  aria-label="Tutup pratinjau"
-                  className="grid size-9 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-mute transition-colors hover:text-[var(--text)]"
-                >
-                  <X aria-hidden className="size-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[var(--bg)] p-4">
-              {previewMeta.kind === "image" ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={`/api/upload/${preview.code}`}
-                  alt={preview.name}
-                  className="max-h-[70dvh] max-w-full object-contain"
-                />
-              ) : previewMeta.kind === "pdf" ? (
-                <iframe
-                  src={`/api/upload/${preview.code}`}
-                  title={preview.name}
-                  className="h-[70dvh] w-full rounded-[var(--radius-sharp)] border border-[var(--border)]"
-                />
-              ) : (
-                <div className="py-16 text-center">
-                  <p className="text-sm font-medium text-[var(--text)]">Pratinjau tidak tersedia</p>
-                  <p className="mt-1 text-xs text-mute">
-                    Format {previewMeta.ext.toUpperCase()} tidak bisa ditampilkan di browser. Silakan download.
-                  </p>
-                </div>
-              )}
-            </div>
+            {previewHead}
+            {previewBody}
           </div>
         </div>
+      )}
+
+      {preview && previewMeta && isMobile && (
+        <MobileSheet
+          open
+          onClose={() => setPreview(null)}
+          titleId="file-preview-title"
+          bodyClassName="!px-0 !pt-2"
+          header={previewHead}
+        >
+          {previewBody}
+        </MobileSheet>
       )}
     </>
   );

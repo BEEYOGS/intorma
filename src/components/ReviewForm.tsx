@@ -68,7 +68,7 @@ export function ReviewForm({
                 aria-checked={rating === value}
                 aria-label={`${value} bintang`}
                 onClick={() => setRating(value)}
-                className="grid size-9 place-items-center rounded-tag-sm transition-colors hover:bg-white/[0.04]"
+                className="grid size-11 place-items-center rounded-tag-sm transition-colors hover:bg-white/[0.04]"
               >
                 <Star
                   aria-hidden

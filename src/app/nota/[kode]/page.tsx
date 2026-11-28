@@ -138,6 +138,7 @@ export default async function NotaPage({
           </div>
         </section>
 
+        <div className="overflow-x-auto">
         <table className="nota-table mt-6 w-full border-collapse text-xs">
           <thead>
             <tr className="bg-[#F4F4F5]">
@@ -164,6 +165,7 @@ export default async function NotaPage({
             </tr>
           </tfoot>
         </table>
+        </div>
 
         {order.brief && (
           <section className="mt-6">
