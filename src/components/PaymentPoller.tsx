@@ -209,7 +209,7 @@ export function PaymentPoller({
         type="button"
         onClick={checkNow}
         disabled={checking}
-        className="ml-auto inline-flex min-h-10 items-center gap-1.5 rounded-tag-sm border border-line px-2.5 text-xs font-semibold text-mute transition-colors hover:border-[var(--border-2)] hover:text-ink disabled:opacity-50"
+        className="ml-auto inline-flex min-h-12 items-center gap-1.5 rounded-tag-sm border border-line px-2.5 text-xs font-semibold text-mute transition-colors hover:border-[var(--border-2)] hover:text-ink disabled:opacity-50 sm:min-h-10"
       >
         {checking ? <Loader2 aria-hidden className="size-3.5 animate-spin" /> : <RefreshCw aria-hidden className="size-3.5" />}
         Cek status

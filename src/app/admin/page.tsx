@@ -424,53 +424,63 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         </Link>
       )}
 
-      <form action="/admin" method="get" className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
-        {filter && <input type="hidden" name="s" value={filter} />}
-        {special && <input type="hidden" name="p" value={special} />}
-        <label htmlFor="cari-pesanan" className="sr-only">Cari pesanan</label>
-        <input
-          id="cari-pesanan"
-          name="q"
-          defaultValue={q}
-          placeholder="Cari kode, nama, atau WhatsApp…"
-          className="field min-h-10 sm:max-w-sm"
-          autoComplete="off"
-        />
-        <button type="submit" className="btn btn-outline min-h-10 px-4 text-sm">
-          <Search aria-hidden className="size-4" /> Cari pesanan
-        </button>
-        {q && (
-          <Link href={clearSearch} className="btn btn-ghost min-h-10 px-4 text-sm">
-            <X aria-hidden className="size-4" /> Reset filter
-          </Link>
-        )}
-      </form>
+      {/* Toolbar filter tetap terlihat saat daftar pesanan panjang di ponsel. */}
+      <div
+        data-mobile-chrome
+        className="sticky top-14 z-30 -mx-4 mt-8 border-b border-line bg-[var(--bg)]/95 px-4 pb-2 pt-2 backdrop-blur-md sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none"
+      >
+        <form action="/admin" method="get" className="flex flex-row items-center gap-2">
+          {filter && <input type="hidden" name="s" value={filter} />}
+          {special && <input type="hidden" name="p" value={special} />}
+          <label htmlFor="cari-pesanan" className="sr-only">Cari pesanan</label>
+          <input
+            id="cari-pesanan"
+            name="q"
+            defaultValue={q}
+            placeholder="Cari kode / nama / WA…"
+            className="field min-h-12 sm:min-h-10 sm:max-w-sm"
+            inputMode="search"
+            enterKeyHint="search"
+            autoComplete="off"
+          />
+          <button type="submit" className="btn btn-outline min-h-12 shrink-0 px-3 text-sm sm:min-h-10 sm:px-4">
+            <Search aria-hidden className="size-4" />
+            <span className="hidden sm:inline">Cari pesanan</span>
+          </button>
+          {q && (
+            <Link href={clearSearch} className="btn btn-ghost min-h-12 shrink-0 px-3 text-sm sm:min-h-10 sm:px-4">
+              <X aria-hidden className="size-4" />
+              <span className="hidden sm:inline">Reset filter</span>
+            </Link>
+          )}
+        </form>
 
-      <nav aria-label="Filter pesanan" className="mt-4 flex flex-wrap gap-2">
-        <FilterLink href={keepSearch("/admin")} active={!filter && !special}>
-          Semua ({total})
-        </FilterLink>
-        {STATUSES.map((st) => (
-          <FilterLink key={st} href={keepSearch(`/admin?s=${st}`)} active={filter === st}>
-            <span className="inline-flex items-center gap-2">
-              <span aria-hidden className="status-dot" style={{ background: STATUS_META[st].color }} />
-              {STATUS_META[st].label} ({count(st)})
-            </span>
+        <nav aria-label="Filter pesanan" className="chip-scroll mt-2 flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:mt-4 sm:flex-wrap sm:overflow-visible">
+          <FilterLink href={keepSearch("/admin")} active={!filter && !special}>
+            Semua ({total})
           </FilterLink>
-        ))}
-        <FilterLink href={keepSearch("/admin?p=belum")} active={special === "belum"}>
-          Belum dibayar ({unpaidCount})
-        </FilterLink>
-        <FilterLink href={keepSearch("/admin?p=overdue")} active={special === "overdue"}>
-          OVERDUE ({Number(slaRows?.overdue ?? 0)})
-        </FilterLink>
-        <FilterLink href={keepSearch("/admin?p=deadline")} active={special === "deadline"}>
-          DUE SOON &lt; 6 jam ({Number(slaRows?.soon ?? 0)})
-        </FilterLink>
-        <FilterLink href={keepSearch("/admin?p=aging")} active={special === "aging"}>
-          Telat bayar ({Number(focus?.aging ?? 0)})
-        </FilterLink>
-      </nav>
+          {STATUSES.map((st) => (
+            <FilterLink key={st} href={keepSearch(`/admin?s=${st}`)} active={filter === st}>
+              <span className="inline-flex items-center gap-2">
+                <span aria-hidden className="status-dot" style={{ background: STATUS_META[st].color }} />
+                {STATUS_META[st].label} ({count(st)})
+              </span>
+            </FilterLink>
+          ))}
+          <FilterLink href={keepSearch("/admin?p=belum")} active={special === "belum"}>
+            Belum dibayar ({unpaidCount})
+          </FilterLink>
+          <FilterLink href={keepSearch("/admin?p=overdue")} active={special === "overdue"}>
+            OVERDUE ({Number(slaRows?.overdue ?? 0)})
+          </FilterLink>
+          <FilterLink href={keepSearch("/admin?p=deadline")} active={special === "deadline"}>
+            DUE SOON &lt; 6 jam ({Number(slaRows?.soon ?? 0)})
+          </FilterLink>
+          <FilterLink href={keepSearch("/admin?p=aging")} active={special === "aging"}>
+            Telat bayar ({Number(focus?.aging ?? 0)})
+          </FilterLink>
+        </nav>
+      </div>
 
 ...
       <div className="mt-6"><BulkOrderForm /></div>
@@ -821,7 +831,7 @@ function FilterLink({ href, active, children }: { href: string; active: boolean;
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`inline-flex min-h-10 items-center rounded-tag-sm border px-3.5 text-[13px] font-semibold transition-colors ${
+      className={`inline-flex min-h-12 shrink-0 items-center rounded-tag-sm border px-3.5 text-[13px] font-semibold transition-colors sm:min-h-10 sm:shrink ${
         active ? "border-accent/40 bg-accent/10 text-accent" : "border-line text-ink/60 hover:border-accent/30 hover:text-ink"
       }`}
     >

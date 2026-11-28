@@ -198,8 +198,14 @@ ketukan di luar, dan mengembalikan fokus ke tombol pembuka.
 - Haptic opsional lewat `navigator.vibrate` saat salin, install diterima, atau validasi gagal.
   Matikan dengan `localStorage.setItem("intorma-haptics", "0")`; otomatis mati bila
   `prefers-reduced-motion: reduce` aktif.
+- Pemilih tanggal dan jam berubah jadi `MobileSheet` penuh di layar <640px; di desktop tetap popover.
+  Deteksi breakpoint memakai `useIsMobile` yang hanya aktif setelah hidrasi, jadi tidak ada
+  perbedaan markup server/klien. Tombol kalender dan jam clock diperbesar ke 44–48px di ponsel.
+- Toolbar pencarian dan filter status admin sticky di bawah top bar pada layar <640px, dengan chip
+  horizontal `scroll-snap`; semua target filter minimal 48px.
 - Halaman `/bayar` punya action bar bawah sendiri (Cek status / Lihat nota) karena nav global sengaja
-  disembunyikan di alur transaksional.
+  disembunyikan di alur transaksional. Semua tombol aksi pembayaran dan tombol poller minimal 48px
+  di ponsel.
 
 ### WhatsApp
 

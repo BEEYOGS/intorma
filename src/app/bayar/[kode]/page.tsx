@@ -177,11 +177,11 @@ export default async function PayPage({
                     Pesanan {order.code} sudah lunas. Kami akan menghubungi kamu lewat WhatsApp kalau ada yang perlu dikonfirmasi.
                   </p>
                   <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-                    <Link href={trackUrl} className="btn btn-primary min-h-11 px-4 text-sm">
+                    <Link href={trackUrl} className="btn btn-primary min-h-12 px-4 text-sm sm:min-h-11">
                       Lihat status pesanan
                       <ArrowRight aria-hidden className="size-4" />
                     </Link>
-                    <Link href={notaUrl} className="btn btn-ghost min-h-11 px-4 text-sm">
+                    <Link href={notaUrl} className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-11">
                       Buka nota
                     </Link>
                   </div>
@@ -192,7 +192,7 @@ export default async function PayPage({
                   <p className="mt-2 text-sm leading-6 text-mute">
                     Tidak perlu melakukan pembayaran. Kalau ini keliru, hubungi kami lewat WhatsApp.
                   </p>
-                  <a href={waLink(`Halo in.torma, pesanan ${order.code} dibatalkan. Saya mau tanya-tanya dulu.`)} className="btn btn-ghost mt-4 min-h-10 px-4 text-sm">
+                  <a href={waLink(`Halo in.torma, pesanan ${order.code} dibatalkan. Saya mau tanya-tanya dulu.`)} className="btn btn-ghost mt-4 min-h-12 px-4 text-sm sm:min-h-10">
                     Chat admin
                   </a>
                 </div>
@@ -202,7 +202,7 @@ export default async function PayPage({
                   <p className="mt-2 text-sm leading-6 text-mute">
                     Silakan transfer manual atau hubungi admin untuk menyelesaikan pembayaran.
                   </p>
-                  <a href={waLink(`Halo in.torma, saya mau bayar pesanan ${order.code}.`)} className="btn btn-primary mt-4 min-h-10 px-4 text-sm">
+                  <a href={waLink(`Halo in.torma, saya mau bayar pesanan ${order.code}.`)} className="btn btn-primary mt-4 min-h-12 px-4 text-sm sm:min-h-10">
                     Hubungi admin
                   </a>
                 </div>
@@ -212,7 +212,7 @@ export default async function PayPage({
                   <p className="mt-2 text-sm leading-6 text-mute">
                     Nominal belum ditentukan. Kami akan mengabari lewat WhatsApp setelah pesanan diperiksa.
                   </p>
-                  <Link href={trackUrl} className="btn btn-ghost mt-4 min-h-10 px-4 text-sm">
+                  <Link href={trackUrl} className="btn btn-ghost mt-4 min-h-12 px-4 text-sm sm:min-h-10">
                     Lihat status pesanan
                   </Link>
                 </div>
@@ -228,7 +228,7 @@ export default async function PayPage({
                     </div>
                     <Link
                       href={changeUrl}
-                      className="text-xs font-semibold text-mute underline decoration-line underline-offset-4 hover:text-ink"
+                      className="inline-flex min-h-11 items-center text-xs font-semibold text-mute underline decoration-line underline-offset-4 hover:text-ink"
                     >
                       Ganti metode
                     </Link>
@@ -358,7 +358,7 @@ export default async function PayPage({
 
             <a
               href={waLink(`Halo in.torma, saya butuh bantuan pembayaran pesanan ${order.code}.`)}
-              className="btn btn-ghost min-h-11 px-4 text-sm"
+              className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-11"
             >
               Butuh bantuan? Chat admin
             </a>

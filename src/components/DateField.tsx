@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
+import { MobileSheet } from "@/components/MobileSheet";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useOverlayRegistration } from "@/hooks/useOverlayRegistration";
 import { wibToday } from "@/lib/deadline";
 
@@ -65,9 +68,10 @@ export function DateField({
   placeholder?: string;
   min?: string;
 }) {
+  const isMobile = useIsMobile();
   const [value, setValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);
-  useOverlayRegistration("date-field", open, () => setOpen(false));
+  useOverlayRegistration("date-field", open && !isMobile, () => setOpen(false));
   const start = parseISO(defaultValue) ?? (min ? parseISO(min) : null) ?? new Date();
   const [view, setView] = useState({ year: start.getFullYear(), month: start.getMonth() });
   const rootRef = useRef<HTMLDivElement>(null);
@@ -75,7 +79,7 @@ export function DateField({
   const selectedRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || isMobile) return;
     const onPointer = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
@@ -91,11 +95,11 @@ export function DateField({
       document.removeEventListener("pointerdown", onPointer);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [isMobile, open]);
 
   useEffect(() => {
-    if (open) selectedRef.current?.focus();
-  }, [open]);
+    if (open && !isMobile) selectedRef.current?.focus();
+  }, [isMobile, open]);
 
   // Semua perhitungan tanggal memakai WIB supaya sama dengan validasi server.
   const todayISO = wibToday();
@@ -135,6 +139,73 @@ export function DateField({
     setOpen((current) => !current);
   }
 
+  const calendar = (
+    <>
+      <div className="flex items-center justify-between gap-2">
+        <button type="button" onClick={() => moveMonth(-1)} aria-label="Bulan sebelumnya" className="grid size-11 place-items-center rounded-tag-sm text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink sm:size-10">
+          <Arrow dir="left" />
+        </button>
+        <p aria-live="polite" className="text-sm font-semibold">
+          {MONTHS[view.month]} {view.year}
+        </p>
+        <button type="button" onClick={() => moveMonth(1)} aria-label="Bulan berikutnya" className="grid size-11 place-items-center rounded-tag-sm text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink sm:size-10">
+          <Arrow dir="right" />
+        </button>
+      </div>
+
+      <div className="mt-3 grid grid-cols-7 gap-1">
+        {WEEKDAYS.map((day) => (
+          <span key={day} aria-hidden="true" className="grid h-7 place-items-center text-[11px] font-semibold uppercase tracking-[0.06em] text-mute">
+            {day}
+          </span>
+        ))}
+        {cells.map((day, index) => {
+          if (day === null) return <span key={`kosong-${index}`} aria-hidden="true" />;
+          const iso = toISO(view.year, view.month, day);
+          const selected = value === iso;
+          const isToday = todayISO === iso;
+          const past = iso < todayISO;
+          const blocked = past || (min ? iso < min : false);
+          return (
+            <button
+              key={iso}
+              ref={selected ? selectedRef : undefined}
+              type="button"
+              onClick={() => !blocked && choose(iso)}
+              disabled={blocked}
+              aria-disabled={blocked || undefined}
+              aria-pressed={selected}
+              aria-current={isToday ? "date" : undefined}
+              aria-label={`${day} ${MONTHS[view.month]} ${view.year}${blocked ? " (belum tersedia)" : ""}`}
+              className={`grid size-9 place-items-center rounded-tag-sm text-[13px] font-medium tabular-nums transition-colors ${
+                blocked
+                  ? "cursor-not-allowed text-ink/25"
+                  : selected
+                    ? "bg-ink text-paper"
+                    : `text-ink/75 hover:bg-ink/5 hover:text-ink ${isToday ? "border border-ink/30" : ""}`
+              }`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
+        <button type="button" onClick={() => choose("")} disabled={!value} className="inline-flex min-h-11 items-center text-xs font-semibold text-ink/55 transition-colors hover:text-ink disabled:opacity-35 sm:min-h-0">
+          Hapus
+        </button>
+        <button
+          type="button"
+          onClick={() => choose(min && min > todayISO ? min : todayISO)}
+          className="inline-flex min-h-11 items-center text-xs font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink sm:min-h-0"
+        >
+          {min && min > todayISO ? "Tanggal tercepat" : "Hari ini"}
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div ref={rootRef} className="relative">
       <input type="hidden" name={name} value={value} />
@@ -152,76 +223,42 @@ export function DateField({
         </span>
       </button>
 
-      {open && (
+      {open && !isMobile && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Pilih tanggal"
           className="absolute left-0 right-0 z-30 mt-2 rounded-tag-sm border border-line bg-panel p-4 shadow-[0_18px_40px_-24px_rgba(11,11,11,0.45)]"
         >
-          <div className="flex items-center justify-between gap-2">
-            <button type="button" onClick={() => moveMonth(-1)} aria-label="Bulan sebelumnya" className="grid size-10 place-items-center rounded-tag-sm text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink">
-              <Arrow dir="left" />
-            </button>
-            <p aria-live="polite" className="text-sm font-semibold">
-              {MONTHS[view.month]} {view.year}
-            </p>
-            <button type="button" onClick={() => moveMonth(1)} aria-label="Bulan berikutnya" className="grid size-10 place-items-center rounded-tag-sm text-ink/60 transition-colors hover:bg-ink/5 hover:text-ink">
-              <Arrow dir="right" />
-            </button>
-          </div>
-
-          <div className="mt-3 grid grid-cols-7 gap-1">
-            {WEEKDAYS.map((day) => (
-              <span key={day} aria-hidden="true" className="grid h-7 place-items-center text-[11px] font-semibold uppercase tracking-[0.06em] text-mute">
-                {day}
-              </span>
-            ))}
-            {cells.map((day, index) => {
-              if (day === null) return <span key={`kosong-${index}`} aria-hidden="true" />;
-              const iso = toISO(view.year, view.month, day);
-              const selected = value === iso;
-              const isToday = todayISO === iso;
-              const past = iso < todayISO;
-              const blocked = past || (min ? iso < min : false);
-              return (
-                <button
-                  key={iso}
-                  ref={selected ? selectedRef : undefined}
-                  type="button"
-                  onClick={() => !blocked && choose(iso)}
-                  disabled={blocked}
-                  aria-disabled={blocked || undefined}
-                  aria-pressed={selected}
-                  aria-current={isToday ? "date" : undefined}
-                  aria-label={`${day} ${MONTHS[view.month]} ${view.year}${blocked ? " (belum tersedia)" : ""}`}
-                  className={`grid size-9 place-items-center rounded-tag-sm text-[13px] font-medium tabular-nums transition-colors ${
-                    blocked
-                      ? "cursor-not-allowed text-ink/25"
-                      : selected
-                        ? "bg-ink text-paper"
-                        : `text-ink/75 hover:bg-ink/5 hover:text-ink ${isToday ? "border border-ink/30" : ""}`
-                  }`}
-                >
-                  {day}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
-            <button type="button" onClick={() => choose("")} disabled={!value} className="text-xs font-semibold text-ink/55 transition-colors hover:text-ink disabled:opacity-35">
-              Hapus
-            </button>
-            <button
-              type="button"
-              onClick={() => choose(min && min > todayISO ? min : todayISO)}
-              className="text-xs font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink"
-            >
-              {min && min > todayISO ? "Tanggal tercepat" : "Hari ini"}
-            </button>
-          </div>
+          {calendar}
         </div>
+      )}
+
+      {open && isMobile && (
+        <MobileSheet
+          open
+          onClose={() => setOpen(false)}
+          titleId="date-field-title"
+          bodyClassName="!pt-4"
+          header={
+            <header className="flex items-center justify-between gap-3 px-4 pb-1 pt-2">
+              <div>
+                <p className="eyebrow">Deadline</p>
+                <h2 id="date-field-title" className="mt-1 text-base font-semibold">Pilih tanggal</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Tutup pilih tanggal"
+                className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
+              >
+                <X aria-hidden className="size-4" />
+              </button>
+            </header>
+          }
+        >
+          {calendar}
+        </MobileSheet>
       )}
     </div>
   );
