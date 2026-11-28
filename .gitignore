@@ -13,6 +13,8 @@ logs/
 *.jks
 *.keystore
 *.pfx
+*.p12
+*.key
 *.apk
 *.aab
 *.idsig

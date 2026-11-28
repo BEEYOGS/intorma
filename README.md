@@ -148,6 +148,9 @@ tetap bisa muncul; untuk distribusi luas tetap diperlukan sertifikat OV/EV dari 
 dibangun sebagai `release` dan ditandatangani dengan keypair RSA 2048 milik sendiri (v2/v3 terverifikasi);
 ini build sideload, bukan artifact Play Store. keystore ada di `android/intorma-release.jks`, sertifikat Windows di
 `certs/intorma-code-signing.pfx`, dan kredensialnya di `.env.signing`—semuanya di-ignore git.
+Untuk naik ke sertifikat OV/EV, CSR ada di `certs/in.torma-codesign.csr` (private key terenkripsi di
+`certs/in.torma-codesign.key`, password di `.env.signing`). Ajukan CSR tersebut ke CA, lalu simpan
+sertifikat + chain sebagai `.pfx` dan perbarui `PFX_FILE`/`PFX_PASSWORD` sebelum build ulang.
 Workflow CI tetap bisa memakai secret
 `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, dan `KEY_PASSWORD` bila dipakai.
 

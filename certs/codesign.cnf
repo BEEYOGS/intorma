@@ -1,0 +1,17 @@
+[req]
+distinguished_name = dn
+req_extensions = v3_req
+prompt = no
+
+[dn]
+CN = in.torma
+O = in.torma
+L = Jakarta
+ST = DKI Jakarta
+C = ID
+
+[v3_req]
+basicConstraints = critical,CA:FALSE
+keyUsage = critical,digitalSignature
+extendedKeyUsage = critical,codeSigning
+subjectKeyIdentifier = hash
