@@ -10,3 +10,5 @@ logs/
 .vercel
 .env*
 !.env.example
+*.jks
+*.keystore

@@ -8,8 +8,6 @@ const ROUTES = [
   "/kalkulator",
   "/order",
   "/lacak",
-  "/install",
-  "/download",
   "/contact",
   "/privacy",
   "/terms",

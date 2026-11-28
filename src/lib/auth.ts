@@ -35,7 +35,7 @@ export type AdminCredential = {
   source: "env" | "db";
 };
 
-function envFallbackActive(): boolean {
+export function envFallbackActive(): boolean {
   return Boolean(process.env.ADMIN_PASSWORD) && process.env.ADMIN_PASSWORD_ENABLED !== "0";
 }
 

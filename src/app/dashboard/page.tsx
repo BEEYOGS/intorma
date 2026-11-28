@@ -9,6 +9,8 @@ import { gatewayEnabled } from "@/lib/payment";
 import { waDiagnostics } from "@/lib/wa";
 import { redirect } from "next/navigation";
 
+export const metadata = { title: "Dashboard", robots: { index: false } };
+
 const WA_LABEL: Record<string, string> = {
   cloud: "Meta Cloud API",
   fonnte: "Fonnte (hosted)",

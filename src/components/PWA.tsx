@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, X } from "lucide-react";
-import { isInstalledEnvironment, useAppEnvironment } from "@/hooks/useAppEnvironment";
+import { isInstalledEnvironment, markInstalledEnvironment, useAppEnvironment } from "@/hooks/useAppEnvironment";
 
 type InstallPrompt = Event & {
   prompt: () => Promise<void>;
@@ -66,11 +66,7 @@ function rememberLater() {
 }
 
 function rememberInstalled() {
-  try {
-    window.localStorage.setItem(INSTALLED_KEY, "1");
-  } catch {
-    /* deteksi environment lain tetap bekerja. */
-  }
+  markInstalledEnvironment();
 }
 
 export function ServiceWorkerRegister() {

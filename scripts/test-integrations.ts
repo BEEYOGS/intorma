@@ -171,10 +171,13 @@ async function main() {
       "  OPENWA_API_KEY (kalau openwa)",
       "  OPENWA_SESSION (kalau openwa)",
       "  ADMIN_WHATSAPP_NUMBER",
-      "  ADMIN_PASSWORD",
       "  ADMIN_SECRET",
+      "  ADMIN_PASSWORD_ENABLED=0",
       "  DATABASE_URL",
+      "  CRON_SECRET",
       "  NEXT_PUBLIC_SITE_URL",
+      "  MIDTRANS_SERVER_KEY dan MIDTRANS_IS_PRODUCTION (aktif jika memakai QRIS/VA)",
+      "  MIDTRANS_SIGNATURE_SECRET_KEY (wajib jika kunci tanda tangan Midtrans berbeda)",
     ].join("\n"),
   );
 

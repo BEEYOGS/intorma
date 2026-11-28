@@ -2,6 +2,7 @@
 const CACHE = "intorma-v9";
 const SHELL = [
   "/",
+  "/?source=installed_app",
   "/order",
   "/kalkulator",
   "/lacak",
@@ -92,7 +93,9 @@ self.addEventListener("fetch", (event) => {
           return res;
         })
         .catch(async () => {
-          const cached = cacheable ? await caches.match(req) : null;
+          // Manifest start_url memakai query ?source=installed_app; abaikan
+          // query saat mencari halaman yang sudah di-precache.
+          const cached = cacheable ? await caches.match(req, { ignoreSearch: true }) : null;
           if (cached) return cached;
           const offline = await caches.match("/offline.html");
           return offline || Response.error();

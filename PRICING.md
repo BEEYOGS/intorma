@@ -1,6 +1,12 @@
-# Riset item & harga (untuk harga otomatis)
+# Riset item & harga (arsip historis)
 
-Tanggal riset: 18 November 2026. Angka di bawah dipakai sebagai **harga awal** dan bisa diubah kapan saja dari `/admin/layanan`. Sistem mengalikan `harga satuan × jumlah` yang diisi pelanggan; admin tetap bisa mengubah harga final per pesanan.
+> **Dokumen historis 18 November 2026.** Angka di bawah adalah riset awal, bukan source of truth
+> produksi. Harga yang dipakai aplikasi sekarang berasal dari `scripts/seed-catalog.mjs`, diverifikasi
+> lewat `npm run db:catalog:all`, dan dapat diubah dari `/admin/layanan`. Model harga aktif mencakup
+> `flat`, `per_unit`, dan `area` (bukan hanya “Harga tetap / Dihitung per item”). Lihat `README.md`
+> bagian *Self-service order* untuk daftar harga awal yang sekarang dipakai.
+
+Tanggal riset: 18 November 2026. Angka di bawah dipakai sebagai **bahan pertimbangan awal** dan bisa diubah kapan saja dari `/admin/layanan`. Sistem menghitung ulang harga di server dari snapshot opsi; admin tetap bisa mengubah harga final per pesanan.
 
 ## Acuan harga pasar
 

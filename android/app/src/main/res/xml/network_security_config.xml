@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Semua traffic harus HTTPS. Tidak ada pengecualian cleartext untuk host mana pun. -->
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

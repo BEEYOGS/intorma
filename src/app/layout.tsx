@@ -24,6 +24,7 @@ import { ScrollProgress } from "@/components/ScrollProgress";
 import { StorefrontBottomNav } from "@/components/StorefrontBottomNav";
 import { ServiceWorkerRegister } from "@/components/PWA";
 import { InstallButtonLazy } from "@/components/InstallButtonLazy";
+import { AppBackHandler } from "@/components/AppBackHandler";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://intorma-psi.vercel.app"),
@@ -72,11 +73,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#konten" className="skip-link">Lewati ke konten</a>
         <ScrollProgress />
         <PageFade>
-          <main id="konten" className="main-content">{children}</main>
+          {/* Setiap halaman punya <main> sendiri; pembungkus ini hanya target skip link. */}
+          <div id="konten" className="main-content">{children}</div>
         </PageFade>
         <StorefrontBottomNav />
         <ServiceWorkerRegister />
         <InstallButtonLazy />
+        <AppBackHandler />
         <ToastHost />
       </body>
     </html>

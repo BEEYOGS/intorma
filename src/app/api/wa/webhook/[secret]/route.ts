@@ -9,8 +9,6 @@ export async function GET(req: Request) {
   return baseGet(req);
 }
 
-const SITE = "https://intorma-psi.vercel.app";
-
 function webhookSecret(): string {
   return (process.env.WA_WEBHOOK_SECRET || process.env.OPENWA_WEBHOOK_SECRET || "").trim();
 }
@@ -38,9 +36,13 @@ export async function POST(req: Request, context: { params: Promise<{ secret: st
   }
 
   const headers = new Headers(req.headers);
+  // Header Host milik request publik tidak boleh dibawa ke request internal:
+  // pada preview deploy bisa mengarah ke alias produksi yang salah.
+  headers.delete("host");
   headers.set("x-webhook-secret", expected);
   const body = await req.text().catch(() => "");
-  const internal = new Request(`${SITE}/api/wa/webhook`, {
+  const origin = new URL(req.url).origin;
+  const internal = new Request(`${origin}/api/wa/webhook`, {
     method: "POST",
     headers,
     body,

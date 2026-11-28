@@ -5,28 +5,32 @@
   "identifier": "com.intorma.app",
   "build": {
     "frontendDist": "../public",
-    "devUrl": "https://intorma-psi.vercel.app",
-    "beforeDevCommand": " ",
-    "beforeBuildCommand": " "
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
   },
   "app": {
     "windows": [
       {
         "title": "in.torma",
+        "label": "main",
+        "url": "https://intorma-psi.vercel.app/?source=installed_app",
         "width": 1280,
         "height": 800,
+        "minWidth": 1024,
+        "minHeight": 640,
+        "center": true,
         "resizable": true,
-        "fullscreen": false,
-        "url": "https://intorma-psi.vercel.app"
+        "fullscreen": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' tauri: asset:; connect-src 'self' ipc: http://ipc.localhost https://intorma-psi.vercel.app https://*.googleapis.com; img-src 'self' asset: data: blob: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'none'; base-uri 'self'"
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "msi"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

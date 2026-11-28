@@ -186,26 +186,25 @@ insert into app_settings (key, value) values
   ('admin_digest_enabled', '1')
 on conflict (key) do nothing;
 
--- Kampanye repeat order otomatis untuk pelanggan yang pesanannya sudah selesai.
-insert into promo_codes (code, type, value, min_order, max_discount, usage_limit)
-values ('REORDER10', 'percent', 10, 100000, 100000, 500)
-on conflict (code) do nothing;
-
+-- Seed katalog dasar mengikuti harga awal di scripts/seed-catalog.mjs.
+-- `db:catalog:all` tetap dijalankan setelah migrasi untuk melengkapi category,
+-- pricing_model, min_price, round_to, price_note, dan grup opsi.
 insert into services (id, name, blurb, price_from, days, sort, pricing_mode, unit_label, min_qty, max_qty) values
-  ('logo', 'Logo dan identitas', 'Logo, palet warna, dan panduan pemakaian dasar.', 350000, 5, 1, 'flat', '', 1, 10000),
-  ('poster', 'Poster dan banner', 'Desain poster acara, spanduk, atau materi cetak lain.', 120000, 2, 2, 'flat', '', 1, 10000),
-  ('feed', 'Feed Instagram', 'Satu set postingan dengan gaya yang seragam.', 200000, 3, 3, 'flat', '', 1, 10000),
+  ('logo', 'Logo dan identitas', 'Logo, palet warna, dan panduan pemakaian dasar.', 250000, 5, 1, 'flat', '', 1, 10000),
+  ('poster', 'Poster dan banner', 'Desain poster acara, spanduk, atau materi cetak lain.', 100000, 2, 2, 'flat', '', 1, 10000),
+  ('feed', 'Feed Instagram', 'Satu set postingan dengan gaya yang seragam.', 150000, 3, 3, 'flat', '', 1, 10000),
   ('kemasan', 'Kemasan dan label', 'Label produk, stiker, dan desain kemasan.', 300000, 4, 4, 'flat', '', 1, 10000),
   ('thumbnail', 'Thumbnail dan cover', 'Thumbnail video, cover podcast, atau sampul.', 60000, 1, 5, 'flat', '', 1, 10000),
-  ('spanduk-flexi', 'Spanduk Flexi', 'Cetak banner outdoor. Pilih bahan dan finishing; harga per m².', 25000, 2, 6, 'per_unit', 'meter', 1, 1000),
-  ('poster-a3', 'Cetak Poster A3+', 'Cetak poster A3+ full color, art paper 150gr. Harga per lembar.', 5000, 1, 7, 'per_unit', 'lembar', 1, 5000),
-  ('kartu-nama', 'Cetak Kartu Nama', 'Kartu nama art carton, 1 box isi 100 lembar. Harga per box.', 25000, 2, 8, 'per_unit', 'box', 1, 100),
-  ('stiker-vinyl', 'Cetak Stiker Vinyl A3+', 'Stiker vinyl tahan air, A3+. Harga per lembar.', 15000, 2, 9, 'per_unit', 'lembar', 1, 5000),
-  ('lain', 'Belum tahu butuh apa', 'Ceritakan saja kebutuhanmu, nanti kami arahkan.', 0, 3, 10, 'flat', '', 1, 10000),
-  ('x-banner', 'X-Banner', 'Banner portable dengan kaki X, cocok untuk pameran dan promo.', 85000, 2, 11, 'per_unit', 'pcs', 1, 100),
-  ('poster-a2', 'Cetak Poster A2', 'Poster A2 full color untuk display toko dan acara.', 9000, 1, 12, 'per_unit', 'lembar', 1, 5000),
-  ('kartu-pos', 'Kartu Pos', 'Kartu pos cetak full color, cocok untuk undangan dan merchandising.', 3500, 2, 13, 'per_unit', 'lembar', 1, 5000),
-  ('stiker-label', 'Stiker Label Produk', 'Stiker label kemasan dalam various ukuran, siap tempel.', 500, 2, 14, 'per_unit', 'lembar', 1, 10000),
+  ('spanduk-flexi', 'Spanduk Flexi', 'Cetak banner outdoor. Harga per meter persegi.', 25000, 2, 6, 'per_unit', 'm²', 1, 10000),
+  ('lain', 'Belum tahu butuh apa', 'Ceritakan saja kebutuhanmu, nanti kami arahkan.', 0, 3, 6, 'flat', '', 1, 10000),
+  ('poster-a3', 'Cetak Poster A3+', 'Cetak poster A3+ full color, art paper 150gr. Harga per lembar.', 5000, 1, 7, 'per_unit', 'lembar', 1, 10000),
+  ('kartu-nama', 'Cetak Kartu Nama', 'Kartu nama art carton, 1 box isi 100 lembar. Harga per box.', 30000, 2, 8, 'per_unit', 'box', 1, 10000),
+  ('stiker-vinyl', 'Cetak Stiker Vinyl A3+', 'Stiker vinyl tahan air, A3+. Harga per lembar.', 10000, 2, 9, 'per_unit', 'lembar', 1, 10000),
+  ('kaos-dtf', 'Kaos Sablon DTF', 'Kaos cotton combed 30s, sablon DTF full color. Minimum 1 pcs.', 65000, 3, 10, 'per_unit', 'pcs', 1, 500),
+  ('x-banner', 'X-Banner', 'Banner portable dengan kaki X, cocok untuk pameran dan promo.', 85000, 2, 11, 'per_unit', 'unit', 1, 10000),
+  ('poster-a2', 'Cetak Poster A2', 'Poster A2 full color untuk display toko dan acara.', 15000, 1, 12, 'per_unit', 'lembar', 1, 10000),
+  ('kartu-pos', 'Kartu Pos', 'Kartu pos cetak full color, cocok untuk undangan dan merchandising.', 3500, 2, 13, 'per_unit', 'lembar', 1, 10000),
+  ('stiker-label', 'Stiker Label Produk', 'Stiker label kemasan dalam berbagai ukuran, siap tempel.', 500, 2, 14, 'per_unit', 'lembar', 1, 10000),
   ('foto-produk', 'Foto Produk', 'Pemotretan dan editing foto produk untuk katalog dan marketplace.', 150000, 3, 15, 'flat', '', 1, 10000),
   ('desain-web', 'Desain Website', 'Desain tampilan website/landing page beserta panduan handoff.', 750000, 7, 16, 'flat', '', 1, 10000),
   ('copywriting', 'Copywriting', 'Naskah promosi untuk website, iklan, dan media sosial.', 200000, 3, 17, 'flat', '', 1, 10000)
@@ -276,6 +275,13 @@ create table if not exists promo_codes (
   expires_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+-- Kampanye repeat order otomatis. Seed dipindahkan ke sini agar schema.sql
+-- tetap bisa dijalankan pada database kosong (tabel sudah ada saat INSERT).
+insert into promo_codes (code, type, value, min_order, max_discount, usage_limit)
+values ('REORDER10', 'percent', 10, 100000, 100000, 500)
+on conflict (code) do nothing;
+
 alter table orders add column if not exists promo_code text;
 alter table orders add column if not exists discount_amount int not null default 0;
 

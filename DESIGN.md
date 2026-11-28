@@ -33,7 +33,17 @@ the four-value pattern (`8px 8px 8px 0`) used by `.btn`, `.card`, `.input`,
 (`rounded-l-*`) must not use these tokens; use explicit corner values.
 Dots, progress bars, radios, and spinners stay `rounded-full`.
 
-### Palette (Tailwind tokens)
+Ikon aplikasi (`.ico`, `.icns`, PNG launcher/PWA, dan `public/icon.svg`) saat ini masih
+menggunakan keempat sudut membulat. Ini adalah pengecualian yang disengaja untuk aset merek;
+komponen antarmuka wajib tetap mengikuti pola sudut kiri bawah tajam. Regenerasi ikon harus
+dilakukan sekaligus untuk semua platform bila keputusan merek berubah.
+
+### Palette
+
+Nama di kolom pertama adalah CSS custom properties di `src/app/globals.css`; Tailwind
+meng-ekspos sebagian sebagai token (`bg`, `panel`, `line`, `mute`, `ink`, `accent`) dan
+sebagian lagi sebagai alias (`carbon`, `border`, `faint`, `quiet`, `accent.deep/soft`).
+Keduanya merujuk ke warna yang sama; jangan menambah hex baru di komponen.
 
 | Token | Hex | Role |
 | --- | --- | --- |
@@ -78,7 +88,7 @@ defining per-page colors. Patterns, not new hues, separate adjacent tones.
 
 ### Interaction rules
 
-- Primary button: ink fill, near-black text, hover → white + white glow.
+- Primary button: ink fill, near-black text, hover → blue `#0070f3` border/text shift, no glow.
 - Active nav/filter: ink fill or ink underline; scrollspy on home anchors.
 - Status pills (admin): `.status-pill` with `--pill` CSS variable per status and
   `data-tone` (`solid` / `dashed` / `strike`); checked state tints via `color-mix`.
@@ -95,5 +105,5 @@ defining per-page colors. Patterns, not new hues, separate adjacent tones.
   customer logos, metrics, testimonials, or delivery promises.
 - Keep pages responsive, keyboard accessible, and readable at high contrast.
   Descriptive alt text for meaningful images; visible ink focus states.
-- PWA: public pages cached by `sw.js` (cache name `intorma-v3`); `/admin` and
+- PWA: public pages cached by `sw.js` (cache name `intorma-v9`); `/admin` and
   `/api` are never cached. Manifest theme matches `paper`.

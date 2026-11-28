@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
 import { AdminAccountManager } from "@/components/AdminAccountManager";
-import { isAdmin, listAdminAccounts } from "@/lib/auth";
+import { envFallbackActive, isAdmin, listAdminAccounts } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Akun admin", robots: { index: false } };
@@ -20,7 +20,7 @@ export default async function AdminAccountsPage() {
         </p>
       </div>
 
-      <AdminAccountManager accounts={accounts} envPasswordActive={Boolean(process.env.ADMIN_PASSWORD)} />
+      <AdminAccountManager accounts={accounts} envPasswordActive={envFallbackActive()} />
     </AdminShell>
   );
 }

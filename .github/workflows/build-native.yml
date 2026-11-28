@@ -19,6 +19,13 @@ jobs:
           node-version: 22
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
+      - name: Validate version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          test "$tag" = "$version" || { echo "Tag $tag != tauri.conf $version"; exit 1; }
       - run: npm run tauri build
       - uses: actions/upload-artifact@v4
         with:
@@ -50,18 +57,64 @@ jobs:
           java-version: 21
       - run: npm ci
       - run: npx cap sync android
+
+      - name: Validate version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(grep -o 'versionName "[^"]*"' android/app/build.gradle | head -1 | cut -d'"' -f2)
+          test "$tag" = "$version" || { echo "Tag $tag != build.gradle $version"; exit 1; }
+          test -n "$ANDROID_KEYSTORE_BASE64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD" || { echo "Android signing secrets belum diisi"; exit 1; }
+
       - name: Build debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
+
       - uses: actions/upload-artifact@v4
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         with:
-          name: in.torma-android
+          name: in.torma-android-debug
           path: android/app/build/outputs/apk/debug/*.apk
 
-      - name: Publish Android release
+      - name: Decode release keystore
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/intorma-release.jks
+          test -s android/app/intorma-release.jks
+
+      - name: Build signed release APK
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          ANDROID_KEYSTORE_FILE: intorma-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          version="${GITHUB_REF_NAME#v}"
+          cp app/build/outputs/apk/release/app-release.apk "app/build/outputs/apk/release/intorma-${version}.apk"
+
+      - uses: actions/upload-artifact@v4
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: in.torma-android-release
+          path: android/app/build/outputs/apk/release/intorma-*.apk
+
+      - name: Publish signed Android release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: android/app/build/outputs/apk/debug/*.apk
+          files: android/app/build/outputs/apk/release/intorma-*.apk

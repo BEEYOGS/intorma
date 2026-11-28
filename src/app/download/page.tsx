@@ -11,6 +11,7 @@ type ReleaseAsset = {
   name: string;
   browser_download_url: string;
   size: number;
+  digest?: string;
 };
 
 type Release = {
@@ -41,7 +42,7 @@ async function getLatestRelease(): Promise<Release | null> {
         Accept: "application/vnd.github+json",
         "User-Agent": "in.torma-download-page",
       },
-      cache: "no-store",
+      next: { revalidate: 300 },
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return releaseCache?.release ?? null;
@@ -65,15 +66,19 @@ function fileSize(bytes: number) {
 }
 
 function AssetButton({ asset, label }: { asset: ReleaseAsset; label: string }) {
+  const checksum = asset.digest?.replace(/^sha256:/, "").slice(0, 12);
   return (
     <a
       href={asset.browser_download_url}
+      target="_blank"
       className="btn btn-primary min-h-10 px-4 text-sm"
       rel="noreferrer"
+      title={checksum ? `SHA-256: ${asset.digest?.replace(/^sha256:/, "")}` : undefined}
     >
       <Download aria-hidden className="size-4" />
       {label}
       {asset.size > 0 && <span className="text-xs font-normal opacity-70">{fileSize(asset.size)}</span>}
+      {checksum && <span className="font-mono text-[10px] font-normal opacity-60">{checksum}</span>}
     </a>
   );
 }
@@ -86,6 +91,7 @@ export default async function DownloadPage() {
   const apk = assets.find((asset) => asset.name.toLowerCase().endsWith(".apk"));
   // APK 1.0.1 masih memakai splash bawaan Capacitor; mulai 1.0.2 sudah memakai ikon in.torma.
   const apkReady = Boolean(apk) && versionValue(release?.tag_name ?? "") >= 1_000_002;
+  const apkDebug = Boolean(apk && /debug/i.test(apk.name));
   const releaseUrl = release?.html_url ?? RELEASES_URL;
 
   return (
@@ -140,10 +146,16 @@ export default async function DownloadPage() {
             </div>
             <p className="mb-5 text-sm leading-6 text-[var(--text-2)]">
               Pasang langsung di Android. Izinkan pemasangan dari sumber tidak dikenal saat diminta.
+              {apkDebug && (
+                <span className="mt-2 block text-xs text-[var(--text-2)]">
+                  Aset rilis saat ini masih build debug (debug-signed). Rilis berikutnya memakai APK
+                  signed; untuk distribusi luas, tunggu aset berlabel release.
+                </span>
+              )}
             </p>
             <div className="mt-auto flex flex-wrap gap-2">
               {apkReady && apk ? (
-                <AssetButton asset={apk} label="Unduh APK" />
+                <AssetButton asset={apk} label={apkDebug ? "Unduh APK (debug)" : "Unduh APK"} />
               ) : (
                 <div className="rounded-tag-sm border border-line bg-white/[0.02] px-3.5 py-2.5 text-xs leading-5 text-mute">
                   <span className="inline-flex items-center gap-1.5 font-medium text-ink">
@@ -166,8 +178,9 @@ export default async function DownloadPage() {
               <div>
                 <p className="font-semibold">Pasang dari browser (PWA)</p>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-2)]">
-                  Tidak perlu download file. Buka situs di Chrome/Edge/Safari, lalu pilih “Install app” /
-                  “Add to Home Screen”. Popup pemasangan muncul otomatis beberapa detik lalu hilang sendiri.
+                  Tidak perlu download file. Buka situs di Chrome/Edge/Safari, lalu ketuk tombol
+                  <span className="font-medium text-ink"> Install aplikasi</span> di header/menu.
+                  Tidak ada popup otomatis; penolakan disimpan 30 hari dan pilihan “Nanti” 7 hari.
                 </p>
                 <ul className="mt-4 grid gap-2 text-sm text-[var(--text-2)] sm:grid-cols-2">
                   <li className="flex items-center gap-2">

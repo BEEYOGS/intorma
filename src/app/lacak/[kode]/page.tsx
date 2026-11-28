@@ -24,7 +24,7 @@ import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, isStatus, type Status } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Status pesanan" };
+export const metadata = { title: "Status pesanan", robots: { index: false } };
 
 export default async function TrackPage({
   params,

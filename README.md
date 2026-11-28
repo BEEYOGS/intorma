@@ -19,12 +19,29 @@ Halaman utama: `/` · order: `/order` · lacak: `/lacak` · portal: `/masuk`
 
 ## Run
 
-1. `npm install`
+1. `npm install` (Node ≥ 20.12).
 2. Salin `.env.example` ke `.env.local`, lalu isi nilainya (jangan commit file env).
 3. `npm run db:migrate` — membuat tabel, kolom baru, `wa_outbox`, dan seed layanan.
-4. `npm run dev` → http://localhost:3000 (atau port yang ditampilkan Next).
+4. `npm run db:catalog:all` — menyamakan harga/kategori katalog dengan `scripts/seed-catalog.mjs`.
+5. `npm run dev` → http://localhost:3000 (atau port yang ditampilkan Next).
 
-Pemeriksaan tanpa mengirim pesan: `npm run build` dan `npm run typecheck`.
+Pemeriksaan tanpa mengirim pesan: `npm run typecheck`, `npm run build`, dan
+`npm run test:smoke` (bisa diarahkan ke URL lain dengan `BASE_URL=https://… npm run test:smoke`).
+Smoke hanya membaca endpoint dan tidak mengirim WA/email.
+
+### Bootstrap admin database
+
+`ADMIN_PASSWORD_ENABLED=0` adalah pengaturan produksi. Untuk menyiapkan akun admin pertama
+pada database baru, lakukan **sekali** di mesin lokal yang DATABASE_URL-nya bukan produksi:
+
+```bash
+# isi ADMIN_PASSWORD sementara di .env.local lokal
+npm run db:admin-owner
+# verifikasi login di /admin/login, lalu kosongkan ADMIN_PASSWORD
+```
+
+Setelah akun database aktif, set `ADMIN_PASSWORD_ENABLED=0` lagi. Jangan mengaktifkan fallback
+password di Vercel hanya untuk "masuk dulu".
 
 ## Self-service order
 
@@ -120,14 +137,28 @@ Dengan Drive aktif:
 ### Aplikasi native & PWA
 
 Halaman `/download` mengarah ke aset rilis GitHub yang dibangun oleh
-`.github/workflows/build-native.yml` (`.exe`, `.msi`, `.apk` v1.0.2). PWA dipasang lewat
+`.github/workflows/build-native.yml` (`.exe`, `.msi`, `.apk`). PWA dipasang lewat
 `manifest.webmanifest` + `sw.js` (cache `intorma-v9`). Tombol **Install aplikasi** di header/menu
-membuka prompt PWA bila browser mendukung; jika tidak, popup menampilkan panduan per platform.
-Penolakan popup disimpan per sesi agar tidak muncul berulang saat berpindah halaman.
+hanya muncul setelah pengguna mengetuknya; tidak ada auto-modal. Penolakan disimpan 30 hari dan
+“Nanti” 7 hari di localStorage.
 
-Tauri adalah jalur wrapper utama. Konfigurasi Capacitor disimpan hanya sebagai percobaan Android;
-keduanya memuat URL produksi yang sama, sehingga folder `public` bukan hasil static export Next.js
-dan build lokal Tauri memerlukan Windows SDK. Jangan menganggap build lokal sebagai pengganti rilis CI.
+**Status rilis saat ini:** installer Windows v1.0.2 sudah nyata tetapi **belum di-code-sign**
+(SmartScreen masih bisa muncul). APK v1.0.2 juga nyata tetapi masih `app-debug.apk`, sehingga
+`debuggable` dan memakai debug key. Workflow sudah disiapkan untuk menghasilkan `.apk` release
+signed pada tag berikutnya bila secret keystore diisi; sampai saat itu, anggap APK sebagai build
+sideload, bukan artifact Play Store.
+
+Tauri dan Capacitor adalah **wrapper online** ke `https://intorma-psi.vercel.app`, bukan static
+export Next.js (SSR/API/server action tidak bisa diekspor ke `public`). Konsekuensinya:
+
+- Butuh koneksi untuk first load; halaman offline PWA tidak membantu saat aplikasi native pertama
+  kali dibuka tanpa jaringan.
+- `npm run tauri dev` memakai `http://localhost:3000` (`beforeDevCommand: npm run dev`), sedangkan
+  installer memuat URL produksi dengan `?source=installed_app`.
+- Build Tauri lokal memerlukan MSVC Build Tools + Windows SDK + WebView2; build APK lokal memerlukan
+  Android SDK (`ANDROID_HOME`/`ANDROID_SDK_ROOT`). Tanpa itu, pakai artifact CI.
+- Deteksi app terinstal mencakup PWA standalone, WebView/TWA, Capacitor native, dan Tauri, sehingga
+  tombol install PWA tidak di-mount di dalam aplikasi native.
 
 ### Bottom bar mobile
 
@@ -160,16 +191,18 @@ memindahkan nomor. Token dan URL webhook bersifat rahasia; jangan pernah ditempe
 WA_PROVIDER=fonnte
 FONNTE_TOKEN=token-dari-dashboard-fonnte
 OPENWA_WEBHOOK_SECRET=string-acak-panjang
-ADMIN_WHATSAPP_NUMBER=089617607952
+ADMIN_WHATSAPP_NUMBER=nomor-admin-kamu
 ```
 
 Langkah Fonnte:
 
 1. Pastikan device di dashboard Fonnte berstatus **connect** dan kuota masih ada.
-2. Isi `FONNTE_TOKEN` di `.env.local` lewat halaman token lokal, lalu jalankan `npm run wa:fonnte:setup`.
+2. Isi `FONNTE_TOKEN` di `.env.local` (atau Environment Variables Vercel). `npm run wa:fonnte:setup`
+   adalah **opsional** dan akan menimpa Environment Variables produksi di Vercel, bukan hanya `.env.local`.
 3. Di dashboard Fonnte → Device → Edit, set Webhook URL ke
-   `https://intorma-psi.vercel.app/api/wa/webhook/<OPENWA_WEBHOOK_SECRET>` dan aktifkan **auto read**.
-   Secret hanya lewat segmen path, bukan query string; halaman token lokal menampilkan URL lengkap.
+   `https://intorma-psi.vercel.app/api/wa/webhook/<WA_WEBHOOK_SECRET>` dan aktifkan **auto read**.
+   `WA_WEBHOOK_SECRET` jatuh ke `OPENWA_WEBHOOK_SECRET` bila kosong. Secret hanya lewat segmen path,
+   bukan query string. Jangan menempelkan URL lengkap di chat.
 4. Deploy ulang: `npx --no-install vercel --prod --yes`.
 5. Paket Fonnte tertentu masih menambahkan footer pihak ketiga yang tidak bisa dihapus lewat API.
    Pastikan paket yang dipakai mendukung pesan tanpa footer sebelum dipakai produksi.
@@ -185,7 +218,7 @@ META_WA_VERSION=v25.0
 META_WA_VERIFY_TOKEN=string-acak-untuk-verifikasi-webhook
 META_WA_APP_SECRET=app-secret-untuk-tanda-tangan-webhook
 META_TPL_LANGUAGE=id
-ADMIN_WHATSAPP_NUMBER=089617607952
+ADMIN_WHATSAPP_NUMBER=nomor-admin-kamu
 ```
 
 Langkah Meta:
@@ -251,8 +284,16 @@ Disable-ScheduledTask -TaskName intorma-wa-agent
 
 > **PERINGATAN:** `POST /api/wa/test-gateway`, `npm run test:integrations`, dan
 > `npm run wa:fonnte:setup` / `npm run wa:cloud:setup` dapat mengirim WhatsApp nyata, mengubah
-> webhook, atau menimpa `.env.local`. Jalankan hanya bila dimaksudkan, dan jangan pakai nomor
-> pelanggan untuk uji coba. `npm run wa:check` hanya membaca status dan aman dipakai kapan saja.
+> webhook produksi, atau menimpa **Environment Variables di Vercel** (bukan sekadar `.env.local`).
+> Jalankan hanya bila dimaksudkan, pastikan akun Vercel yang aktif benar, dan jangan pakai nomor
+> pelanggan untuk uji coba. `npm run wa:check`, `npm run typecheck`, `npm run build`, dan
+> `npm run test:smoke` hanya membaca status dan aman dipakai kapan saja.
+
+> **Script yang mengubah data:** `npm run db:migrate`, `npm run db:catalog:all`, `npm run db:wa-trigger`,
+> `npm run db:admin-owner`, `npm run db:uploads-to-drive`, `npm run db:drive-only`, dan `npm run db:backup`
+> menulis ke database yang ditunjuk `.env.local`. Sebelum menjalankan terhadap produksi, cek
+> `DATABASE_URL`, ambil backup, dan pastikan skrip memang dimaksudkan. `db:drive-only` menghapus
+> kolom lama `uploads.data` dan bersifat destruktif.
 
 ### Pembayaran
 
@@ -312,18 +353,24 @@ Perubahan langsung dipakai halaman `/order` tanpa menjalankan SQL manual.
 
 Kolom `orders.internal_note` ditambahkan lewat `npm run db:migrate` (idempoten).
 
-### Antrean WA outbox & agent (jalur fallback OpenWA)
+### Antrean WA outbox & agent
 
 Ada tiga fungsi WhatsApp yang berbeda:
 
 1. **Tautan chat publik** (`wa.me` / WhatsApp Web) — selalu bekerja, tidak butuh gateway.
-2. **Notifikasi keluar** — produksi memakai Fonnte; saat OpenWA dipakai, pesan masuk `wa_outbox`.
+2. **Notifikasi keluar** — produksi memakai Fonnte. Jika pengiriman langsung gagal (atau
+   `WA_QUEUE_ONLY=1`), pesan masuk `wa_outbox` apa pun provider aktifnya.
 3. **Balasan otomatis masuk** (`status INT-DDMMYY001`) — lewat webhook ke `/api/wa/webhook`.
+
+Worker `npm run wa:agent` saat ini hanya bisa menguras antrean melalui gateway **OpenWA**. Jika
+Fonnte/Cloud gagal dan antrean terisi, pesan akan menunggu sampai OpenWA fallback disiapkan atau
+drain Fonnte ditambahkan. Pantau `wa_outbox` lewat `/admin` atau `npm run wa:check`.
 
 Karena **Vercel tidak bisa menjangkau OpenWA di `localhost`**, notifikasi dari deployment Vercel
 disimpan di tabel `wa_outbox`. Worker `npm run wa:agent` mengambilnya lewat jembatan publik
-`GET/POST /api/wa/outbox` (cukup `SITE_WEBHOOK_URL` + `OPENWA_WEBHOOK_SECRET`, **tanpa
-`DATABASE_URL` produksi** di PC). Jika `DATABASE_URL` tersedia, agent bisa membaca antrean langsung
+`GET/POST /api/wa/outbox` memakai header `x-webhook-secret` (bukan query `?s=`) dan tetap
+membutuhkan `OPENWA_URL`/`OPENWA_KEY` untuk mengirim ke gateway. Yang **tidak** diperlukan adalah
+`DATABASE_URL` produksi di PC. Jika `DATABASE_URL` tersedia, agent bisa membaca antrean langsung
 dari Neon dan menyediakan inbox webhook lokal di port `WA_INBOX_PORT`.
 
 SOP OpenWA + worker:
@@ -403,6 +450,10 @@ Sesuaikan path OpenWA di `scripts/openwa.mjs` bila perlu.
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `GOOGLE_DRIVE_FOLDER_ID` | Wajib untuk upload | OAuth user Google Drive |
 | `GOOGLE_DRIVE_AUTH`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `GDRIVE_SERVICE_ACCOUNT`, `GDRIVE_FOLDER` | Opsi | Hanya Shared Drive / Workspace |
 | `MIDTRANS_SERVER_KEY`, `MIDTRANS_IS_PRODUCTION` | Opsi | Midtrans Core API (tanpa Snap) |
+| `MIDTRANS_SIGNATURE_SECRET_KEY` | Opsi | Kunci tanda tangan webhook; kosong → pakai server key |
+| `ALLOW_LOCAL_CRON` | Dev-only | `1` hanya di localhost untuk menguji cron tanpa `CRON_SECRET` |
+| `APP_PORT`, `GATEWAY_VERBOSE` | Dev-only | Port dan verbositas `npm run gateway` |
+| `OPENWA_DIR`, `OPENWA_DIST_MAIN`, `OPENWA_NODE`, `OPENWA_PORT` | Dev-only | Path gateway OpenWA lokal |
 
 ## Deploy ke Vercel
 
@@ -413,13 +464,19 @@ Sesuaikan path OpenWA di `scripts/openwa.mjs` bila perlu.
    `ADMIN_SECRET`, `ADMIN_PASSWORD_ENABLED=0`, `CRON_SECRET`,
    `NEXT_PUBLIC_SITE_URL=https://intorma-psi.vercel.app`, `NEXT_PUBLIC_WA_NUMBER`,
    `ADMIN_WHATSAPP_NUMBER`, `WA_PROVIDER=fonnte`, `FONNTE_TOKEN`, `WA_WEBHOOK_SECRET`,
-   variabel Drive/Midtrans, dll. **Jangan** mengaktifkan fallback `ADMIN_PASSWORD`, dan
-   **jangan** set `OPENWA_URL`/`OPENWA_BASE_URL` ke localhost di Vercel.
-3. Jalankan migrasi sekali ke database produksi:
+   variabel Drive/Midtrans (termasuk `MIDTRANS_SIGNATURE_SECRET_KEY` bila berbeda), dll.
+   **Jangan** mengaktifkan fallback `ADMIN_PASSWORD`, dan **jangan** set
+   `OPENWA_URL`/`OPENWA_BASE_URL` ke localhost di Vercel.
+3. Jalankan sekali ke database produksi:
 
    ```bash
    npm run db:migrate
+   npm run db:catalog:all
    ```
+
+   Perintah tersebut menulis ke `DATABASE_URL` yang aktif di `.env.local`—pastikan bukan database
+   lain. Setelah deploy, jalankan `npm run test:smoke` untuk memeriksa health, robots, sitemap,
+   dan endpoint privat tanpa mengirim pesan.
 
 4. Pastikan domain/alias Vercel mengarah ke deployment yang benar (`intorma-psi.vercel.app`).
 5. Fonnte adalah jalur aktif: daftarkan webhook dengan secret di path (lihat bagian WhatsApp).
@@ -437,7 +494,9 @@ scripts/wa-agent.mjs     worker antrean wa_outbox via jembatan publik / DB lokal
 scripts/wa-session.mjs   buat/start sesi OpenWA + viewer QR
 scripts/wa-webhook.mjs   daftar/update webhook OpenWA ke situs publik
 scripts/wa-check.mjs     diagnosa provider/gateway/sesi/webhook/antrean
+scripts/smoke.mjs        pemeriksaan endpoint aman (BASE_URL bisa diubah)
 src/app/actions.ts       server action: order, login, admin CRUD, WA
+src/app/api/db/migrate   eksekutor schema.sql (admin-only + rate limit)
 src/app/api/wa/outbox    jembatan antrean untuk agent tanpa DB produksi
 src/app/api/wa/webhook   balasan otomatis "status INT-XXXXXX" (Fonnte/Meta/OpenWA)
 src/components           UI (Chrome, form order, editor admin, WhatsApp link)

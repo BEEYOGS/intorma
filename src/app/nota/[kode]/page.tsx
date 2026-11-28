@@ -15,7 +15,7 @@ import { getPaymentSettings } from "@/lib/settings";
 import { STATUS_META, asStatus } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Nota pesanan" };
+export const metadata = { title: "Nota pesanan", robots: { index: false } };
 
 export default async function NotaPage({
   params,

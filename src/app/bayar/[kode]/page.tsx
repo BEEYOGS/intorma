@@ -24,7 +24,7 @@ import { PAYMENT_METHODS, gatewayEnabled } from "@/lib/payment";
 import { waLink } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Pembayaran" };
+export const metadata = { title: "Pembayaran", robots: { index: false } };
 
 type OrderRow = {
   id: number;
