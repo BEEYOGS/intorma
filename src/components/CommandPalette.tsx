@@ -217,7 +217,7 @@ export function CommandPalette() {
           )}
         </div>
 
-        <div className="border-t border-line px-4 py-2 text-[11px] text-mute">
+        <div className="border-t border-line px-4 py-2 text-xs text-mute">
           <kbd className="rounded border border-line px-1.5 py-0.5">Ctrl</kbd> + <kbd className="rounded border border-line px-1.5 py-0.5">K</kbd> buka/tutup · <kbd className="rounded border border-line px-1.5 py-0.5">Esc</kbd> tutup
         </div>
       </div>
@@ -228,7 +228,7 @@ export function CommandPalette() {
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-2">
-      <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-mute">{title}</p>
+      <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-mute">{title}</p>
       <div className="space-y-0.5">{children}</div>
     </div>
   );

@@ -77,7 +77,7 @@ export default async function ServicesAdmin() {
                   <span aria-hidden className="status-dot !mr-0" style={{ background: s.active ? "#0070f3" : "var(--text-3)" }} />
                   {s.active ? "Aktif" : "Nonaktif"}
                 </span>
-                <span className="text-[11px] text-mute">{orderCount(s.id)} pesanan</span>
+                <span className="text-xs text-mute">{orderCount(s.id)} pesanan</span>
                 <span aria-hidden className="text-ink/30 transition-transform group-open:rotate-90">
                   <ChevronRight className="size-4" />
                 </span>
@@ -90,7 +90,7 @@ export default async function ServicesAdmin() {
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-tag-sm border border-danger/20 bg-danger/[0.03] px-4 py-3">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-danger">Hapus layanan</p>
-                    <p className="mt-1 text-[11px] leading-5 text-mute">
+                    <p className="mt-1 text-xs leading-5 text-mute">
                       Grup opsi ikut terhapus. Riwayat pesanan tetap menyimpan nama layanan ini.
                     </p>
                   </div>

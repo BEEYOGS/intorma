@@ -202,7 +202,7 @@ export function PrintCalculator() {
                     <span className={`block text-xs font-medium ${active ? "text-accent" : "text-[var(--text)]"}`}>
                       {preset.label}
                     </span>
-                    <span className="mono mt-0.5 block text-[10px] text-[var(--text-3)]">{preset.hint}</span>
+                    <span className="mono mt-0.5 block text-xs text-[var(--text-3)]">{preset.hint}</span>
                   </button>
                 );
               })}
@@ -328,7 +328,7 @@ export function PrintCalculator() {
             <p className="mt-1 text-xs text-[var(--text-3)]">Ukuran kanvas sudah termasuk bleed di semua sisi.</p>
 
             <div className="mt-5 rounded-[var(--radius-sharp)] border border-[var(--border)] bg-[var(--bg-2)] p-4">
-              <p className="eyebrow !text-[10px]">Ukuran kanvas</p>
+              <p className="eyebrow !text-xs">Ukuran kanvas</p>
               <p className="mono mt-2 text-xl font-semibold tracking-tight sm:text-2xl">
                 {format(result.canvasPxW)} × {format(result.canvasPxH)} <span className="text-sm font-normal text-[var(--text-3)]">px</span>
               </p>
@@ -354,7 +354,7 @@ export function PrintCalculator() {
               <p className="mono mt-1 text-xs text-[var(--text-3)]">
                 PDF/X dengan gambar terkompresi: ~{format(result.pdfLowMb, 1)}–{format(result.pdfHighMb, 1)} MB
               </p>
-              <p className="mt-2 text-[11px] leading-relaxed text-[var(--text-3)]">
+              <p className="mt-2 text-xs leading-relaxed text-[var(--text-3)]">
                 Estimasi belum termasuk font tersemat dan layer. Ukuran akhir mengikuti aplikasi desain.
               </p>
             </div>
@@ -407,7 +407,7 @@ function Field({ label, unit, children }: { label: string; unit: string; childre
     <div>
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <label className="text-xs font-medium text-[var(--text-2)]">{label}</label>
-        <span className="mono text-[10px] text-[var(--text-3)]">{unit}</span>
+        <span className="mono text-xs text-[var(--text-3)]">{unit}</span>
       </div>
       {children}
     </div>
@@ -417,7 +417,7 @@ function Field({ label, unit, children }: { label: string; unit: string; childre
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] text-[var(--text-3)]">{label}</p>
+      <p className="text-xs text-[var(--text-3)]">{label}</p>
       <p className="mono mt-1 truncate text-xs text-[var(--text)]" title={value}>{value}</p>
     </div>
   );

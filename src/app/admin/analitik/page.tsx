@@ -205,7 +205,7 @@ export default async function AnalitikPage({
                       style={{ height: `${h}px` }}
                       title={`${tanggal(r.day)}: ${n} pesanan`}
                     />
-                    <span className="text-[11px] text-mute">{String(r.day).slice(5)}</span>
+                    <span className="text-xs text-mute">{String(r.day).slice(5)}</span>
                   </div>
                 );
               })}
@@ -328,7 +328,7 @@ export default async function AnalitikPage({
           <h2 className="text-sm font-semibold">Pengingat operasional</h2>
           <div className="mt-4 space-y-4">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">Terlambat (deadline lewat)</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mute">Terlambat (deadline lewat)</p>
               {overdue.length === 0 ? (
                 <p className="mt-2 text-sm text-mute">Tidak ada.</p>
               ) : (
@@ -348,7 +348,7 @@ export default async function AnalitikPage({
               )}
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">Belum dibayar &gt; 7 hari</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mute">Belum dibayar &gt; 7 hari</p>
               {unpaidOld.length === 0 ? (
                 <p className="mt-2 text-sm text-mute">Tidak ada.</p>
               ) : (
@@ -374,7 +374,7 @@ export default async function AnalitikPage({
 function Kpi({ label, value, hint }: { label: string; value: string | number; hint: string }) {
   return (
     <div className="rounded-tag-lg border border-line bg-panel/50 p-5 sm:p-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/60">{label}</p>
       <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">{value}</p>
       <p className="mt-1 text-xs text-mute">{hint}</p>
     </div>

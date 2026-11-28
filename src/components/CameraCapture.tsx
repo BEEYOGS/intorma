@@ -626,7 +626,7 @@ function ExampleCard({ good = false, caption, note }: { good?: boolean; caption:
         </span>
       </div>
       <p className="mt-2 text-xs font-medium">{caption}</p>
-      <p className="text-[11px] text-white/60">{note}</p>
+      <p className="text-xs text-white/60">{note}</p>
     </div>
   );
 }

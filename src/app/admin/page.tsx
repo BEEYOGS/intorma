@@ -354,7 +354,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         className="mt-4 rounded-tag-lg border border-line bg-panel/40 p-4 sm:p-5"
       >
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">SLA produksi</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/60">SLA produksi</h2>
           <p className="text-xs text-mute">Dihitung dari deadline pesanan aktif</p>
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -382,7 +382,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       {focusItems.length > 0 && (
         <section className="mt-4 rounded-tag-lg border border-line bg-panel/40 p-5 sm:p-6">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/60">
               Fokus hari ini
             </h2>
             <p className="text-xs text-mute">
@@ -403,7 +403,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
           className="mt-4 block rounded-tag-lg border border-line bg-panel/50 p-4 transition-colors hover:border-[var(--border-2)] sm:p-5"
         >
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/60">
               Piutang menunggu transfer
             </p>
             <p className="font-semibold tabular-nums">{rupiah(dueTotal)}</p>
@@ -563,7 +563,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       </span>
                       {dl && (
                         <span
-                          className={`mt-1 inline-flex items-center gap-1 rounded-tag-sm border px-2 py-1 text-[11px] font-semibold md:hidden ${
+                          className={`mt-1 inline-flex items-center gap-1 rounded-tag-sm border px-2 py-1 text-xs font-semibold md:hidden ${
                             dl.overdue
                               ? "border-danger/35 bg-danger/[0.06] text-danger"
                               : dl.soon
@@ -582,7 +582,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       <StatusBadge color={STATUS_META[st].color} label={STATUS_META[st].label} status={st} />
                       {dl && (
                         <span
-                          className={`mt-1 flex items-center gap-1 text-[11px] font-semibold ${
+                          className={`mt-1 flex items-center gap-1 text-xs font-semibold ${
                             dl.overdue ? "text-danger" : dl.soon ? "text-accent" : "text-mute"
                           }`}
                         >
@@ -640,7 +640,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                                 >
                                   {f.name}
                                 </a>
-                                <span className="shrink-0 font-mono text-[11px] text-mute">{formatBytes(f.size)}</span>
+                                <span className="shrink-0 font-mono text-xs text-mute">{formatBytes(f.size)}</span>
                               </li>
                             ))}
                           </ul>
@@ -743,7 +743,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                       />
 
                       <div className="rounded-tag-lg border border-danger/25 bg-danger/[0.04] p-5">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-danger">Hapus pesanan</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-danger">Hapus pesanan</p>
                         <p className="mt-2 text-xs leading-5 text-mute">
                           Untuk pesanan duplikat, uji coba, atau yang sudah dibatalkan. Riwayat status ikut terhapus.
                         </p>
@@ -779,7 +779,7 @@ function formatBytes(n: number): string {
 function Stat({ label, value, hint, href }: { label: string; value: number; hint: string; href?: string }) {
   const body = (
     <>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/60">{label}</p>
       <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">{value}</p>
       <p className="mt-1 text-xs text-mute">{hint}</p>
     </>
@@ -811,9 +811,9 @@ function SlaStat({
     tone === "danger" ? "text-danger" : tone === "accent" ? "text-accent" : "text-ink";
   const body = (
     <>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/60">{label}</p>
       <p className={`mt-1.5 text-2xl font-semibold tabular-nums tracking-tight ${valueClass}`}>{value}</p>
-      {hint && <p className="mt-0.5 text-[11px] text-mute">{hint}</p>}
+      {hint && <p className="mt-0.5 text-xs text-mute">{hint}</p>}
     </>
   );
   const className = "block rounded-tag-sm border border-line bg-panel/60 px-3 py-3 transition-colors";

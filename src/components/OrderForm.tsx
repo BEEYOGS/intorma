@@ -1156,7 +1156,7 @@ setInteracted(true);
                     <li key={`${file.name}-${file.size}-${index}`} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{file.name}</span>
-                        <span className="mono block text-[11px] text-mute">{formatBytes(file.size)}</span>
+                        <span className="mono block text-xs text-mute">{formatBytes(file.size)}</span>
                       </span>
                       <button
                         type="button"
@@ -1426,7 +1426,7 @@ setInteracted(true);
               {finalTotal != null ? rupiah(finalTotal) : "Belum dihitung"}
             </p>
             {promoDiscount > 0 && (
-              <p className="truncate text-[11px] text-accent/80">Termasuk diskon {rupiah(promoDiscount)}</p>
+              <p className="truncate text-xs text-accent/80">Termasuk diskon {rupiah(promoDiscount)}</p>
             )}
           </div>
           <button

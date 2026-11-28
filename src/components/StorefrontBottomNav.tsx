@@ -65,7 +65,7 @@ export function StorefrontBottomNav() {
               <Link
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
-                className={`relative flex min-h-[var(--bottom-bar-height)] flex-col items-center justify-center gap-1 px-2 py-1.5 text-[11px] font-semibold leading-none transition-colors ${
+                className={`relative flex min-h-[var(--bottom-bar-height)] flex-col items-center justify-center gap-1 px-2 py-1.5 text-xs font-semibold leading-none transition-colors ${
                   active ? "text-[var(--text)]" : "text-[var(--text-3)] hover:text-[var(--text)]"
                 }`}
               >

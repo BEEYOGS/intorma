@@ -13,7 +13,7 @@ export function UploadProgressBar({
   const percent = Math.max(0, Math.min(100, progress.percent));
   return (
     <div className="mt-2" aria-live="polite">
-      <div className="flex items-center justify-between gap-3 text-[11px] text-mute">
+      <div className="flex items-center justify-between gap-3 text-xs text-mute">
         <span className="truncate">{label ?? "Mengunggah file"}</span>
         <span className="shrink-0 tabular-nums">
           {percent}% · {formatBytes(progress.uploaded)} / {formatBytes(progress.total)}

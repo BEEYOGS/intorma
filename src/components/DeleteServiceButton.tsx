@@ -48,7 +48,7 @@ export function DeleteServiceButton({
         titleId={`hapus-layanan-${id}`}
         header={
           <header className="border-b border-[var(--border)] px-5 pb-3 pt-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-danger">Zona berbahaya</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-danger">Zona berbahaya</p>
             <h3 id={`hapus-layanan-${id}`} className="mt-2 text-xl font-semibold tracking-tight">
               Hapus layanan {name}?
             </h3>

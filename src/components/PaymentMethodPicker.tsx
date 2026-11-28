@@ -84,7 +84,7 @@ export function PaymentMethodPicker({
           {state.error}
         </p>
       )}
-      <p className="mt-3 text-center text-[11px] leading-5 text-mute">
+      <p className="mt-3 text-center text-xs leading-5 text-mute">
         Tagihan berlaku 60 menit. Status pesanan berubah otomatis setelah pembayaran terverifikasi.
       </p>
     </form>

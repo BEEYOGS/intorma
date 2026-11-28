@@ -87,7 +87,7 @@ export default async function DashboardPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-3 border-t border-line pt-3 text-[11px] leading-5 text-mute">
+              <p className="mt-3 border-t border-line pt-3 text-xs leading-5 text-mute">
                 Provider: {wa?.provider ? WA_LABEL[wa.provider] ?? wa.provider : "—"}
                 {!waReady && wa?.error ? ` · ${wa.error}` : ""}
               </p>

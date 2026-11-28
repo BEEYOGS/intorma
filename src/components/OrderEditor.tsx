@@ -108,7 +108,7 @@ export function OrderEditor({
       <label className="mt-5 block">
         <span className="label flex flex-wrap items-center gap-2">
           Catatan internal
-          <span className="rounded-tag-sm border border-line px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-mute">
+          <span className="rounded-tag-sm border border-line px-2 py-1 text-xs font-semibold uppercase tracking-wider text-mute">
             Admin saja
           </span>
         </span>

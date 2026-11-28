@@ -74,7 +74,7 @@ export default async function AuditPage({
       ) : (
         <div className="mt-4 overflow-x-auto rounded-tag-lg border border-line">
           <table className="w-full text-sm">
-            <thead className="bg-panel/60 text-[11px] uppercase tracking-[0.14em] text-mute">
+            <thead className="bg-panel/60 text-xs uppercase tracking-[0.14em] text-mute">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold">Waktu</th>
                 <th className="px-4 py-3 text-left font-semibold">Aksi</th>
@@ -96,7 +96,7 @@ export default async function AuditPage({
                   <td className="px-4 py-3 font-mono text-xs">{r.entity_id ? String(r.entity_id) : "—"}</td>
                   <td className="px-4 py-3 text-xs text-mute">
                     {r.meta ? (
-                      <pre className="whitespace-pre-wrap break-all font-mono text-[11px]">{JSON.stringify(r.meta)}</pre>
+                      <pre className="whitespace-pre-wrap break-all font-mono text-xs">{JSON.stringify(r.meta)}</pre>
                     ) : (
                       "—"
                     )}

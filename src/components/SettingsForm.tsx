@@ -97,7 +97,7 @@ export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; 
               : "border-dashed border-line bg-panel/40"
           }`}
         >
-          <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${form.enabled ? "text-accent" : "text-mute"}`}>
+          <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${form.enabled ? "text-accent" : "text-mute"}`}>
             Pembayaran
           </p>
           {hasBankLogo(form.bankName) && (

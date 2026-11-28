@@ -52,10 +52,10 @@ export function QuickActions({
       className="rounded-tag-lg border border-line bg-panel/40 p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-mute">
+        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-mute">
           <Zap aria-hidden className="size-3.5" /> Aksi cepat
         </p>
-        <span className="mono text-[11px] text-mute">{code}</span>
+        <span className="mono text-xs text-mute">{code}</span>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">

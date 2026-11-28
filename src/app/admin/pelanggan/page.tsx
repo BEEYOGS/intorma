@@ -256,7 +256,7 @@ function MiniStat({
 }) {
   return (
     <div className="rounded-tag-lg border border-line bg-panel/50 p-5 sm:p-6">
-      <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/60">
+      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink/60">
         {icon} {label}
       </p>
       <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">{value}</p>

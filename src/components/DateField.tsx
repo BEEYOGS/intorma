@@ -179,7 +179,7 @@ export function DateField({
 
       <div className="mt-3 grid grid-cols-7 gap-0.5 sm:gap-1">
         {WEEKDAYS.map((day) => (
-          <span key={day} aria-hidden="true" className="grid h-7 place-items-center text-[11px] font-semibold uppercase tracking-[0.06em] text-mute">
+          <span key={day} aria-hidden="true" className="grid h-7 place-items-center text-xs font-semibold uppercase tracking-[0.06em] text-mute">
             {day}
           </span>
         ))}

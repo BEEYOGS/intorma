@@ -85,8 +85,8 @@ export function OptionEditor({ service }: { service: Service }) {
                             >
                               <span className="text-[var(--text)]">
                                 {option.label}
-                                {option.is_default && <span className="ml-2 text-[10px] text-mute">(default)</span>}
-                                {!option.active && <span className="ml-2 text-[10px] text-danger">(nonaktif)</span>}
+                                {option.is_default && <span className="ml-2 text-xs text-mute">(default)</span>}
+                                {!option.active && <span className="ml-2 text-xs text-danger">(nonaktif)</span>}
                               </span>
                               <span className="flex items-center gap-3">
                                 <OptionBadge amount={option.price_delta} basis={option.delta_basis} />

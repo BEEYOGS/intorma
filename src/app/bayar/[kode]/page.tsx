@@ -71,7 +71,7 @@ function Step({ index, label, state }: { index: number; label: string; state: "d
   return (
     <li className="flex items-center gap-2">
       <span
-        className={`grid size-6 place-items-center rounded-full border text-[11px] font-bold ${
+        className={`grid size-6 place-items-center rounded-full border text-xs font-bold ${
           state === "done"
             ? "border-accent bg-accent text-white"
             : state === "active"

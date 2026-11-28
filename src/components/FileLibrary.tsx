@@ -63,7 +63,7 @@ function FileThumb({ file }: { file: FileItem }) {
   }
   return (
     <span className="grid size-10 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-line bg-sand">
-      <span className="mono text-[10px] font-semibold uppercase text-mute">
+      <span className="mono text-xs font-semibold uppercase text-mute">
         {ext.slice(0, 4)}
       </span>
     </span>
@@ -175,7 +175,7 @@ export function FileLibrary({
         <FileThumb file={preview} />
         <div className="min-w-0">
           <h3 id="file-preview-title" className="truncate text-sm font-medium text-[var(--text)]">{preview.name}</h3>
-          <p className="mono text-[11px] uppercase text-mute">
+          <p className="mono text-xs uppercase text-mute">
             {previewMeta.ext} · {formatSize(preview.size)}
           </p>
         </div>
@@ -314,7 +314,7 @@ export function FileLibrary({
                       <span className="block truncate text-[13px] font-medium text-[var(--text)]">
                         {file.name}
                       </span>
-                      <span className="mt-0.5 block truncate text-[11px] text-mute">
+                      <span className="mt-0.5 block truncate text-xs text-mute">
                         <span className="mono uppercase">{meta.ext}</span> · {formatSize(file.size)} ·{" "}
                         {new Date(file.createdAt).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" })}
                         {file.orderCode && ` · ${file.orderCode}`}

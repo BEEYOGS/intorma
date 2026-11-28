@@ -83,7 +83,7 @@ function AssetButton({ asset, label }: { asset: ReleaseAsset; label: string }) {
       <Download aria-hidden className="size-4" />
       {label}
       {asset.size > 0 && <span className="text-xs font-normal opacity-70">{fileSize(asset.size)}</span>}
-      {checksum && <span className="font-mono text-[10px] font-normal opacity-60">{checksum}</span>}
+      {checksum && <span className="font-mono text-xs font-normal opacity-60">{checksum}</span>}
     </a>
   );
 }

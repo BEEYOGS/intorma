@@ -12,7 +12,7 @@ const moreTabs = adminTabs.filter((tab) => !primaryKeys.has(tab.key));
 const SHEET_ID = "admin-more-sheet";
 
 function tabClass(active: boolean) {
-  return `relative flex min-h-[var(--bottom-bar-height)] flex-col items-center justify-center gap-1 px-1 py-1.5 text-[11px] font-semibold leading-none transition-colors ${
+  return `relative flex min-h-[var(--bottom-bar-height)] flex-col items-center justify-center gap-1 px-1 py-1.5 text-xs font-semibold leading-none transition-colors ${
     active ? "text-[var(--text)]" : "text-[var(--text-3)] hover:text-[var(--text)]"
   }`;
 }
