@@ -159,7 +159,7 @@ export default async function AnalitikPage({
                 key={r.key}
                 href={`/admin/analitik?range=${r.key}`}
                 aria-current={range === r.key ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-tag-sm border px-3 text-xs font-semibold transition-colors ${
+                className={`inline-flex min-h-12 items-center rounded-tag-sm border px-3 text-xs font-semibold transition-colors ${
                   range === r.key
                     ? "border-accent/40 bg-accent/10 text-accent"
                     : "border-line text-ink/60 hover:border-accent/30 hover:text-ink"

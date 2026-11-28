@@ -107,9 +107,11 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
   useEffect(() => {
     const anchor = filterAnchorRef.current;
     if (!anchor) return;
+    const topbar = document.querySelector<HTMLElement>(".topbar");
+    const offset = Math.ceil(topbar?.getBoundingClientRect().height ?? 56);
     const observer = new IntersectionObserver(
       ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < 0),
-      { threshold: 0, rootMargin: "-56px 0px 0px 0px" },
+      { threshold: 0, rootMargin: `-${offset}px 0px 0px 0px` },
     );
     observer.observe(anchor);
     return () => observer.disconnect();
@@ -275,7 +277,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
                   type="button"
                   onClick={() => setQuery("")}
                   aria-label="Hapus pencarian"
-                  className="absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-tag-sm text-[var(--text-3)] transition-colors hover:text-[var(--text)]"
+                  className="absolute right-1 top-1/2 grid size-12 -translate-y-1/2 place-items-center rounded-tag-sm text-[var(--text-3)] transition-colors hover:text-[var(--text)]"
                 >
                   <X aria-hidden className="size-4" />
                 </button>
@@ -450,7 +452,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
       )}
 
       <div className="mt-10 flex justify-center">
-        <Link href="/order" className="btn btn-primary min-h-11 px-5 text-sm">
+        <Link href="/order" className="btn btn-primary min-h-12 px-5 text-sm">
           Pesan layanan <ArrowRight aria-hidden className="size-4" />
         </Link>
       </div>

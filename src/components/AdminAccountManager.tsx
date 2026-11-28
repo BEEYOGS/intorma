@@ -145,7 +145,7 @@ function AccountRow({ account }: { account: AdminAccount }) {
               <span className="eyebrow">Ulangi password baru</span>
               <PasswordField name="confirm" minLength={8} autoComplete="new-password" className="input mt-1.5" placeholder="Sama seperti di atas" />
             </label>
-            <label className="flex min-h-11 items-center gap-3 rounded-tag-sm border border-line px-3 sm:col-span-2">
+            <label className="flex min-h-12 items-center gap-3 rounded-tag-sm border border-line px-3 sm:col-span-2">
               <input type="hidden" name="activeForm" value="1" />
               <input type="checkbox" name="active" defaultChecked={account.active} className="size-4 accent-[var(--accent)]" />
               <span className="text-xs text-mute">Akun aktif (nonaktif langsung mencabut sesi)</span>

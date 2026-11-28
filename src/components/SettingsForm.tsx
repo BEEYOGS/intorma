@@ -71,7 +71,7 @@ export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; 
         </label>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4">
-          <button type="submit" disabled={pending} className="btn btn-primary min-h-11 px-5 text-sm">
+          <button type="submit" disabled={pending} className="btn btn-primary min-h-12 px-5 text-sm">
             {pending ? "Menyimpan…" : "Simpan pengaturan"}
           </button>
           {state?.ok && <span role="status" className="text-sm font-medium text-ink">Tersimpan.</span>}

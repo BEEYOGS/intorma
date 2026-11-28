@@ -23,13 +23,13 @@ export function OrderAccessGate({ code }: { code: string }) {
           <div className="mt-8 flex flex-wrap gap-3">
             <WhatsAppLink
               text={`Halo in.torma, saya butuh tautan akses untuk pesanan ${code}.`}
-              className="btn-wa min-h-11 px-5 text-sm"
+              className="btn-wa min-h-12 px-5 text-sm"
             >
               <WhatsAppIcon aria-hidden className="size-4" /> Minta tautan via WhatsApp
             </WhatsAppLink>
             <Link
               href={`/masuk?next=${encodeURIComponent(next)}`}
-              className="btn btn-primary min-h-11 px-5 text-sm"
+              className="btn btn-primary min-h-12 px-5 text-sm"
             >
               Masuk ke portal
               <ArrowRight aria-hidden className="size-4" />

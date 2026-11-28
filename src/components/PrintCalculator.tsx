@@ -375,10 +375,10 @@ export function PrintCalculator() {
             </div>
 
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-              <button type="button" onClick={copySpec} className="btn btn-ghost flex-1 !h-11 text-xs">
+              <button type="button" onClick={copySpec} className="btn btn-ghost flex-1 !h-12 text-xs">
                 <Clipboard aria-hidden className="size-3.5" /> Salin spesifikasi
               </button>
-              <Link href="/order" className="btn btn-primary flex-1 !h-11 text-xs">
+              <Link href="/order" className="btn btn-primary flex-1 !h-12 text-xs">
                 Buat pesanan <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </div>

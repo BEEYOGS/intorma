@@ -138,7 +138,7 @@ export default async function PayPage({
       <main className="mx-auto w-full max-w-5xl px-5 pb-28 pt-8 sm:pb-12 sm:py-12">
         <Link
           href={trackUrl}
-          className="inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-mute transition-colors hover:text-ink"
+          className="inline-flex min-h-12 items-center gap-1.5 text-xs font-semibold text-mute transition-colors hover:text-ink"
         >
           <ArrowLeft aria-hidden className="size-3.5" />
           Kembali ke status pesanan
@@ -177,11 +177,11 @@ export default async function PayPage({
                     Pesanan {order.code} sudah lunas. Kami akan menghubungi kamu lewat WhatsApp kalau ada yang perlu dikonfirmasi.
                   </p>
                   <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-                    <Link href={trackUrl} className="btn btn-primary min-h-12 px-4 text-sm sm:min-h-11">
+                    <Link href={trackUrl} className="btn btn-primary min-h-12 px-4 text-sm sm:min-h-12">
                       Lihat status pesanan
                       <ArrowRight aria-hidden className="size-4" />
                     </Link>
-                    <Link href={notaUrl} className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-11">
+                    <Link href={notaUrl} className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-12">
                       Buka nota
                     </Link>
                   </div>
@@ -228,7 +228,7 @@ export default async function PayPage({
                     </div>
                     <Link
                       href={changeUrl}
-                      className="inline-flex min-h-11 items-center text-xs font-semibold text-mute underline decoration-line underline-offset-4 hover:text-ink"
+                      className="inline-flex min-h-12 items-center text-xs font-semibold text-mute underline decoration-line underline-offset-4 hover:text-ink"
                     >
                       Ganti metode
                     </Link>
@@ -255,7 +255,7 @@ export default async function PayPage({
                           <a
                             href={raw.qrDataUrl}
                             download={`QRIS-${order.code}.png`}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:text-accent-strong"
+                            className="inline-flex min-h-12 items-center gap-1 text-xs font-semibold text-accent hover:text-accent-strong"
                           >
                             <Download aria-hidden className="size-3.5" />
                             Unduh
@@ -358,7 +358,7 @@ export default async function PayPage({
 
             <a
               href={waLink(`Halo in.torma, saya butuh bantuan pembayaran pesanan ${order.code}.`)}
-              className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-11"
+              className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-12"
             >
               Butuh bantuan? Chat admin
             </a>

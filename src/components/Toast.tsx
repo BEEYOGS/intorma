@@ -83,8 +83,7 @@ export function ToastHost() {
     if (Math.abs(state.dx) > SWIPE_PX) remove(state.id);
   }
 
-  if (items.length === 0) return null;
-
+  // Live region harus sudah ada di DOM sebelum toast pertama disisipkan.
   return (
     <div
       data-mobile-chrome
@@ -117,7 +116,7 @@ export function ToastHost() {
             type="button"
             onClick={() => remove(item.id)}
             aria-label="Tutup notifikasi"
-            className="grid size-11 shrink-0 place-items-center rounded-tag-sm text-[var(--text-3)] transition-colors hover:text-[var(--text)] sm:size-9"
+            className="grid size-12 shrink-0 place-items-center rounded-tag-sm text-[var(--text-3)] transition-colors hover:text-[var(--text)] sm:size-10"
           >
             <X aria-hidden className="size-4" />
           </button>

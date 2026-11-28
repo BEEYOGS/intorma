@@ -511,7 +511,7 @@ export function OrderForm({
           className="peer sr-only"
         />
         <span
-          className={`relative flex min-h-11 items-center gap-2.5 overflow-hidden rounded-tag-sm border px-2.5 py-2 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
+          className={`relative flex min-h-12 items-center gap-2.5 overflow-hidden rounded-tag-sm border px-2.5 py-2 transition-colors peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
             on
               ? "border-[var(--border-2)] bg-white/[0.09] text-[var(--text)]"
               : tone
@@ -946,7 +946,7 @@ setInteracted(true);
                     value={promoCode}
                     onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
                     placeholder="Kode promo"
-                    className="field min-h-12 text-sm uppercase"
+                    className="field min-h-12 text-base uppercase"
                   />
                   <button
                     type="button"
@@ -1036,7 +1036,7 @@ setInteracted(true);
                     type="button"
                     onClick={() => setCameraFor("print")}
                     disabled={uploading || !driveReady}
-                    className="btn btn-ghost min-h-11 !h-auto px-3 text-xs disabled:opacity-50"
+                    className="btn btn-ghost min-h-12 !h-auto px-3 text-xs disabled:opacity-50"
                   >
                     <Camera aria-hidden className="size-4" /> Ambil foto
                   </button>
@@ -1051,7 +1051,7 @@ setInteracted(true);
                     <button
                       type="button"
                       onClick={cancelPrintUpload}
-                      className="min-h-11 px-2 text-xs font-medium text-danger underline underline-offset-4"
+                      className="min-h-12 px-2 text-xs font-medium text-danger underline underline-offset-4"
                     >
                       Batalkan
                     </button>
@@ -1128,7 +1128,7 @@ setInteracted(true);
                   type="button"
                   onClick={() => setCameraFor("reference")}
                   disabled={refUploading || pending || refFiles.length >= 12}
-                  className="btn btn-ghost min-h-11 !h-auto px-3 text-xs disabled:opacity-50"
+                  className="btn btn-ghost min-h-12 !h-auto px-3 text-xs disabled:opacity-50"
                 >
                   <Camera aria-hidden className="size-4" /> Ambil foto
                 </button>
@@ -1149,7 +1149,7 @@ setInteracted(true);
                         type="button"
                         onClick={() => removeReferenceFile(index)}
                         disabled={refUploading || pending}
-                        className="min-h-11 px-2 text-xs font-medium text-mute transition-colors hover:text-ink disabled:opacity-50"
+                        className="min-h-12 px-2 text-xs font-medium text-mute transition-colors hover:text-ink disabled:opacity-50"
                       >
                         Hapus
                       </button>
@@ -1170,7 +1170,7 @@ setInteracted(true);
                   <button
                     type="button"
                     onClick={cancelReferenceUpload}
-                    className="mt-2 min-h-11 text-xs font-medium text-danger underline underline-offset-4"
+                    className="mt-2 min-h-12 text-xs font-medium text-danger underline underline-offset-4"
                   >
                     Batalkan upload
                   </button>
@@ -1344,7 +1344,7 @@ setInteracted(true);
                     <Link
                       key={service.id}
                       href={`/order?layanan=${service.id}`}
-                      className="flex min-h-11 items-center justify-between gap-3 rounded-tag-sm border border-line px-3 py-2 text-xs transition-colors hover:border-accent/40 hover:bg-white/[0.03]"
+                      className="flex min-h-12 items-center justify-between gap-3 rounded-tag-sm border border-line px-3 py-2 text-xs transition-colors hover:border-accent/40 hover:bg-white/[0.03]"
                     >
                       <span className="font-medium">{service.name}</span>
                       <span className="mono text-mute">{priceLabel(service)}</span>
@@ -1402,7 +1402,7 @@ setInteracted(true);
           </button>
         </div>
         {hasPriceError && (
-          <p className="mt-1.5 truncate text-xs text-danger">{quote?.error}</p>
+          <p role="alert" className="mt-1.5 text-xs leading-4 text-danger">{quote?.error}</p>
         )}
       </div>
 

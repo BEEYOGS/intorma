@@ -335,11 +335,11 @@ export default async function ProductPage() {
               <p className="text-xs text-[var(--text-3)] mt-1">Studio desain & cetak independen. CREATIVE WITHOUT IDEA.</p>
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--text-3)]">
-              <Link href="/order" className="inline-flex min-h-11 items-center hover:text-[var(--text-2)] transition-colors">Pesan</Link>
-              <Link href="/kalkulator" className="inline-flex min-h-11 items-center hover:text-[var(--text-2)] transition-colors">Hitung cetak</Link>
-              <Link href="/lacak" className="inline-flex min-h-11 items-center hover:text-[var(--text-2)] transition-colors">Lacak</Link>
-              <Link href="/download" className="inline-flex min-h-11 items-center hover:text-[var(--text-2)] transition-colors">Aplikasi</Link>
-              <WhatsAppLink text="Halo in.torma, saya mau tanya soal layanan desain dan cetak." className="inline-flex min-h-11 items-center gap-1.5 hover:text-[var(--text-2)] transition-colors">
+              <Link href="/order" className="inline-flex min-h-12 items-center hover:text-[var(--text-2)] transition-colors">Pesan</Link>
+              <Link href="/kalkulator" className="inline-flex min-h-12 items-center hover:text-[var(--text-2)] transition-colors">Hitung cetak</Link>
+              <Link href="/lacak" className="inline-flex min-h-12 items-center hover:text-[var(--text-2)] transition-colors">Lacak</Link>
+              <Link href="/download" className="inline-flex min-h-12 items-center hover:text-[var(--text-2)] transition-colors">Aplikasi</Link>
+              <WhatsAppLink text="Halo in.torma, saya mau tanya soal layanan desain dan cetak." className="inline-flex min-h-12 items-center gap-1.5 hover:text-[var(--text-2)] transition-colors">
                 <WhatsAppIcon aria-hidden className="size-3.5" /> WhatsApp
               </WhatsAppLink>
             </div>

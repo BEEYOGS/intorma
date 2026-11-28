@@ -168,7 +168,7 @@ export function PaymentPoller({
 
   if (paid) {
     return (
-      <div className="mt-4 flex items-start gap-3 rounded-tag-sm border border-accent/35 bg-accent/[0.07] px-4 py-3">
+      <div role="status" aria-live="polite" aria-atomic="true" className="mt-4 flex items-start gap-3 rounded-tag-sm border border-accent/35 bg-accent/[0.07] px-4 py-3">
         <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-accent" />
         <div>
           <p className="text-sm font-semibold text-ink">Pembayaran diterima</p>
@@ -180,7 +180,7 @@ export function PaymentPoller({
 
   if (expired) {
     return (
-      <div className="mt-4 flex items-start gap-3 rounded-tag-sm border border-[var(--quiet)]/35 bg-[var(--quiet)]/[0.07] px-4 py-3">
+      <div role="alert" aria-atomic="true" className="mt-4 flex items-start gap-3 rounded-tag-sm border border-[var(--quiet)]/35 bg-[var(--quiet)]/[0.07] px-4 py-3">
         <Clock3 aria-hidden className="mt-0.5 size-4 shrink-0 text-[var(--quiet)]" />
         <div>
           <p className="text-sm font-semibold text-ink">Tagihan kedaluwarsa</p>

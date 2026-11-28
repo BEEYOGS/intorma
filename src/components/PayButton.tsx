@@ -18,7 +18,7 @@ export function PayButton({
     <form action={action} className="grid gap-2">
       <input type="hidden" name="code" value={code} />
       {accessToken ? <input type="hidden" name="accessToken" value={accessToken} /> : null}
-      <button type="submit" disabled={pending} className="btn btn-primary w-full !h-11 text-sm">
+      <button type="submit" disabled={pending} className="btn btn-primary w-full !h-12 text-sm">
         <CreditCard aria-hidden className={`size-4 ${pending ? "animate-pulse" : ""}`} />
         {pending ? "Membuka halaman pembayaran…" : label}
       </button>

@@ -82,7 +82,7 @@ export default async function PromoPage() {
                         <form action={togglePromo}>
                           <input type="hidden" name="id" value={promo.id} />
                           <input type="hidden" name="active" value="" />
-                          <button type="submit" className="min-h-11 rounded-tag-sm border border-accent/30 bg-accent/10 px-3 text-xs font-semibold text-accent">
+                          <button type="submit" className="min-h-12 rounded-tag-sm border border-accent/30 bg-accent/10 px-3 text-xs font-semibold text-accent">
                             Aktif
                           </button>
                         </form>
@@ -90,7 +90,7 @@ export default async function PromoPage() {
                         <form action={togglePromo}>
                           <input type="hidden" name="id" value={promo.id} />
                           <input type="hidden" name="active" value="on" />
-                          <button type="submit" className="min-h-11 rounded-tag-sm border border-line px-3 text-xs font-semibold text-mute">
+                          <button type="submit" className="min-h-12 rounded-tag-sm border border-line px-3 text-xs font-semibold text-mute">
                             Nonaktif
                           </button>
                         </form>

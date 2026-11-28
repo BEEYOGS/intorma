@@ -50,7 +50,7 @@ export function OrderEditor({
             <label key={s} className="cursor-pointer">
               <input type="radio" name="status" value={s} defaultChecked={status === s} className="peer sr-only" />
               <span
-                className="inline-flex min-h-11 items-center gap-2 rounded-tag-sm border border-line bg-panel/60 px-3 py-2 text-[13px] font-semibold text-ink/70 transition-colors peer-checked:[color:var(--status-color)] peer-checked:[border-color:var(--status-border)] peer-checked:[background:var(--status-soft)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
+                className="inline-flex min-h-12 items-center gap-2 rounded-tag-sm border border-line bg-panel/60 px-3 py-2 text-[13px] font-semibold text-ink/70 transition-colors peer-checked:[color:var(--status-color)] peer-checked:[border-color:var(--status-border)] peer-checked:[background:var(--status-soft)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
                 style={
                   {
                     "--status-color": STATUS_META[s].color,
@@ -161,7 +161,7 @@ export function OrderEditor({
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4">
-        <button type="submit" disabled={pending} className="btn btn-primary min-h-11 px-5 text-sm">
+        <button type="submit" disabled={pending} className="btn btn-primary min-h-12 px-5 text-sm">
           {pending ? "Menyimpan…" : "Simpan perubahan"}
         </button>
         {state?.ok && <span role="status" className="text-sm font-medium text-ink">Tersimpan.</span>}

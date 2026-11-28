@@ -102,7 +102,7 @@ export function AdminBottomNav({ active }: { active: AdminTab }) {
                 type="button"
                 onClick={() => close(true)}
                 aria-label="Tutup menu"
-                className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
+                className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-[var(--border)] text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
               >
                 <X aria-hidden className="size-4" />
               </button>

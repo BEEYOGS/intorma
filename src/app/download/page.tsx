@@ -116,7 +116,7 @@ export default async function DownloadPage() {
             href={releaseUrl}
             target="_blank"
             rel="noreferrer"
-            className="tag hover:border-accent/50 hover:text-ink"
+            className="tag inline-flex min-h-12 items-center hover:border-accent/50 hover:text-ink"
           >
             {release ? `Rilis ${release.tag_name}` : "Semua rilis"}
             <ExternalLink aria-hidden className="size-3.5" />

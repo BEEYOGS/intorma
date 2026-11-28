@@ -27,7 +27,7 @@ function to12(hour24: number): { hour: number; period: "AM" | "PM" } {
   return { hour: hour24 % 12 || 12, period };
 }
 
-const SIZE = 232;
+const SIZE = 248;
 const CENTER = SIZE / 2;
 const RADIUS = SIZE / 2 - 30;
 const BTN = 34;
@@ -82,7 +82,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
   const selectedMinuteIndex = minuteNumbers.indexOf(minute);
   const hourPos = selectedHourIndex >= 0 ? polar(selectedHourIndex, 12) : null;
   const minutePos = selectedMinuteIndex >= 0 ? polar(selectedMinuteIndex, 12) : null;
-  const buttonSize = isMobile ? 44 : BTN;
+  const buttonSize = isMobile ? 48 : BTN;
 
   const clock = (
     <>

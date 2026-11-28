@@ -65,7 +65,7 @@ export function PaymentMethodPicker({
         })}
       </div>
 
-      <button type="submit" disabled={pending} className="btn btn-primary mt-4 min-h-11 w-full px-4 text-sm">
+      <button type="submit" disabled={pending} className="btn btn-primary mt-4 min-h-12 w-full px-4 text-sm">
         {pending ? (
           <>
             <Loader2 aria-hidden className="size-4 animate-spin" />

@@ -13,7 +13,6 @@ type InstallPrompt = Event & {
 
 type Platform = "ios" | "android" | "desktop";
 
-const POPUP_MS = 15_000;
 const DISMISS_MS = 30 * 24 * 60 * 60 * 1000;
 const LATER_MS = 7 * 24 * 60 * 60 * 1000;
 const OPEN_EVENT = "intorma:open-install";
@@ -126,40 +125,51 @@ export function InstallButton() {
   const [platform, setPlatform] = useState<Platform>("desktop");
   const [popupKey, setPopupKey] = useState(0);
   const env = useAppEnvironment();
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
-
-  const clearTimer = useCallback(() => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = null;
-  }, []);
 
   /** Popup hanya dibuka karena klik tombol pasif, bukan auto-show. */
   const openPopup = useCallback(() => {
     if (isInstalledEnvironment() || readInstalledFlag() || dismissedRecently()) return;
-    clearTimer();
     openerRef.current = document.activeElement as HTMLElement | null;
     setShowPopup(true);
     setPopupKey((value) => value + 1);
-    timer.current = setTimeout(() => setShowPopup(false), POPUP_MS);
-  }, [clearTimer]);
+  }, []);
 
   const closePopup = useCallback(() => {
-    clearTimer();
     setShowPopup(false);
     rememberDismissal();
-  }, [clearTimer]);
+  }, []);
 
   useOverlayRegistration("install-popup", showPopup, closePopup);
 
   // Dialog pasif tetap harus bisa ditutup dengan keyboard dan mengembalikan fokus.
   useEffect(() => {
     if (!showPopup) return;
+    const focusable = () =>
+      Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((el) => el.offsetParent !== null);
+
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         closePopup();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener("keydown", onKey);
@@ -184,7 +194,6 @@ export function InstallButton() {
       setPrompt(event as InstallPrompt);
     };
     const onInstalled = () => {
-      clearTimer();
       rememberInstalled();
       setInstalled(true);
       setShowPopup(false);
@@ -207,9 +216,8 @@ export function InstallButton() {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
       window.removeEventListener(OPEN_EVENT, onOpen);
-      clearTimer();
     };
-  }, [clearTimer, openPopup]);
+  }, [openPopup]);
 
   async function install() {
     if (!prompt) return;
@@ -226,7 +234,6 @@ export function InstallButton() {
     } catch {
       /* Prompt bisa dibatalkan browser; biarkan pengguna memakai panduan. */
     } finally {
-      clearTimer();
       setShowPopup(false);
       setPrompt(null);
     }
@@ -252,7 +259,7 @@ export function InstallButton() {
               type="button"
               onClick={closePopup}
               aria-label="Tutup notifikasi"
-              className="absolute right-3 top-3 grid size-11 place-items-center rounded-[var(--radius-sharp)] text-ink/45 transition-colors hover:bg-white/[0.06] hover:text-ink"
+              className="absolute right-3 top-3 grid size-12 place-items-center rounded-[var(--radius-sharp)] text-ink/45 transition-colors hover:bg-white/[0.06] hover:text-ink"
             >
               <X className="size-4" />
             </button>
@@ -279,7 +286,6 @@ export function InstallButton() {
                 <button
                   type="button"
                   onClick={() => {
-                    clearTimer();
                     setShowPopup(false);
                     rememberLater();
                   }}
@@ -309,19 +315,15 @@ export function InstallButton() {
                   )}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <a href="/install" className="btn btn-ghost min-h-10 px-4 text-sm" onClick={closePopup}>
+                  <a href="/install" className="btn btn-ghost min-h-12 px-4 text-sm" onClick={closePopup}>
                     Lihat panduan pasang
                   </a>
-                  <a href="/download" className="btn btn-ghost min-h-10 px-4 text-sm" onClick={closePopup}>
+                  <a href="/download" className="btn btn-ghost min-h-12 px-4 text-sm" onClick={closePopup}>
                     Installer native
                   </a>
                 </div>
               </div>
             )}
-          </div>
-
-          <div aria-hidden="true" className="h-0.5 bg-line">
-            <div className="h-full bg-accent install-timer" />
           </div>
         </div>
       )}

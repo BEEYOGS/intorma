@@ -46,7 +46,7 @@ export default async function FilesPage() {
     <div className="animate-in">
       <TopBar />
       <div className="wrap py-8 sm:py-10">
-        <Link href="/portal" className="text-xs text-mute transition-colors hover:text-[var(--text)]">
+        <Link href="/portal" className="inline-flex min-h-12 items-center text-xs text-mute transition-colors hover:text-[var(--text)]">
           ← Kembali ke portal
         </Link>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4">

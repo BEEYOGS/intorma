@@ -53,6 +53,14 @@ Audit menyeluruh terhadap komponen customer tidak menemukan P0. Yang sudah baik 
 | P2 | Focus trap & restore fokus menu mobile | `MobileNav.tsx` | Dibangun |
 | P2 | Warna hard-coded kamera/status → token | `CameraCapture.tsx`, `lacak/[kode]/page.tsx` | Dibangun |
 | P2 | `DESIGN.md` diselaraskan dengan komponen yang ada | `DESIGN.md` | Dibangun |
+| P1 | Back Android memakai index `history.state`, tidak inkremental saat `popstate`; deep-link kembali ke beranda sebelum exit | `AppBackHandler.tsx` | Dibangun |
+| P2 | Popup install tidak auto-close; fokus terjebak di dialog dan kembali ke tombol pembuka | `PWA.tsx`, `globals.css` | Dibangun |
+| P2 | Live region toast selalu ada di DOM sebelum pesan disisipkan | `Toast.tsx` | Dibangun |
+| P2 | Status paid/expired pembayaran diumumkan ke screen reader | `PaymentPoller.tsx` | Dibangun |
+| P3 | Sisa kontrol 44px (label layanan, summary, link teks, jam/menit, rating, footer) dinaikkan ke 48px | `OrderForm`, `TimeField`, `ReviewForm`, `Chrome`, `app/page`, `lacak/[kode]`, `bayar/[kode]`, `portal/files`, `masuk`, `download`, `TopBar`, admin | Dibangun |
+| P3 | `rootMargin` filter katalog mengikuti tinggi topbar asli | `CatalogBrowser.tsx` | Dibangun |
+| P3 | Error harga sticky tidak di-truncate dan memakai `role="alert"` | `OrderForm.tsx` | Dibangun |
+| P3 | Focus trap sheet memfilter elemen tersembunyi | `MobileSheet.tsx` | Dibangun |
 
 ## Baseline QA produksi (28 Nov 2026)
 

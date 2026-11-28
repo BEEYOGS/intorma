@@ -62,7 +62,7 @@ export function OrderInspection({
               type="button"
               onClick={close}
               aria-label="Tutup inspeksi"
-              className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-sharp)] text-ink/50 transition-colors hover:bg-white/[0.06] hover:text-ink sm:size-10"
+              className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sharp)] text-ink/50 transition-colors hover:bg-white/[0.06] hover:text-ink sm:size-10"
             >
               <X aria-hidden className="size-4" />
             </button>
