@@ -4,19 +4,27 @@ Platform self-service untuk memesan jasa desain dan cetak: katalog dan kalkulasi
 order dengan deadline tanggal **dan jam**, pembayaran (transfer/Midtrans), lacak status,
 portal pelanggan, nota PDF, PWA, serta installer native (Windows/Android).
 
-Antarmuka memakai tema gelap monokrom dengan aksen biru `#0070f3`; hijau tidak dipakai,
-merah hanya untuk kondisi berbahaya. Logo resmi mempertahankan warna aslinya.
+Stack: Next.js 15 (App Router) + Tailwind CSS 3 + Neon Postgres. WhatsApp produksi memakai
+**Fonnte**; OpenWA/Meta Cloud adalah opsi. Antarmuka memakai tema gelap monokrom dengan aksen
+biru `#0070f3`; hijau tidak dipakai, merah hanya untuk kondisi berbahaya. Logo resmi
+mempertahankan warna aslinya. Detail visual ada di `DESIGN.md`; font di-host lokal lewat
+`next/font/local`.
+
+> URL produksi yang aktif: **https://intorma-psi.vercel.app**. Domain `torma-psi.vercel.app`
+> (tanpa `in`) bukan alias deployment ini dan akan menampilkan 404 Vercel sampai alias/dns
+> diperbaiki di pengaturan project Vercel.
 
 Halaman utama: `/` · order: `/order` · lacak: `/lacak` · portal: `/masuk`
 · admin: `/admin/login` · unduh aplikasi: `/download`.
 
 ## Run
-```bash
-npm install
-npm run db:migrate
-npm run dev
-```
-Set `.env.local` from `.env.example`.
+
+1. `npm install`
+2. Salin `.env.example` ke `.env.local`, lalu isi nilainya (jangan commit file env).
+3. `npm run db:migrate` — membuat tabel, kolom baru, `wa_outbox`, dan seed layanan.
+4. `npm run dev` → http://localhost:3000 (atau port yang ditampilkan Next).
+
+Pemeriksaan tanpa mengirim pesan: `npm run build` dan `npm run typecheck`.
 
 ## Self-service order
 
@@ -233,13 +241,18 @@ Disable-ScheduledTask -TaskName intorma-openwa
 Disable-ScheduledTask -TaskName intorma-wa-agent
 ```
 
-Diagnostik & tes:
+### Diagnostik & tes
 
 - `GET /api/wa/test-gateway` — status konfigurasi, gateway, sesi, dan latency (butuh login admin
   atau header `x-admin-secret`).
-- `POST /api/wa/test-gateway` — kirim pesan tes nyata; body opsional `{ "phone": "...", "message": "..." }`.
+- `POST /api/wa/test-gateway` — kirim pesan tes **nyata**; body opsional `{ "phone": "...", "message": "..." }`.
 - `npm run test:integrations` — tes OAuth Drive (resumable upload + hapus file uji) dan tes kirim WA
   ke nomor admin. Kalau kredensial belum diisi, bagian tersebut dilaporkan `SKIP`.
+
+> **PERINGATAN:** `POST /api/wa/test-gateway`, `npm run test:integrations`, dan
+> `npm run wa:fonnte:setup` / `npm run wa:cloud:setup` dapat mengirim WhatsApp nyata, mengubah
+> webhook, atau menimpa `.env.local`. Jalankan hanya bila dimaksudkan, dan jangan pakai nomor
+> pelanggan untuk uji coba. `npm run wa:check` hanya membaca status dan aman dipakai kapan saja.
 
 ### Pembayaran
 
@@ -298,3 +311,137 @@ Perubahan langsung dipakai halaman `/order` tanpa menjalankan SQL manual.
   rangkuman admin.
 
 Kolom `orders.internal_note` ditambahkan lewat `npm run db:migrate` (idempoten).
+
+### Antrean WA outbox & agent (jalur fallback OpenWA)
+
+Ada tiga fungsi WhatsApp yang berbeda:
+
+1. **Tautan chat publik** (`wa.me` / WhatsApp Web) — selalu bekerja, tidak butuh gateway.
+2. **Notifikasi keluar** — produksi memakai Fonnte; saat OpenWA dipakai, pesan masuk `wa_outbox`.
+3. **Balasan otomatis masuk** (`status INT-DDMMYY001`) — lewat webhook ke `/api/wa/webhook`.
+
+Karena **Vercel tidak bisa menjangkau OpenWA di `localhost`**, notifikasi dari deployment Vercel
+disimpan di tabel `wa_outbox`. Worker `npm run wa:agent` mengambilnya lewat jembatan publik
+`GET/POST /api/wa/outbox` (cukup `SITE_WEBHOOK_URL` + `OPENWA_WEBHOOK_SECRET`, **tanpa
+`DATABASE_URL` produksi** di PC). Jika `DATABASE_URL` tersedia, agent bisa membaca antrean langsung
+dari Neon dan menyediakan inbox webhook lokal di port `WA_INBOX_PORT`.
+
+SOP OpenWA + worker:
+
+1. Jalankan gateway OpenWA dan isi `.env.local`: `OPENWA_URL`, `OPENWA_KEY`, `OPENWA_SESSION`,
+   `OPENWA_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL` (atau `SITE_WEBHOOK_URL`).
+2. Tautkan sesi WhatsApp (scan QR):
+
+   ```bash
+   npm run wa:session
+   ```
+
+   Buka `.tools/qr-<sesi>.html` (auto-refresh), lalu scan dari WhatsApp → Perangkat tertaut.
+3. Jalankan worker antrean di komputer yang menjalankan OpenWA:
+
+   ```bash
+   npm run wa:agent
+   ```
+
+4. Daftarkan webhook ke URL publik agar balasan `status INT-DDMMYY001` masuk ke situs produksi:
+
+   ```bash
+   SITE_WEBHOOK_URL=https://intorma-psi.vercel.app npm run wa:webhook
+   ```
+
+   Webhook memakai header `x-webhook-secret` / HMAC; **secret tidak boleh dikirim lewat query
+   string**. `WA_WEBHOOK_URL` bisa dipakai untuk mengarahkan ke inbox lokal saat debugging.
+   Pastikan secret di mesin itu **sama** dengan environment Vercel (jangan pernah menampilkannya).
+5. Cek kondisi (tanpa mengirim pesan):
+
+   ```bash
+   npm run wa:check
+   ```
+
+### Mode lokal/gateway terpadu
+
+Jika Next.js dan OpenWA berjalan di mesin yang sama, `npm run gateway` menjalankan
+tunnel/app/gateway/webhook lokal sekaligus worker antrean (lihat `scripts/gateway.mjs`).
+Sesuaikan path OpenWA di `scripts/openwa.mjs` bila perlu.
+
+### Catatan penting
+
+- Nomor admin (`ADMIN_WHATSAPP_NUMBER`, alias lama `ADMIN_WA`) sebaiknya **bukan** nomor akun
+  WhatsApp gateway, supaya uji perintah status tidak bentrok dengan pesan `fromMe`.
+- Pesan WA bersifat *best effort*: jika gateway/worker belum siap, order tetap tersimpan dan
+  notifikasi tertunda di antrean.
+- Untuk produksi stabil dengan OpenWA, jalankan `wa:agent` di VPS/komputer yang selalu hidup.
+- Jangan jalankan `wa:agent` / `wa:webhook` / `wa:fonnte:setup` hanya untuk "coba-coba": skrip
+  tersebut dapat mengirim WA nyata atau menimpa konfigurasi/env.
+
+## Environment
+
+| Variabel | Status | Arti |
+| --- | --- | --- |
+| `DATABASE_URL` | Wajib | Connection string Neon (pakai yang pooled) |
+| `ADMIN_PASSWORD_ENABLED` | Wajib | `0` — fallback `ADMIN_PASSWORD` dinonaktifkan |
+| `ADMIN_PASSWORD` | Nonaktif | Jangan dijadikan jalur masuk saat `ADMIN_PASSWORD_ENABLED=0` |
+| `ADMIN_SECRET` | Wajib | Kunci acak panjang untuk tanda tangan cookie sesi |
+| `CUSTOMER_SECRET`, `UPLOAD_TOKEN_SECRET` | Opsional | Kunci khusus sesi portal / token upload |
+| `CRON_SECRET` | Wajib di production | Bearer token untuk `/api/cron/reminders` |
+| `NEXT_PUBLIC_SITE_URL` | Disarankan | URL publik situs (link di pesan WA/webhook) |
+| `NEXT_PUBLIC_WA_NUMBER` | Disarankan | Nomor WhatsApp publik untuk tombol chat |
+| `ADMIN_WHATSAPP_NUMBER` (`ADMIN_WA`) | Opsional | Nomor penerima notifikasi pesanan baru |
+| `WA_PROVIDER` | Aktif | `fonnte` (default produksi); `cloud` atau `openwa` sebagai opsi |
+| `FONNTE_TOKEN` | Aktif | Token dashboard Fonnte (rahasia) |
+| `WA_WEBHOOK_SECRET` | Aktif | Rahasia webhook Fonnte di path `/api/wa/webhook/<secret>`; jatuh ke `OPENWA_WEBHOOK_SECRET` |
+| `META_WA_*`, `META_TPL_*` | Opsi | Hanya bila `WA_PROVIDER=cloud` (token, phone id, verify/app secret, template) |
+| `OPENWA_BASE_URL` (`OPENWA_URL`) | Opsi | URL gateway OpenWA; jangan `localhost` di Vercel |
+| `OPENWA_API_KEY` (`OPENWA_KEY`) | Opsi | API key gateway (`x-api-key`) |
+| `OPENWA_SESSION` | Opsi | Nama sesi WhatsApp, default `intorma` |
+| `OPENWA_WEBHOOK_SECRET` | Opsi | Rahasia webhook OpenWA **dan** jembatan `/api/wa/outbox` (bukan query webhook) |
+| `SITE_WEBHOOK_URL` (`OUTBOX_URL`, `WA_SITE_URL`) | Opsi | URL situs publik untuk agent tanpa DB produksi |
+| `WA_WEBHOOK_URL` | Opsi | Timpa URL webhook yang didaftarkan ke OpenWA |
+| `WA_QUEUE_ONLY` | Opsi | `1` untuk memaksa antrean, tidak kirim langsung |
+| `WA_POLL_MS` | Opsi | Interval polling worker (ms), default 5000 |
+| `WA_INBOX_PORT`, `WA_INBOX_SECRET`, `WA_OPEN_QR` | Opsi | Inbox balasan lokal & viewer QR |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `GOOGLE_DRIVE_FOLDER_ID` | Wajib untuk upload | OAuth user Google Drive |
+| `GOOGLE_DRIVE_AUTH`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `GDRIVE_SERVICE_ACCOUNT`, `GDRIVE_FOLDER` | Opsi | Hanya Shared Drive / Workspace |
+| `MIDTRANS_SERVER_KEY`, `MIDTRANS_IS_PRODUCTION` | Opsi | Midtrans Core API (tanpa Snap) |
+
+## Deploy ke Vercel
+
+`vercel.json` sudah disiapkan. Langkah umum:
+
+1. Hubungkan repo/project ke Vercel (`beeyogs-projects/in.torma`).
+2. Isi Environment Variables (Production/Preview sesuai kebutuhan): `DATABASE_URL`,
+   `ADMIN_SECRET`, `ADMIN_PASSWORD_ENABLED=0`, `CRON_SECRET`,
+   `NEXT_PUBLIC_SITE_URL=https://intorma-psi.vercel.app`, `NEXT_PUBLIC_WA_NUMBER`,
+   `ADMIN_WHATSAPP_NUMBER`, `WA_PROVIDER=fonnte`, `FONNTE_TOKEN`, `WA_WEBHOOK_SECRET`,
+   variabel Drive/Midtrans, dll. **Jangan** mengaktifkan fallback `ADMIN_PASSWORD`, dan
+   **jangan** set `OPENWA_URL`/`OPENWA_BASE_URL` ke localhost di Vercel.
+3. Jalankan migrasi sekali ke database produksi:
+
+   ```bash
+   npm run db:migrate
+   ```
+
+4. Pastikan domain/alias Vercel mengarah ke deployment yang benar (`intorma-psi.vercel.app`).
+5. Fonnte adalah jalur aktif: daftarkan webhook dengan secret di path (lihat bagian WhatsApp).
+   Bila memakai fallback OpenWA, jalankan `npm run wa:agent` di mesin dengan OpenWA aktif dan
+   daftarkan webhook publik (`npm run wa:webhook`). Jangan menjalankan skrip pengirim WA nyata
+   hanya untuk verifikasi deploy.
+
+## Struktur singkat
+
+```text
+db/schema.sql            tabel + wa_outbox + seed layanan (idempoten)
+scripts/migrate.mjs      menjalankan schema.sql
+scripts/gateway.mjs      tunnel + app + OpenWA + worker untuk mode lokal
+scripts/wa-agent.mjs     worker antrean wa_outbox via jembatan publik / DB lokal
+scripts/wa-session.mjs   buat/start sesi OpenWA + viewer QR
+scripts/wa-webhook.mjs   daftar/update webhook OpenWA ke situs publik
+scripts/wa-check.mjs     diagnosa provider/gateway/sesi/webhook/antrean
+src/app/actions.ts       server action: order, login, admin CRUD, WA
+src/app/api/wa/outbox    jembatan antrean untuk agent tanpa DB produksi
+src/app/api/wa/webhook   balasan otomatis "status INT-XXXXXX" (Fonnte/Meta/OpenWA)
+src/components           UI (Chrome, form order, editor admin, WhatsApp link)
+src/lib                  db, auth, settings, format, status, pricing, wa, site, drive
+```
+
+> Jangan commit `.env.local` atau kredensial apa pun, dan jangan menempelkan token/secret di chat.

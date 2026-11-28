@@ -25,6 +25,7 @@ type Params = {
   open?: string;
   saved?: string;
   deleted?: string;
+  wa?: string;
   view?: string;
   sort?: string;
 };
@@ -125,6 +126,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
   const sort: Sort = params.sort === "newest" ? "newest" : "deadline";
   const openCode = params.open?.toUpperCase() ?? null;
   const saved = params.saved === "1";
+  const waFailed = saved && params.wa === "0";
   const deleted = params.deleted?.toUpperCase() ?? null;
   const returnTo = buildReturn(filter, special, q, sort);
   const boardView = params.view === "board";
@@ -215,6 +217,30 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
         (select count(*)::int from active where due is null) as flexible`,
   ]);
 
+  // order_files muncul lewat migrasi Drive; jangan sampai halaman admin rusak
+  // kalau database produksi belum menjalankan migrasi tersebut.
+  const fileRows = await sql
+    .query(
+      `select f.order_id, f.name, f.size, f.mime, f.drive_id
+       from order_files f
+       where f.order_id in (select o.id ${from} ${where} order by o.created_at desc limit 100)
+       order by f.id`,
+      values,
+    )
+    .catch(() => []);
+  const filesByOrder = new Map<string, Array<{ name: string; size: number; mime: string; driveId: string }>>();
+  for (const f of fileRows) {
+    const key = String(f.order_id);
+    const list = filesByOrder.get(key) ?? [];
+    list.push({
+      name: String(f.name),
+      size: Number(f.size),
+      mime: String(f.mime ?? ""),
+      driveId: String(f.drive_id),
+    });
+    filesByOrder.set(key, list);
+  }
+
   const count = (st: string) => Number(counts.find((c) => c.status === st)?.n ?? 0);
   const total = counts.reduce((sum, c) => sum + Number(c.n), 0);
   const unpaidCount = Number(unpaid[0]?.n ?? 0);
@@ -286,8 +312,14 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       </div>
 
       {(saved || deleted) && (
-        <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-tag-sm border border-accent/25 bg-accent/[0.07] px-4 py-3 text-sm">
-          <span>{deleted ? `Pesanan ${deleted} sudah dihapus.` : "Perubahan pesanan tersimpan."}</span>
+        <div role="status" className={`mt-6 flex flex-wrap items-center justify-between gap-3 rounded-tag-sm border px-4 py-3 text-sm ${waFailed ? "border-dashed border-silver/45 bg-silver/[0.08]" : "border-accent/25 bg-accent/[0.07]"}`}>
+          <span>
+            {deleted
+              ? `Pesanan ${deleted} sudah dihapus.`
+              : waFailed
+                ? "Perubahan tersimpan, tapi notifikasi WhatsApp belum terkirim. Kabari klien manual lewat chat."
+                : "Perubahan pesanan tersimpan."}
+          </span>
           <Link href={returnTo} className="inline-flex items-center gap-1.5 font-semibold text-mute transition-colors hover:text-accent">
             <X aria-hidden className="size-3.5" /> Tutup pemberitahuan
           </Link>
@@ -582,6 +614,29 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
                         </div>
                       )}
 
+                      {(filesByOrder.get(String(o.id)) ?? []).length > 0 && (
+                        <div className="border-t border-line pt-4">
+                          <p className="eyebrow">
+                            File klien ({(filesByOrder.get(String(o.id)) ?? []).length})
+                          </p>
+                          <ul className="mt-2 space-y-1.5">
+                            {(filesByOrder.get(String(o.id)) ?? []).map((f) => (
+                              <li key={f.driveId} className="flex items-center justify-between gap-3 text-sm">
+                                <a
+                                  href={`https://drive.google.com/file/d/${f.driveId}/view`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="min-w-0 truncate font-medium underline decoration-ink/25 underline-offset-4 hover:decoration-ink"
+                                >
+                                  {f.name}
+                                </a>
+                                <span className="shrink-0 font-mono text-[11px] text-mute">{formatBytes(f.size)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
                       <dl className="grid grid-cols-2 gap-4 border-t border-line pt-4 text-sm">
                         <div>
                           <dt className="text-mute">WhatsApp</dt>
@@ -702,6 +757,13 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Pa
       )}
     </AdminShell>
   );
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 ** 2) return `${Math.round(n / 1024)} KB`;
+  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+  return `${(n / 1024 ** 3).toFixed(2)} GB`;
 }
 
 function Stat({ label, value, hint, href }: { label: string; value: number; hint: string; href?: string }) {

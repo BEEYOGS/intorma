@@ -169,6 +169,110 @@ async function lookupSession(timeoutMs = 5000): Promise<SessionLookup> {
   }
 }
 
+let cachedSession: { id: string; at: number } | null = null;
+
+function isLocalHost(base: string): boolean {
+  try {
+    const host = new URL(base).hostname.toLowerCase();
+    return (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "0.0.0.0" ||
+      host === "::1" ||
+      host.endsWith(".local") ||
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+    );
+  } catch {
+    return true;
+  }
+}
+
+/** Di Vercel, localhost/private IP tidak mungkin dijangkau. Langsung antrekan. */
+function canReachDirectly(base: string): boolean {
+  if (!base) return false;
+  if (process.env.WA_QUEUE_ONLY === "1") return false;
+  if (process.env.VERCEL && isLocalHost(base)) return false;
+  return true;
+}
+
+type Recipient = {
+  /** Nomor tanpa tanda +, dipakai untuk tampilan dan fallback chat. */
+  number: string;
+  /** JID lengkap kalau pengirim memakai LID (WhatsApp baru) atau grup. */
+  chatId?: string;
+};
+
+function parseRecipient(to: string): Recipient | null {
+  const raw = to.trim();
+  if (!raw) return null;
+
+  // Terima JID apa adanya, mis. 62812...@c.us atau 2012...@lid.
+  if (raw.includes("@")) {
+    const chatId = raw.toLowerCase();
+    if (!/^[0-9-]+@(c\.us|lid|g\.us|broadcast)$/.test(chatId)) return null;
+    const number = chatId.replace(/@.*$/, "").replace(/\D/g, "");
+    return number ? { number, chatId } : null;
+  }
+
+  const number = normalizeWA(raw);
+  return number ? { number } : null;
+}
+
+async function resolveSession(base: string, key: string): Promise<string | null> {
+  const configured = sessionName();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(configured)) return configured;
+  if (cachedSession && Date.now() - cachedSession.at < 5 * 60_000) return cachedSession.id;
+  try {
+    const response = await fetch(`${base}/api/sessions?name=${encodeURIComponent(configured)}`, {
+      headers: { "x-api-key": key },
+      cache: "no-store",
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!response.ok) return null;
+    const list = (await response.json()) as Array<{ id?: string; name?: string }>;
+    const match = list.find((row) => row.name === configured || row.id === configured);
+    if (!match?.id) return null;
+    cachedSession = { id: match.id, at: Date.now() };
+    return match.id;
+  } catch {
+    return null;
+  }
+}
+
+async function sendDirect(
+  chatId: string,
+  content: string,
+  idempotencyKey: string,
+  base: string,
+  key: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await resolveSession(base, key);
+  if (!session) return { ok: false, error: "Sesi WhatsApp belum siap." };
+  try {
+    const response = await fetch(
+      `${base}/api/sessions/${encodeURIComponent(session)}/messages/send-text`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": key,
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify({ chatId, text: content.slice(0, MAX_LENGTH) }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(12_000),
+      },
+    );
+    if (response.ok) return { ok: true };
+    const body = await response.text().catch(() => "");
+    return { ok: false, error: `HTTP ${response.status}${body ? ` — ${body.slice(0, 160)}` : ""}` };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "gagal menghubungi gateway" };
+  }
+}
+
 type FonnteDevice = {
   status?: boolean;
   device?: string;
@@ -717,46 +821,95 @@ export async function waDiagnostics(): Promise<WADiagnostics> {
   };
 }
 
-async function enqueue(to: string, content: string, idempotencyKey?: string): Promise<boolean> {
+async function enqueue(
+  recipient: Recipient,
+  content: string,
+  idempotencyKey: string,
+): Promise<boolean> {
   try {
-    const number = normalizeWA(to);
-    if (!number) return false;
     await sql`
-      insert into wa_outbox (to_number, content, idempotency_key)
-      values (${number}, ${content.slice(0, MAX_LENGTH)}, ${idempotencyKey ?? null})
+      insert into wa_outbox (to_number, chat_id, content, idempotency_key)
+      values (${recipient.number}, ${recipient.chatId ?? null}, ${content.slice(0, MAX_LENGTH)}, ${idempotencyKey})
       on conflict (idempotency_key) where idempotency_key is not null do nothing`;
     return true;
-  } catch {
+  } catch (error) {
+    // Database lama mungkin belum punya kolom chat_id. Tetap simpan pesan
+    // supaya nomor biasa tidak ikut hilang saat migrasi belum dijalankan.
+    if (recipient.chatId) {
+      try {
+        await sql`
+          insert into wa_outbox (to_number, content, idempotency_key)
+          values (${recipient.number}, ${content.slice(0, MAX_LENGTH)}, ${idempotencyKey})
+          on conflict (idempotency_key) where idempotency_key is not null do nothing`;
+        return true;
+      } catch (fallbackError) {
+        console.error("[wa] gagal menyimpan pesan ke antrean", fallbackError);
+        return false;
+      }
+    }
+    console.error("[wa] gagal menyimpan pesan ke antrean", error);
     return false;
   }
+}
+
+function newIdempotencyKey(): string {
+  const random =
+    typeof globalThis.crypto !== "undefined" && typeof globalThis.crypto.randomUUID === "function"
+      ? globalThis.crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  return `wa-${random}`;
 }
 
 /**
  * Kirim WA dan tunggu hasilnya. Kalau gateway tidak bisa dijangkau dari Vercel,
  * pesan tetap masuk antrean database dan dikirim oleh `npm run wa:agent`.
  * Semua langkah di-await supaya tidak dibunuh setelah response serverless.
+ *
+ * `to` boleh nomor (0812..., 62812..., +62...) atau JID lengkap
+ * (62812...@c.us / 2012...@lid) supaya balasan webhook masuk ke chat yang sama.
  */
 export async function sendWA(
   to: string,
   content: string,
-  idempotencyKey?: string,
+  idempotency?: string | { idempotencyKey?: string },
   template?: WATemplate,
 ): Promise<boolean> {
-  const number = normalizeWA(to);
-  if (!number || !content.trim()) return false;
+  const recipient = parseRecipient(to);
+  if (!recipient || !content.trim()) return false;
+
+  const key =
+    (typeof idempotency === "string"
+      ? idempotency
+      : idempotency?.idempotencyKey) || newIdempotencyKey();
+  const provider = waProvider();
 
   if (waConfigured()) {
-    const result =
-      waProvider() === "cloud" && template
-        ? await waSendTemplate(number, template)
-        : await waSendTest(number, content);
-    if (result.ok) return true;
-    console.warn(
-      `[wa] ${result.provider ?? waProvider()} gagal (${result.status || "network"}): ${result.error ?? "unknown"}; masuk antrean database.`,
-    );
+    if (provider === "openwa") {
+      const base = gatewayBase();
+      if (canReachDirectly(base)) {
+        const chatId = recipient.chatId ?? `${recipient.number}@c.us`;
+        const result = await sendDirect(chatId, content, key, base, gatewayKey());
+        if (result.ok) return true;
+        console.warn(`[wa] kirim langsung gagal (${result.error}); pesan masuk antrean`);
+      }
+    } else {
+      const result =
+        provider === "cloud" && template
+          ? await waSendTemplate(recipient.number, template)
+          : await waSendTest(recipient.number, content);
+      if (result.ok) return true;
+      console.warn(
+        `[wa] ${result.provider ?? provider} gagal (${result.status || "network"}): ${result.error ?? "unknown"}; masuk antrean database.`,
+      );
+    }
   }
-  return enqueue(to, content, idempotencyKey);
+  return enqueue(recipient, content, key);
 }
 
-export const siteUrl = () =>
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://intorma-psi.vercel.app";
+export const siteUrl = () => {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (configured) return configured;
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
+  return "https://intorma-psi.vercel.app";
+};

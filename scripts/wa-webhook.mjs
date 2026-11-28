@@ -1,10 +1,12 @@
-// Daftarkan/Perbarui webhook sesi OpenWA ke inbox lokal (wa-agent),
-// supaya balasan otomatis "status INT-DDMMYY001" tidak bergantung pada Vercel.
+// Daftarkan/Perbarui webhook sesi OpenWA ke situs publik (mis. Vercel), supaya
+// balasan otomatis "status INT-DDMMYY001" tetap masuk lewat /api/wa/webhook.
+// Rahasia webhook dikirim lewat header x-webhook-secret (dan HMAC bila didukung),
+// bukan query string.
 //
 // Pakai: npm run wa:webhook
-//
 // Opsi:
-//   WA_WEBHOOK_URL   timpa URL tujuan (mis. https://.../api/wa/webhook)
+//   WA_WEBHOOK_URL   timpa URL tujuan penuh (mis. inbox lokal http://127.0.0.1:2786/webhook)
+//   SITE_WEBHOOK_URL timpa alamat situs publik (base URL atau URL webhook penuh)
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,7 +27,8 @@ const env = { ...loadEnvFile(join(root, ".env.local")), ...process.env };
 const base = (env.OPENWA_URL || "http://127.0.0.1:2785").replace(/\/$/, "");
 const key = env.OPENWA_KEY || "";
 const sessionName = env.OPENWA_SESSION || "intorma";
-const secret = env.WA_INBOX_SECRET || env.OPENWA_WEBHOOK_SECRET || "";
+const secret = String(env.WA_WEBHOOK_SECRET || env.OPENWA_WEBHOOK_SECRET || "");
+const site = (env.SITE_WEBHOOK_URL || env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
 const inboxPort = Number(env.WA_INBOX_PORT || 2786);
 
 if (!key) {
@@ -33,13 +36,21 @@ if (!key) {
   process.exit(1);
 }
 if (!secret) {
-  console.error("[wa-webhook] OPENWA_WEBHOOK_SECRET kosong di .env.local");
+  console.error("[wa-webhook] WA_WEBHOOK_SECRET / OPENWA_WEBHOOK_SECRET kosong di .env.local");
   process.exit(1);
 }
 
 const webhookUrl = String(
-  env.WA_WEBHOOK_URL || `http://127.0.0.1:${inboxPort}/webhook`,
+  env.WA_WEBHOOK_URL ||
+    (site.endsWith("/api/wa/webhook") ? site : `${site}/api/wa/webhook`),
 ).trim();
+
+if (!webhookUrl || webhookUrl === "/api/wa/webhook") {
+  console.error(
+    "[wa-webhook] URL situs kosong. Isi NEXT_PUBLIC_SITE_URL atau SITE_WEBHOOK_URL, mis. https://intorma-psi.vercel.app",
+  );
+  process.exit(1);
+}
 
 async function api(path, init = {}) {
   const res = await fetch(`${base}${path}`, {
@@ -108,3 +119,8 @@ if (existing) {
 }
 
 console.log(`[wa-webhook] sesi ${sessionName} (${session.status}) · event message.received`);
+if (/localhost|127\.0\.0\.1/.test(webhookUrl)) {
+  console.log(
+    `[wa-webhook] URL lokal: balasan otomatis hanya jalan saat inbox wa:agent di port ${inboxPort} aktif.`,
+  );
+}

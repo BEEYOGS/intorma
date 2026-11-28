@@ -1,11 +1,13 @@
 {
   "name": "intorma-saas",
   "private": true,
+  "engines": { "node": ">=20" },
   "scripts": {
     "tauri": "tauri",
     "tauri:build": "tauri build",
     "dev": "next dev",
     "build": "next build",
+    "typecheck": "tsc --noEmit",
     "start": "next start",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
     "db:uploads-to-drive": "tsx scripts/migrate-uploads-to-drive.ts",

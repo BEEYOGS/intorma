@@ -70,6 +70,12 @@ function cloudInbound(payload: unknown): CloudInbound[] {
   return found;
 }
 
+/** Id pesan gateway dipakai sebagai idempotency key balasan status. */
+function replyKey(rawId: unknown): string | undefined {
+  const id = String(rawId ?? "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 120);
+  return id ? `wa-reply-${id}` : undefined;
+}
+
 async function statusReply(body: string, from: string): Promise<string | null> {
   const match = body.match(/status\s*[:#-]?\s*(?:INT[-\s]?)?([A-Z0-9]{6,})/i);
   if (!match) return null;
@@ -159,7 +165,12 @@ async function webhookRate(scope: string, limit: number): Promise<boolean> {
   }
 }
 
-async function processMessage(from: string, body: string, media: boolean): Promise<void> {
+async function processMessage(
+  from: string,
+  body: string,
+  media: boolean,
+  idempotencyKey?: string,
+): Promise<void> {
   const sender = from.replace(/@.*/, "");
   if (!(await webhookRate(`wa_inbound:${sender}`, 6))) return;
 
@@ -168,7 +179,7 @@ async function processMessage(from: string, body: string, media: boolean): Promi
     return null;
   });
   if (reply) {
-    await sendWA(sender, reply);
+    await sendWA(sender, reply, idempotencyKey);
     return;
   }
   await forwardInbound(sender, body, media).catch((error) =>
@@ -225,7 +236,7 @@ export async function POST(req: Request) {
     const messages = cloudInbound(payload);
     for (const message of messages) {
       if (message.from.endsWith("@g.us")) continue;
-      await processMessage(message.from, message.body, message.media);
+      await processMessage(message.from, message.body, message.media, replyKey(message.id));
     }
     return NextResponse.json({ ok: true, processed: messages.length });
   }
@@ -248,6 +259,6 @@ export async function POST(req: Request) {
   const media = isFonnte
     ? Boolean(payload.url || payload.file)
     : Boolean(msg?.media || msg?.mimetype || msg?.hasMedia);
-  await processMessage(from, body, media);
+  await processMessage(from, body, media, replyKey(isFonnte ? payload.id : msg?.id));
   return NextResponse.json({ ok: true });
 }

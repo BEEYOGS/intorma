@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { WhatsAppLink } from "@/components/WhatsApp";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
@@ -20,6 +21,12 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
           <Link href="/" className="btn btn-ghost">
             Kembali ke beranda
           </Link>
+          <WhatsAppLink
+            text="Halo in.torma, saya sedang mengalami kendala di situs."
+            className="btn-outline"
+          >
+            Chat WhatsApp
+          </WhatsAppLink>
         </div>
       </div>
     </div>

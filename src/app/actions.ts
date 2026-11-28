@@ -60,6 +60,24 @@ export type CustomerState = { error?: string } | null;
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const digits = (f: FormData, k: string) => str(f, k).replace(/\D/g, "");
 
+type UploadedFile = { id: string; name: string; size: number; mime: string };
+
+/** Hidden field files dari unggahan Drive: "driveId|nama|ukuran|mime;..." */
+function parseUploadedFiles(raw: string): UploadedFile[] {
+  return raw.split(";").flatMap((entry) => {
+    const [id, name, size, mime] = entry.split("|");
+    if (!id || !name || !Number(size)) return [];
+    return [
+      {
+        id: id.slice(0, 120),
+        name: name.slice(0, 200),
+        size: Number(size),
+        mime: (mime ?? "").slice(0, 100),
+      },
+    ];
+  });
+}
+
 /** Hanya terima path admin internal supaya redirect tidak bisa dipakai untuk open redirect. */
 /** Server action wajib fail-closed: DB rate-limit error tidak boleh mematikan pembatasan. */
 async function actionRate(
@@ -166,6 +184,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     height: str(f, "height"),
     selection: str(f, "selection"),
     file: str(f, "file"),
+    files: str(f, "files"),
     promo: str(f, "promo"),
     requestId: str(f, "requestId"),
   };
@@ -367,6 +386,25 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
         : null);
   }
 
+  // Jalur upload Drive dari main: berkas yang sudah diunggah ke inbox dipindah
+  // ke folder pesanan dan dicatat di order_files. Bersifat tambahan, jadi tidak
+  // boleh menggagalkan order bila Drive belum terkonfigurasi.
+  const uploadedFiles = parseUploadedFiles(values.files);
+  if (uploadedFiles.length) {
+    const drive = (await import("@/lib/drive")) as {
+      attachOrderFiles?: (
+        orderId: number,
+        code: string,
+        files: UploadedFile[],
+      ) => Promise<void>;
+    };
+    if (typeof drive.attachOrderFiles === "function") {
+      await drive.attachOrderFiles(order.id, order.code, uploadedFiles).catch((error) => {
+        console.error("attachOrderFiles failed", error);
+      });
+    }
+  }
+
   const link = `${siteUrl()}${withAccess(`/lacak/${order.code}`, order.access_token)}`;
   const serviceSummary = quote.snapshot?.summary ?? svc.name;
   const total = finalPrice;
@@ -393,9 +431,10 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
 
   // Kalau trigger database aktif, trigger sudah mengantrekan pesan pelanggan
   // dan admin. Jangan kirim lagi dari sini supaya tidak dobel.
+  let waSent = true;
   if (!(await waTriggerActive())) {
     const adminWa = adminWhatsApp();
-    await Promise.all([
+    const [customerSent] = await Promise.all([
       sendStudioMessage(
         wa,
         orderCreatedCustomerMessage(customerNotice),
@@ -411,6 +450,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
           )
         : Promise.resolve(false),
     ]);
+    waSent = Boolean(customerSent);
   }
 
   const adminCreating = await isAdmin();
@@ -423,7 +463,7 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
     wa: values.wa,
   }, adminCreating ? "admin" : "customer");
 
-  redirect(withAccess(`/lacak/${order.code}?baru=1`, order.access_token));
+  redirect(withAccess(`/lacak/${order.code}?baru=1${waSent ? "" : "&wa=0"}`, order.access_token));
 }
 
 export async function approveReview(f: FormData): Promise<void> {
@@ -696,6 +736,7 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
     await sql`insert into order_events (order_id, status, note) values (${id}, ${status}, ${note || null})`;
   }
 
+  let waSent = true;
   if (f.get("notify") === "on" && (statusChanged || noteChanged || priceChanged || paidChanged)) {
     const payment = await getPaymentSettings();
     const paymentLinesList = payment.enabled && price !== null ? paymentLines(payment) : [];
@@ -709,11 +750,13 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
       paymentLines: paymentLinesList,
       accessToken: order.access_token,
     };
-    await sendStudioMessage(
-      order.wa,
-      orderStatusMessage(statusNotice),
-      undefined,
-      orderStatusTemplate(statusNotice),
+    waSent = Boolean(
+      await sendStudioMessage(
+        order.wa,
+        orderStatusMessage(statusNotice),
+        undefined,
+        orderStatusTemplate(statusNotice),
+      ),
     );
   }
 
@@ -733,7 +776,13 @@ export async function updateOrder(_prev: ActionResult, f: FormData): Promise<Act
   revalidatePath("/admin");
   revalidatePath(`/lacak/${order.code}`);
   revalidatePath(`/admin/pelanggan`);
-  redirect(withQuery(str(f, "returnTo"), { open: order.code, saved: "1" }));
+  redirect(
+    withQuery(str(f, "returnTo"), {
+      open: order.code,
+      saved: "1",
+      ...(waSent ? {} : { wa: "0" }),
+    }),
+  );
 }
 
 /**

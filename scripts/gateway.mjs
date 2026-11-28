@@ -2,7 +2,8 @@
 //   1. membuka tunnel publik (cloudflared quick tunnel) ke app Next.js
 //   2. menjalankan Next.js (kalau belum jalan)
 //   3. memastikan OpenWA gateway jalan, sesi WhatsApp aktif, dan webhook
-//      sesi itu menunjuk ke /api/wa/webhook lewat URL tunnel
+//      sesi itu menunjuk ke /api/wa/webhook lewat URL app lokal
+//   4. menjalankan worker antrean wa_outbox (notifikasi dari DB)
 //
 // Pakai: npm run gateway   (APP_PORT=3001 secara default)
 import { spawn } from "node:child_process";
@@ -186,14 +187,14 @@ async function ensureSession() {
     if (!created.ok) throw new Error(`buat sesi gagal: HTTP ${created.status} ${created.text.slice(0, 200)}`);
     session = created.json;
   }
-  if (session.status !== "ready") {
+  if (!["ready", "qr_ready", "authenticating", "initializing"].includes(String(session.status))) {
     const started = await openwaApi(`/api/sessions/${session.id}/start`, { method: "POST" });
     if (!started.ok && started.status !== 400) {
       throw new Error(`start sesi gagal: HTTP ${started.status} ${started.text.slice(0, 200)}`);
     }
-    console.log(`[gateway] sesi "${sessionName}" status: ${started.json?.status ?? session.status}`);
   }
-  return session;
+  const info = await openwaApi(`/api/sessions/${session.id}`);
+  return info.json ?? session;
 }
 
 async function ensureWebhook(sessionId, webhookUrl) {
@@ -239,6 +240,7 @@ const siteUrl = publicUrl || localApp;
 // Webhook dikirim ke app di mesin yang sama; OpenWA dijalankan dengan
 // WEBHOOK_SSRF_PROTECT=false sehingga 127.0.0.1 diizinkan. URL tunnel tidak
 // dipakai untuk webhook karena DNS quick tunnel bisa belum siap / berubah.
+// Rahasia hanya lewat header x-webhook-secret / HMAC, bukan query string.
 const webhookUrl = `${localApp}/api/wa/webhook`;
 
 const running = await reachable(localApp);
@@ -267,7 +269,7 @@ try {
   const session = await ensureSession();
   const hook = await ensureWebhook(session.id, webhookUrl);
 
-  // Kirim pesan yang masuk ke wa_outbox (mis. dari deployment Vercel).
+  // Kirim pesan wa_outbox dari database (mis. dari deployment Vercel).
   const agent = run("agent", process.execPath, [join(root, "scripts", "wa-agent.mjs")], {
     cwd: root,
     stdio: ["ignore", "pipe", "pipe"],

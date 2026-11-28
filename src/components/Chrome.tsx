@@ -3,7 +3,7 @@ import { TopBar } from "@/components/TopBar";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { IconForStatus } from "@/components/StatusIcon";
 import { STATUS_META, type Status } from "@/lib/status";
-import { CONTACT_EMAIL, SITE_NAME, TAGLINE } from "@/lib/site";
+import { CONTACT_EMAIL, SITE_NAME, TAGLINE, waDisplay } from "@/lib/site";
 
 export function Nav() {
   return <TopBar />;
@@ -17,11 +17,14 @@ export function Footer() {
         <div className="flex flex-wrap items-center gap-5">
           <Link href="/order" className="transition-colors hover:text-[var(--text)]">Pesan</Link>
           <Link href="/lacak" className="transition-colors hover:text-[var(--text)]">Lacak</Link>
+          <Link href="/#layanan" className="transition-colors hover:text-[var(--text)]">Layanan &amp; harga</Link>
+          <Link href="/#pembayaran" className="transition-colors hover:text-[var(--text)]">Pembayaran</Link>
           <Link href="/faq" className="transition-colors hover:text-[var(--text)]">FAQ</Link>
           <a href={`mailto:${CONTACT_EMAIL}`} className="transition-colors hover:text-[var(--text)]">{CONTACT_EMAIL}</a>
           <WhatsAppLink
             text="Halo in.torma, saya mau tanya soal layanan desain dan cetak."
             className="inline-flex items-center gap-1.5 transition-colors hover:text-[var(--text)]"
+            title={waDisplay}
           >
             <WhatsAppIcon aria-hidden className="size-3.5" /> WhatsApp
           </WhatsAppLink>

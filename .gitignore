@@ -5,6 +5,8 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 logs/
 
+.tools
+*.log
 .vercel
 .env*
 !.env.example

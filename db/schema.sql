@@ -148,11 +148,13 @@ create table if not exists app_settings (
 );
 
 -- Antrean pesan WhatsApp. Vercel tidak bisa menjangkau OpenWA yang berjalan di
--- komputer lokal, jadi pesan disimpan di sini lalu dikirim oleh `npm run wa:agent`.
--- Trigger pengaman untuk order baru ada di db/wa-trigger.sql (npm run db:wa-trigger).
+-- komputer lokal, jadi pesan disimpan di sini lalu dikirim oleh `npm run wa:agent`
+-- di mesin yang menjalankan OpenWA. Trigger pengaman untuk order baru ada di
+-- db/wa-trigger.sql (npm run db:wa-trigger).
 create table if not exists wa_outbox (
   id bigserial primary key,
   to_number text not null,
+  chat_id text,
   content text not null,
   status text not null default 'pending',
   attempts int not null default 0,
@@ -163,6 +165,7 @@ create table if not exists wa_outbox (
   sent_at timestamptz
 );
 
+alter table wa_outbox add column if not exists chat_id text;
 alter table wa_outbox add column if not exists idempotency_key text;
 
 -- Kunci idempoten: pesan yang sama tidak dikirim dua kali. Wajib ada karena
@@ -302,8 +305,8 @@ group by 1
 on conflict (day) do update
   set last_seq = greatest(order_code_counters.last_seq, excluded.last_seq);
 
--- Akun admin dengan password terpisah. Password ADMIN_PASSWORD di environment
--- tetap diterima sebagai cadangan, jadi mengelola akun tidak bisa mengunci diri.
+-- Akun admin dengan password terpisah. Fallback ADMIN_PASSWORD dinonaktifkan
+-- (ADMIN_PASSWORD_ENABLED=0), jadi akun database yang dipakai untuk masuk.
 create table if not exists admin_accounts (
   id serial primary key,
   username text unique not null,
@@ -357,3 +360,17 @@ drop trigger if exists admin_accounts_last_guard on admin_accounts;
 create trigger admin_accounts_last_guard
   before delete on admin_accounts
   for each row execute function guard_last_admin_account();
+-- File referensi yang diunggah klien, disimpan di Google Drive pemilik studio.
+-- Metadata upload self-service ada di tabel `uploads` di atas; tabel ini dipakai
+-- alur lampiran order yang dibuat dari sisi admin/agent.
+create table if not exists order_files (
+  id bigserial primary key,
+  order_id bigint not null references orders(id) on delete cascade,
+  name text not null,
+  size bigint not null default 0,
+  mime text,
+  drive_id text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists order_files_order_idx on order_files(order_id);

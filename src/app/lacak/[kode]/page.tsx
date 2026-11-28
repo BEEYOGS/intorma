@@ -31,9 +31,9 @@ export default async function TrackPage({
   searchParams,
 }: {
   params: Promise<{ kode: string }>;
-  searchParams: Promise<{ baru?: string; t?: string }>;
+  searchParams: Promise<{ baru?: string; t?: string; wa?: string }>;
 }) {
-  const [{ kode }, { baru, t }] = await Promise.all([params, searchParams]);
+  const [{ kode }, { baru, t, wa }] = await Promise.all([params, searchParams]);
   const code = normalizeCode(kode);
   if (!isValidCode(code)) notFound();
   const order = (
@@ -130,13 +130,15 @@ export default async function TrackPage({
         <div className="border-b border-line bg-sand/40">
           <div className="wrap pb-10 pt-8 sm:pb-12 sm:pt-10">
             {baru && (
-              <div className="mb-9 overflow-hidden rounded-tag-lg border border-accent/25 bg-accent/[0.07] p-5 sm:p-6">
+              <div className={`mb-9 overflow-hidden rounded-tag-lg border p-5 sm:p-6 ${wa === "0" ? "border-dashed border-silver/45 bg-silver/[0.08]" : "border-accent/25 bg-accent/[0.07]"}`}>
                 <div className="flex flex-wrap items-start justify-between gap-5">
                   <div>
                     <p className="eyebrow">Pesanan diterima</p>
                     <p className="mt-2 text-xl font-semibold tracking-tight">Simpan kode pesanan kamu.</p>
                     <p className="mt-1 text-sm text-mute">
-                      Salinannya juga dikirim ke WhatsApp. Gunakan kode ini untuk melacak progres.
+                      {wa === "0"
+                        ? "Salinan WhatsApp belum terkirim otomatis. Pakai kode ini atau tombol Buka WhatsApp untuk menghubungi admin."
+                        : "Salinannya juga dikirim ke WhatsApp. Gunakan kode ini untuk melacak progres."}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">

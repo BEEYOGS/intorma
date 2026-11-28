@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useActionState, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { createOrder, type OrderState } from "@/app/actions";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { DateField } from "@/components/DateField";
@@ -18,6 +18,14 @@ import { ServiceIcon } from "@/components/ServiceIcon";
 import { ArrowRight, Check } from "lucide-react";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
 import { ACCEPT_ATTR } from "@/lib/upload-rules";
+import type { UploadedFile } from "@/lib/drive";
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 ** 2) return `${Math.round(n / 1024)} KB`;
+  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+  return `${(n / 1024 ** 3).toFixed(2)} GB`;
+}
 
 type PaymentInfo = {
   enabled: boolean;
@@ -86,6 +94,8 @@ export function OrderForm({
 }) {
   const [state, action, pending] = useActionState<OrderState, FormData>(createOrder, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const filesFieldRef = useRef<HTMLInputElement>(null);
+  const bypassRef = useRef(false);
   const v = state?.values ?? {};
   const initial = services.find((service) => service.id === (v.service ?? preselect)) ?? services[0];
   const [selectedId, setSelectedId] = useState(initial?.id ?? "");
@@ -99,6 +109,10 @@ export function OrderForm({
   const [dragging, setDragging] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
+  const [refFiles, setRefFiles] = useState<File[]>([]);
+  const [refUploading, setRefUploading] = useState(false);
+  const [refProgress, setRefProgress] = useState(0);
+  const [refError, setRefError] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "design" | "print" | "other">("all");
   const [brief, setBrief] = useState(v.brief || "");
@@ -325,6 +339,112 @@ export function OrderForm({
     }
   }
 
+  function addReferenceFiles(list: FileList | null) {
+    if (!list?.length) return;
+    setRefError("");
+    setRefFiles((previous) => [...previous, ...Array.from(list)].slice(0, 12));
+  }
+
+  function removeReferenceFile(index: number) {
+    setRefFiles((previous) => previous.filter((_, i) => i !== index));
+  }
+
+  /** Unggah langsung ke Google Drive memakai token singkat dari /api/upload/token. */
+  async function uploadReferenceOne(file: File, token: string, folder: string): Promise<UploadedFile> {
+    const init = await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true",
+      {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+          "x-upload-content-type": file.type || "application/octet-stream",
+          "x-upload-content-length": String(file.size),
+        },
+        body: JSON.stringify({ name: file.name, parents: [folder] }),
+      },
+    );
+    if (!init.ok) throw new Error(`Gagal memulai unggahan (HTTP ${init.status}).`);
+    const sessionUrl = init.headers.get("location");
+    if (!sessionUrl) throw new Error("Sesi unggahan tidak dibuat.");
+
+    if (file.size === 0) {
+      const response = await fetch(sessionUrl, {
+        method: "PUT",
+        headers: { "content-range": "bytes */0" },
+      });
+      if (!response.ok) throw new Error(`Unggahan gagal (HTTP ${response.status}).`);
+      const data = (await response.json().catch(() => null)) as { id?: string } | null;
+      if (!data?.id) throw new Error("Unggahan selesai tanpa id file.");
+      return { id: data.id, name: file.name, size: 0, mime: file.type };
+    }
+
+    const chunkSize = Math.max(4 * 1024 * 1024, Math.ceil(file.size / 30));
+    let offset = 0;
+    while (offset < file.size) {
+      const end = Math.min(offset + chunkSize, file.size);
+      const response = await fetch(sessionUrl, {
+        method: "PUT",
+        headers: { "content-range": `bytes ${offset}-${end - 1}/${file.size}` },
+        body: file.slice(offset, end),
+      });
+      if (response.status === 308) {
+        offset = end;
+        continue;
+      }
+      if (response.ok) {
+        const data = (await response.json().catch(() => null)) as { id?: string } | null;
+        if (!data?.id) throw new Error("Unggahan selesai tanpa id file.");
+        return { id: data.id, name: file.name, size: file.size, mime: file.type };
+      }
+      throw new Error(`Unggahan gagal (HTTP ${response.status}).`);
+    }
+    throw new Error("Unggahan tidak selesai.");
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (bypassRef.current) {
+      bypassRef.current = false;
+      setSubmitted(true);
+      return;
+    }
+    if (!refFiles.length) {
+      setSubmitted(true);
+      return;
+    }
+
+    event.preventDefault();
+    setRefUploading(true);
+    setRefError("");
+    setRefProgress(0);
+    const totalBytes = refFiles.reduce((sum, file) => sum + file.size, 0);
+    try {
+      const response = await fetch("/api/upload/token", { cache: "no-store" });
+      if (!response.ok) throw new Error("Upload belum tersedia. Pakai kolom link referensi, atau coba lagi nanti.");
+      const { token, folder } = (await response.json()) as { token: string; folder: string };
+      if (!token || !folder) throw new Error("Sesi upload tidak valid. Coba lagi.");
+
+      let done = 0;
+      const uploaded: UploadedFile[] = [];
+      for (const file of refFiles) {
+        uploaded.push(await uploadReferenceOne(file, token, folder));
+        done += file.size;
+        setRefProgress(totalBytes ? Math.round((done / totalBytes) * 100) : 100);
+      }
+      if (filesFieldRef.current) {
+        filesFieldRef.current.value = uploaded
+          .map((file) => [file.id, file.name.replace(/[|;]/g, "_"), file.size, file.mime].join("|"))
+          .join(";");
+      }
+      bypassRef.current = true;
+      formRef.current?.requestSubmit();
+      setRefUploading(false);
+    } catch (error) {
+      setRefError(error instanceof Error ? error.message : "Gagal mengunggah file referensi.");
+      setRefUploading(false);
+    }
+  }
+
   async function applyPromo() {
     const code = promoCode.trim().toUpperCase();
     if (!code || total == null) return;
@@ -434,7 +554,8 @@ export function OrderForm({
         </div>
       )}
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-14">
-        <form ref={formRef} action={action} onSubmit={() => setSubmitted(true)} className="space-y-10">
+        <form ref={formRef} action={action} onSubmit={handleSubmit} className="space-y-10">
+          <input ref={filesFieldRef} type="hidden" name="files" defaultValue="" />
           <input type="hidden" name="service" value={selectedId} />
           <input type="hidden" name="qty" value={isPerUnit ? qty : ""} />
           <input type="hidden" name="width" value={isArea ? width : ""} />
@@ -899,6 +1020,68 @@ setInteracted(true);
             </fieldset>
           )}
 
+          {driveReady && (
+            <fieldset>
+              <legend className="mb-1 text-xl font-semibold tracking-tight">File referensi</legend>
+              <p className="mb-5 text-sm text-mute">
+                Opsional — logo lama, foto produk, atau referensi. Maksimal 12 file, dikirim langsung ke
+                Google Drive saat pesanan dibuat.
+              </p>
+              <label
+                className={`flex min-h-12 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-tag-sm border border-dashed px-6 py-8 text-center transition-colors ${
+                  refFiles.length ? "border-accent/50 bg-accent/[0.05]" : "border-line hover:border-accent/40"
+                }`}
+              >
+                <input
+                  type="file"
+                  multiple
+                  accept={ACCEPT_ATTR}
+                  className="sr-only"
+                  onChange={(event) => addReferenceFiles(event.target.files)}
+                  disabled={refUploading || pending}
+                />
+                <span className="text-sm font-semibold text-ink">
+                  + Pilih file{refFiles.length ? ` (${refFiles.length} dipilih)` : ""}
+                </span>
+                <span className="text-xs text-mute">Gambar, PDF, atau ZIP — tersimpan di Drive studio.</span>
+              </label>
+
+              {refFiles.length > 0 && (
+                <ul className="mt-3 divide-y divide-line rounded-tag-sm border border-line bg-panel/30 px-4">
+                  {refFiles.map((file, index) => (
+                    <li key={`${file.name}-${file.size}-${index}`} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{file.name}</span>
+                        <span className="mono block text-[11px] text-mute">{formatBytes(file.size)}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeReferenceFile(index)}
+                        disabled={refUploading || pending}
+                        className="min-h-11 px-2 text-xs font-medium text-mute transition-colors hover:text-ink disabled:opacity-50"
+                      >
+                        Hapus
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {refUploading && (
+                <div className="mt-3 rounded-tag-sm border border-line bg-panel/30 px-4 py-3">
+                  <div className="flex items-center justify-between font-mono text-xs text-mute">
+                    <span>Mengunggah ke Google Drive…</span>
+                    <span className="tabular-nums">{refProgress}%</span>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
+                    <div className="h-full bg-accent transition-all duration-200" style={{ width: `${refProgress}%` }} />
+                  </div>
+                </div>
+              )}
+              {refError && <p role="alert" className="mt-3 text-sm text-danger">{refError}</p>}
+            </fieldset>
+          )}
+
           <BriefAssistant
             category={chosen?.category ?? "design"}
             dimensions={isArea && width && height ? `${width} × ${height} cm` : undefined}
@@ -970,11 +1153,11 @@ setInteracted(true);
           <div className="flex flex-col gap-4 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="submit"
-              disabled={pending || hasPriceError || total == null}
+              disabled={pending || uploading || refUploading || hasPriceError || total == null}
               className="btn btn-primary w-full sm:w-auto"
             >
-              {pending ? "Membuat pesanan…" : "Buat pesanan & lihat pembayaran"}
-              {!pending && <ArrowRight aria-hidden className="size-4" />}
+              {refUploading ? "Mengunggah referensi…" : pending ? "Membuat pesanan…" : "Buat pesanan & lihat pembayaran"}
+              {!pending && !refUploading && <ArrowRight aria-hidden className="size-4" />}
             </button>
             <p className="text-sm leading-6 text-mute sm:max-w-[20rem] sm:text-right">
               Setelah dibuat, kamu langsung melihat total dan instruksi pembayaran. Kode pesanan juga
@@ -1110,11 +1293,11 @@ setInteracted(true);
           <button
             type="button"
             onClick={() => formRef.current?.requestSubmit()}
-            disabled={pending || hasPriceError || total == null}
+            disabled={pending || uploading || refUploading || hasPriceError || total == null}
             className="btn btn-primary min-h-11 shrink-0 px-5 text-sm"
           >
-            {pending ? "Membuat…" : "Buat pesanan"}
-            {!pending && <ArrowRight aria-hidden className="size-4" />}
+            {refUploading ? "Mengunggah…" : pending ? "Membuat…" : "Buat pesanan"}
+            {!pending && !refUploading && <ArrowRight aria-hidden className="size-4" />}
           </button>
         </div>
         {hasPriceError && (

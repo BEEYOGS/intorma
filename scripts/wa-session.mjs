@@ -2,8 +2,9 @@
 //
 // Pakai: npm run wa:session   (butuh OpenWA jalan: npm run openwa)
 //
-// Output: .tools/qr-<nama>.png  → buka file itu, scan pakai WhatsApp >
-// Perangkat tertaut. Setelah scan, skrip menunggu sampai status "ready".
+// Output:
+//   .tools/qr-<nama>.png   → gambar QR (selalu diperbarui)
+//   .tools/qr-<nama>.html  → buka ini di browser agar QR auto-refresh
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
@@ -77,12 +78,10 @@ if (!session) {
   console.log(`[wa] sesi "${wanted}" sudah ada: ${session.id} (status ${session.status})`);
 }
 
-if (session.status !== "ready") {
+if (!["ready", "qr_ready", "authenticating", "initializing"].includes(String(session.status))) {
   const started = await api(`/api/sessions/${session.id}/start`, { method: "POST" });
-  if (!started.ok && started.status !== 400) {
-    console.error(`[wa] gagal start: HTTP ${started.status} ${started.text.slice(0, 300)}`);
-    process.exit(1);
-  }
+  if (started.ok) console.log(`[wa] start sesi: ${started.json?.status ?? started.status}`);
+  else console.log(`[wa] start sesi: HTTP ${started.status} ${started.text.slice(0, 200)}`);
 }
 
 mkdirSync(join(root, ".tools"), { recursive: true });
@@ -107,7 +106,6 @@ writeFileSync(
   img { display: block; width: min(78vw, 320px); height: auto; }
   h1 { font-size: 18px; margin: 0; }
   p { color: #8e9cb0; font-size: 13px; line-height: 1.5; margin: 0; max-width: 36ch; }
-  .ok { color: #3ce0c4; }
 </style>
 </head>
 <body>
@@ -143,14 +141,12 @@ for (let i = 0; i < 1800; i++) {
     console.log(`[wa] sesi siap. Nomor: ${info.json?.phone ?? "?"}`);
     process.exit(0);
   }
-  if (status === "failed" || status === "action_required") {
-    console.error(`[wa] sesi ${status}: ${info.json?.lastError ?? "-"}`);
-    process.exit(1);
-  }
-  if (status === "qr_ready" || status === "authenticating") {
-    const qr = await api(`/api/sessions/${session.id}/qr`);
-    const dataUrl = qr.json?.qrCode;
-    if (qr.ok && dataUrl && dataUrl !== lastQr) {
+  if (status) session.status = status;
+
+  const qr = await api(`/api/sessions/${session.id}/qr`);
+  if (qr.ok && qr.json?.qrCode) {
+    const dataUrl = qr.json.qrCode;
+    if (dataUrl !== lastQr) {
       lastQr = dataUrl;
       const b64 = String(dataUrl).replace(/^data:image\/\w+;base64,/, "");
       writeFileSync(qrFile, Buffer.from(b64, "base64"));
@@ -166,5 +162,5 @@ for (let i = 0; i < 1800; i++) {
   await sleep(2000);
 }
 
-console.error("[wa] waktu habis menunggu QR/ready.");
+console.error("[wa] timeout menunggu scan QR. Jalankan lagi: npm run wa:session");
 process.exit(1);

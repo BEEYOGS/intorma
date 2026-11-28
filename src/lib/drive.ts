@@ -1,4 +1,5 @@
 import { createPrivateKey, sign } from "node:crypto";
+import { sql } from "./db";
 
 // Google Drive dipakai HANYA sebagai penyimpanan file. Database tetap Neon.
 //
@@ -6,6 +7,7 @@ import { createPrivateKey, sign } from "node:crypto";
 //   GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET + GOOGLE_REFRESH_TOKEN
 // Service account tidak punya storage quota di "My Drive" (Google 403), jadi
 // hanya dipakai kalau GOOGLE_DRIVE_AUTH=service_account (Shared Drive/Workspace).
+// Varian GDRIVE_SERVICE_ACCOUNT / GDRIVE_FOLDER tetap didukung untuk instalasi lama.
 //
 // Upload file besar memakai Resumable Upload: browser mengirim chunk langsung
 // ke Google, bukan lewat body API route Vercel.
@@ -22,8 +24,11 @@ export type DriveFileMeta = {
   parents?: string[];
 };
 
+/** Format lampiran yang dikirim lewat hidden field `files`. */
+export type UploadedFile = { id: string; name: string; size: number; mime: string };
+
 function serviceAccount(): ServiceAccount | null {
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const raw = (process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GDRIVE_SERVICE_ACCOUNT || "").trim();
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as ServiceAccount;
@@ -43,7 +48,10 @@ function oauthConfig() {
 }
 
 function usesServiceAccount(): boolean {
-  return process.env.GOOGLE_DRIVE_AUTH?.trim().toLowerCase() === "service_account";
+  return (
+    process.env.GOOGLE_DRIVE_AUTH?.trim().toLowerCase() === "service_account" ||
+    Boolean(process.env.GDRIVE_SERVICE_ACCOUNT?.trim() && !oauthConfig())
+  );
 }
 
 export function driveAuthMode(): "oauth" | "service_account" | "none" {
@@ -53,8 +61,15 @@ export function driveAuthMode(): "oauth" | "service_account" | "none" {
 }
 
 export function driveFolderId(): string {
-  return process.env.GOOGLE_DRIVE_FOLDER_ID?.trim() ?? "";
+  return (
+    process.env.GOOGLE_DRIVE_FOLDER_ID?.trim() ||
+    process.env.GDRIVE_FOLDER?.trim() ||
+    ""
+  );
 }
+
+/** Alias untuk alur upload lama: folder inbox tempat file masuk sebelum order dibuat. */
+export const inboxFolder = (): string => driveFolderId();
 
 export function driveEnabled(): boolean {
   return Boolean(driveFolderId() && driveAuthMode() !== "none");
@@ -110,7 +125,7 @@ export async function getDriveAccessToken(): Promise<string> {
     );
   }
   const creds = serviceAccount();
-  if (!creds) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON belum diisi.");
+  if (!creds) throw new Error("Kredensial service account Google belum diisi.");
 
   const now = Math.floor(Date.now() / 1000);
   const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -142,6 +157,15 @@ export async function getDriveAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+/** Versi toleran untuk endpoint yang tidak boleh menggagalkan halaman. */
+export async function mintAccessToken(): Promise<string | null> {
+  try {
+    return await getDriveAccessToken();
+  } catch {
+    return null;
+  }
+}
+
 /** Upload kecil (<= 4 MB) lewat multipart. Dipakai fallback dan script tes. */
 export async function driveUpload(file: {
   name: string;
@@ -150,7 +174,7 @@ export async function driveUpload(file: {
 }): Promise<{ id: string; webViewLink: string | null }> {
   const token = await getDriveAccessToken();
   const folder = driveFolderId();
-  if (!folder) throw new Error("GOOGLE_DRIVE_FOLDER_ID belum diisi.");
+  if (!folder) throw new Error("Folder Google Drive belum diisi.");
 
   const boundary = `----intorma${Date.now().toString(36)}`;
   const metadata = JSON.stringify({
@@ -195,7 +219,7 @@ export async function driveInitResumable(file: {
 }): Promise<{ uploadUrl: string; name: string }> {
   const token = await getDriveAccessToken();
   const folder = driveFolderId();
-  if (!folder) throw new Error("GOOGLE_DRIVE_FOLDER_ID belum diisi.");
+  if (!folder) throw new Error("Folder Google Drive belum diisi.");
   const mime = file.mime || "application/octet-stream";
 
   const headers: Record<string, string> = {
@@ -284,5 +308,84 @@ export async function driveDelete(id: string): Promise<void> {
   );
   if (!response.ok && response.status !== 404) {
     throw await googleError(response, "Gagal menghapus file dari Google Drive");
+  }
+}
+
+async function driveApi(
+  token: string,
+  path: string,
+  init: RequestInit = {},
+): Promise<{ status: number; data: any } | null> {
+  const response = await fetch(`https://www.googleapis.com/drive/v3${path}`, {
+    ...init,
+    headers: { authorization: `Bearer ${token}`, ...(init.headers ?? {}) },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (response.status === 204) return null;
+  const text = await response.text().catch(() => "");
+  let data: unknown = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    /* bukan JSON */
+  }
+  return { status: response.status, data };
+}
+
+async function ensureOrderFolder(token: string, code: string): Promise<string | null> {
+  const inbox = inboxFolder();
+  if (!inbox) return null;
+  const safeCode = code.replace(/['\\]/g, "''").slice(0, 120);
+  const safeInbox = inbox.replace(/['\\]/g, "''").slice(0, 500);
+  const query = encodeURIComponent(
+    `name = '${safeCode}' and '${safeInbox}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+  );
+  const found = await driveApi(token, `/files?q=${query}&fields=files(id)&pageSize=1`);
+  const existing = found?.data?.files?.[0]?.id as string | undefined;
+  if (existing) return existing;
+
+  const created = await driveApi(token, `/files?supportsAllDrives=true`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      name: code,
+      mimeType: "application/vnd.google-apps.folder",
+      parents: [inbox],
+    }),
+  });
+  return (created?.data?.id as string | undefined) ?? null;
+}
+
+/** Pindahkan file hasil unggahan ke folder pesanan dan catat di database. */
+export async function attachOrderFiles(
+  orderId: number,
+  code: string,
+  files: UploadedFile[],
+): Promise<void> {
+  if (!files.length || !driveEnabled()) return;
+  const token = await mintAccessToken();
+  if (!token) return;
+
+  const folder = await ensureOrderFolder(token, code);
+  for (const file of files) {
+    try {
+      const check = await driveApi(token, `/files/${encodeURIComponent(file.id)}?fields=id,size`);
+      if (!check || check.status !== 200 || !check.data?.id) continue;
+      const params = new URLSearchParams({ supportsAllDrives: "true" });
+      if (folder) {
+        params.set("addParents", folder);
+        params.set("removeParents", inboxFolder());
+      }
+      await driveApi(token, `/files/${encodeURIComponent(file.id)}?${params}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      });
+      await sql`
+        insert into order_files (order_id, name, size, mime, drive_id)
+        values (${orderId}, ${file.name.slice(0, 200)}, ${file.size}, ${file.mime || null}, ${file.id})`;
+    } catch {
+      // File tetap aman di inbox; jangan gagalkan order karena Drive bermasalah.
+    }
   }
 }

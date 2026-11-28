@@ -1,6 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const COOKIE = "int_admin";
+const CODE_PATTERN = /^INT-(\d{9,}|[A-Z0-9]{6})$/;
+
+function validOrderPathCode(segment: string): boolean {
+  try {
+    const raw = decodeURIComponent(segment).trim().toUpperCase().replace(/\s+/g, "");
+    const body = raw.replace(/^INT-?/, "").replace(/-/g, "");
+    return CODE_PATTERN.test(`INT-${body}`);
+  } catch {
+    return false;
+  }
+}
 
 function signatureBytes(value: string): Uint8Array<ArrayBuffer> | null {
   if (!/^[0-9a-f]{64}$/i.test(value)) return null;
@@ -52,6 +63,16 @@ async function adminCookieValid(request: NextRequest): Promise<boolean> {
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+
+  // Validasi kode di edge: notFound() di halaman yang sudah streaming sering
+  // keluar dengan status 200. Middleware memastikan 404 nyata sebelum render.
+  const codeMatch = path.match(/^\/(?:lacak|nota|bayar)\/([^/]+)\/?$/);
+  if (codeMatch && !validOrderPathCode(codeMatch[1])) {
+    const notFoundUrl = request.nextUrl.clone();
+    notFoundUrl.pathname = "/not-found";
+    return NextResponse.rewrite(notFoundUrl, { status: 404 });
+  }
+
   if (path !== "/admin" && !path.startsWith("/admin/")) return NextResponse.next();
   if (path === "/admin/login") return NextResponse.next();
   if (await adminCookieValid(request)) return NextResponse.next();
@@ -63,5 +84,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*"],
+  matcher: ["/admin", "/admin/:path*", "/lacak/:code", "/nota/:code", "/bayar/:code"],
 };

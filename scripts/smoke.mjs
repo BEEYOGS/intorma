@@ -9,6 +9,9 @@ const checks = [
   { name: "webhook GET", path: "/api/wa/webhook", expect: 403 },
   { name: "cron reminders", path: "/api/cron/reminders", expect: [401, 503] },
   { name: "invalid code", path: "/api/lacak/INVALID/status", expect: 400 },
+  { name: "wa secret path", path: "/api/wa/webhook/invalidsecret", method: "POST", expect: 401 },
+  { name: "wa outbox private", path: "/api/wa/outbox", expect: 401 },
+  { name: "db migrate private", path: "/api/db/migrate", method: "POST", expect: 401 },
 ];
 
 let failed = 0;

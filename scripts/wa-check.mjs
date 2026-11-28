@@ -1,5 +1,6 @@
-// Diagnosa cepat WhatsApp: gateway, sesi, webhook, dan antrean.
+// Diagnosa cepat WhatsApp: provider, gateway, sesi, webhook, dan antrean.
 // Pakai: npm run wa:check
+// Tidak mengirim pesan dan tidak menampilkan secret.
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,7 +22,7 @@ const env = { ...loadEnvFile(join(root, ".env.local")), ...process.env };
 const base = (env.OPENWA_URL || "http://127.0.0.1:2785").replace(/\/$/, "");
 const key = env.OPENWA_KEY || "";
 const sessionName = env.OPENWA_SESSION || "intorma";
-const site = (env.WA_SITE_URL || env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+const site = (env.WA_SITE_URL || env.OUTBOX_URL || env.SITE_WEBHOOK_URL || env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
 
 const ok = (value) => (value ? "OK" : "BELUM");
 const line = "-".repeat(66);
@@ -34,6 +35,7 @@ const provider = String(
 ).trim();
 console.log(`  Provider     : ${provider}`);
 console.log(`  Situs publik : ${site || "(belum diisi)"}`);
+
 if (provider === "cloud") {
   const ready = ["META_WA_TOKEN", "META_WA_PHONE_ID", "META_WA_APP_SECRET", "META_WA_VERIFY_TOKEN"]
     .map((key) => `${key}=${ok(env[key])}`)
@@ -93,7 +95,9 @@ if (provider === "cloud") {
           })
             .then((r) => r.json())
             .catch(() => []);
-          const hook = (Array.isArray(hooks) ? hooks : []).find((item) => String(item.url).includes("/api/wa/webhook"));
+          const hook = (Array.isArray(hooks) ? hooks : []).find((item) =>
+            String(item.url).includes("/api/wa/webhook"),
+          );
           console.log(`  Webhook      : ${hook ? hook.url : "belum terdaftar — jalankan npm run wa:webhook"}`);
         }
       }
@@ -118,10 +122,15 @@ if (env.DATABASE_URL) {
       console.log(`    #${row.id} → ${row.to_number}: ${String(row.last_error || "").slice(0, 100)}`);
     }
   } catch (error) {
-    console.log(`  Antrean      : gagal dibaca (${error instanceof Error ? error.message : error})`);
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes("wa_outbox")) {
+      console.log("  Antrean      : tabel wa_outbox belum ada — jalankan npm run db:migrate");
+    } else {
+      console.log(`  Antrean      : gagal dibaca (${msg})`);
+    }
   }
 } else {
-  console.log("  Antrean      : DATABASE_URL kosong");
+  console.log("  Antrean      : DATABASE_URL kosong (agent bisa memakai /api/wa/outbox di situs publik)");
 }
 
 console.log(line);
@@ -132,5 +141,6 @@ if (provider === "fonnte") {
   console.log("  Untuk notifikasi: Cloud API mengirim langsung dari Vercel.");
 } else {
   console.log("  Untuk notifikasi: npm run openwa → npm run wa:agent");
+  console.log("  Untuk balasan otomatis 'status INT-...': daftarkan webhook publik (npm run wa:webhook).");
 }
 console.log(line);

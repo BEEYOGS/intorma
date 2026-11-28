@@ -1,11 +1,10 @@
 // Worker WhatsApp untuk in.torma.
 //
-// Vercel tidak bisa menjangkau OpenWA yang berjalan di localhost. Aplikasi web
-// menyimpan notifikasi ke tabel wa_outbox, lalu skrip ini (di komputer yang
-// menjalankan OpenWA) mengambil dan mengirimkannya.
-//
-// Skrip ini juga menyediakan webhook lokal (/webhook) untuk balasan otomatis
-// "status INT-DDMMYY001", supaya tidak bergantung pada deployment Vercel.
+// Vercel tidak bisa menjangkau OpenWA yang berjalan di localhost. Dua jalur:
+//   1. Jembatan publik /api/wa/outbox (disarankan): agent tidak butuh
+//      DATABASE_URL produksi, cukup URL situs + OPENWA_WEBHOOK_SECRET.
+//   2. DATABASE_URL lokal: antrean dibaca langsung dari Neon, dengan inbox
+//      /webhook untuk balasan otomatis "status INT-DDMMYY001".
 //
 // Pakai: npm run wa:agent
 import { readFileSync, existsSync } from "node:fs";
@@ -31,21 +30,27 @@ const databaseUrl = env.DATABASE_URL;
 const base = (env.OPENWA_URL || "http://127.0.0.1:2785").replace(/\/$/, "");
 const key = env.OPENWA_KEY || "";
 const sessionName = env.OPENWA_SESSION || "intorma";
+// Rute /api/wa/outbox membaca OPENWA_WEBHOOK_SECRET (bukan WA_WEBHOOK_SECRET).
+const bridgeSecret = String(env.OPENWA_WEBHOOK_SECRET || "");
+const secret = String(env.WA_WEBHOOK_SECRET || env.OPENWA_WEBHOOK_SECRET || "");
+const site = (env.OUTBOX_URL || env.SITE_WEBHOOK_URL || env.WA_SITE_URL || env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
 const pollMs = Math.max(2000, Number(env.WA_POLL_MS || 5000));
 const inboxPort = Number(env.WA_INBOX_PORT || 2786);
-const inboxSecret = String(env.WA_INBOX_SECRET || env.OPENWA_WEBHOOK_SECRET || "");
-const site = (env.NEXT_PUBLIC_SITE_URL || "https://intorma-psi.vercel.app").replace(/\/$/, "");
+const inboxSecret = String(env.WA_INBOX_SECRET || secret);
+const useBridge = Boolean(site && bridgeSecret);
+const sql = databaseUrl ? neon(databaseUrl) : null;
 
-if (!databaseUrl) {
-  console.error("[wa-agent] DATABASE_URL kosong di .env.local");
-  process.exit(1);
-}
 if (!key) {
   console.error("[wa-agent] OPENWA_KEY kosong di .env.local");
   process.exit(1);
 }
+if (!useBridge && !sql) {
+  console.error(
+    "[wa-agent] Isi SITE_WEBHOOK_URL + OPENWA_WEBHOOK_SECRET (jembatan publik) atau DATABASE_URL (akses Neon lokal).",
+  );
+  process.exit(1);
+}
 
-const sql = neon(databaseUrl);
 const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
 const stamp = () => new Date().toLocaleTimeString("id-ID", { hour12: false });
 
@@ -111,7 +116,7 @@ function normalizeNumber(value) {
   return n;
 }
 
-async function sendText(number, text, sessionId, idempotencyKey) {
+async function sendTo(chatId, text, sessionId, idempotencyKey) {
   const headers = { "content-type": "application/json", "x-api-key": key };
   if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
 
@@ -119,7 +124,7 @@ async function sendText(number, text, sessionId, idempotencyKey) {
     method: "POST",
     headers,
     body: JSON.stringify({
-      chatId: `${number}@c.us`,
+      chatId,
       text: String(text).slice(0, 4000),
     }),
     signal: AbortSignal.timeout(20_000),
@@ -130,10 +135,16 @@ async function sendText(number, text, sessionId, idempotencyKey) {
   return { ok: false, error: `HTTP ${res.status}${body ? ` — ${body.slice(0, 180)}` : ""}` };
 }
 
-async function sendMessage(row, sessionId) {
-  return sendText(normalizeNumber(row.to_number), row.content, sessionId, row.idempotency_key);
+async function sendText(number, text, sessionId, idempotencyKey) {
+  return sendTo(`${normalizeNumber(number)}@c.us`, text, sessionId, idempotencyKey);
 }
 
+async function sendMessage(row, sessionId) {
+  const chatId = row.chat_id || `${normalizeNumber(row.to_number)}@c.us`;
+  return sendTo(chatId, row.content, sessionId, row.idempotency_key);
+}
+
+// --- jalur DATABASE_URL lokal ------------------------------------------------
 async function markSent(id) {
   await sql.query(
     `update wa_outbox
@@ -159,7 +170,28 @@ async function markFailed(row, error) {
   return { attempts, final, delaySeconds };
 }
 
-// --- balasan otomatis "status INT-DDMMYY001" ----------------------------------
+// --- jalur jembatan publik /api/wa/outbox ------------------------------------
+async function fetchBridgeRows() {
+  const res = await fetch(`${site}/api/wa/outbox?s=${encodeURIComponent(bridgeSecret)}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) throw new Error(`ambil antrean gagal: HTTP ${res.status}`);
+  const data = await res.json().catch(() => null);
+  return (data?.rows || []).filter((row) => Number.isInteger(Number(row.id)));
+}
+
+async function reportBridge(row, result) {
+  const res = await fetch(`${site}/api/wa/outbox?s=${encodeURIComponent(bridgeSecret)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id: Number(row.id), ok: result.ok, error: result.error || undefined }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const json = await res.json().catch(() => null);
+  return { httpOk: res.ok, status: res.status, json };
+}
+
+// --- balasan otomatis "status INT-DDMMYY001" (inbox lokal) -------------------
 const STATUS_LABEL = {
   menunggu: "Menunggu konfirmasi",
   dikerjakan: "Sedang dikerjakan",
@@ -178,6 +210,7 @@ function rupiah(value) {
 }
 
 async function statusReply(text) {
+  if (!sql) return null;
   const match = String(text).match(/status\s*[:#-]?\s*(?:INT[-\s]?)?([A-Z0-9]{6,})/i);
   if (!match) return null;
   const code = `INT-${match[1].toUpperCase()}`;
@@ -193,12 +226,13 @@ async function statusReply(text) {
     order.price ? `Total: ${rupiah(order.price)}` : null,
     order.price ? (order.paid ? "Pembayaran: lunas" : "Pembayaran: belum dibayar") : null,
     order.note ? `Catatan: ${order.note}` : null,
-    `Detail: ${site}/lacak/${order.code}`,
+    `Detail: ${site || env.NEXT_PUBLIC_SITE_URL || ""}/lacak/${order.code}`,
   ];
   return { code, text: lines.filter(Boolean).join("\n") };
 }
 
 async function handleWebhook(payload) {
+  if (!sql) return { ok: true, ignored: true };
   if (payload?.event !== "message.received" || !payload?.data) {
     return { ok: true, ignored: true };
   }
@@ -258,64 +292,72 @@ function json(res, status, value) {
   res.end(JSON.stringify(value));
 }
 
-const inbox = createServer(async (req, res) => {
-  try {
-    const url = new URL(req.url || "/", `http://127.0.0.1:${inboxPort}`);
-    if (req.method === "GET" && url.pathname === "/health") {
-      json(res, 200, {
-        ok: true,
-        gateway: base,
-        session: sessionState
-          ? { id: sessionState.id, name: sessionState.name, status: sessionState.status, phone: sessionState.phone }
-          : null,
-        lastTickAt,
-        uptimeSec: Math.round((Date.now() - startedAt) / 1000),
-      });
-      return;
-    }
-    if (req.method === "POST" && url.pathname === "/webhook") {
-      const given = String(req.headers["x-webhook-secret"] ?? "");
-      if (!inboxSecret || given !== inboxSecret) {
-        json(res, 401, { ok: false });
+let inbox = null;
+if (sql) {
+  inbox = createServer(async (req, res) => {
+    try {
+      const url = new URL(req.url || "/", `http://127.0.0.1:${inboxPort}`);
+      if (req.method === "GET" && url.pathname === "/health") {
+        json(res, 200, {
+          ok: true,
+          gateway: base,
+          session: sessionState
+            ? { id: sessionState.id, name: sessionState.name, status: sessionState.status, phone: sessionState.phone }
+            : null,
+          lastTickAt,
+          uptimeSec: Math.round((Date.now() - startedAt) / 1000),
+        });
         return;
       }
-      const raw = await readBody(req);
-      let payload = null;
-      try {
-        payload = raw ? JSON.parse(raw) : null;
-      } catch {
-        json(res, 400, { ok: false, error: "JSON invalid" });
+      if (req.method === "POST" && url.pathname === "/webhook") {
+        const given = String(req.headers["x-webhook-secret"] ?? "");
+        if (!inboxSecret || given !== inboxSecret) {
+          json(res, 401, { ok: false });
+          return;
+        }
+        const raw = await readBody(req);
+        let payload = null;
+        try {
+          payload = raw ? JSON.parse(raw) : null;
+        } catch {
+          json(res, 400, { ok: false, error: "JSON invalid" });
+          return;
+        }
+        json(res, 200, await handleWebhook(payload));
         return;
       }
-      json(res, 200, await handleWebhook(payload));
-      return;
+      json(res, 404, { ok: false });
+    } catch (error) {
+      console.error(`[wa-agent ${stamp()}] webhook error: ${error instanceof Error ? error.message : error}`);
+      json(res, 500, { ok: false });
     }
-    json(res, 404, { ok: false });
-  } catch (error) {
-    console.error(`[wa-agent ${stamp()}] webhook error: ${error instanceof Error ? error.message : error}`);
-    json(res, 500, { ok: false });
-  }
-});
+  });
 
-inbox.on("error", (error) => {
-  console.warn(`[wa-agent] inbox tidak bisa listen di ${inboxPort}: ${error.message}`);
-});
+  inbox.on("error", (error) => {
+    console.warn(`[wa-agent] inbox tidak bisa listen di ${inboxPort}: ${error.message}`);
+  });
+}
 
 async function tick() {
   const session = await ensureSession();
   lastTickAt = new Date().toISOString();
   if (!session?.id || session.status !== "ready") {
-    notice("sesi WhatsApp belum ready. Menunggu scan/verifikasi.");
+    notice(`sesi WhatsApp belum ready (${session?.status || "?"}). Menunggu scan/verifikasi.`);
     return;
   }
 
-  const rows = await sql.query(
-    `select id, to_number, content, attempts, idempotency_key
-     from wa_outbox
-     where status = 'pending' and next_attempt_at <= now()
-     order by id
-     limit 10`,
-  );
+  let rows;
+  if (useBridge) {
+    rows = await fetchBridgeRows();
+  } else {
+    rows = await sql.query(
+      `select id, to_number, chat_id, content, attempts, idempotency_key
+       from wa_outbox
+       where status = 'pending' and next_attempt_at <= now()
+       order by id
+       limit 10`,
+    );
+  }
 
   if (!rows.length) {
     notice("terhubung. Menunggu pesan baru.");
@@ -325,6 +367,22 @@ async function tick() {
   for (const row of rows) {
     if (stopping) return;
     const result = await sendMessage(row, session.id);
+    if (useBridge) {
+      const state = await reportBridge(row, result);
+      if (result.ok) {
+        console.log(`[wa-agent ${stamp()}] terkirim #${row.id} → ${row.chat_id || row.to_number}`);
+      } else if (!state.httpOk) {
+        console.warn(`[wa-agent ${stamp()}] laporan #${row.id} gagal: HTTP ${state.status}`);
+      } else {
+        const info = state.json || {};
+        console.warn(
+          `[wa-agent ${stamp()}] gagal #${row.id} (${info.attempts ?? "?"}/8): ${result.error}` +
+            (info.final ? " — ditandai failed" : ` — coba lagi dalam ${info.delaySeconds ?? "?"}s`),
+        );
+      }
+      continue;
+    }
+
     if (result.ok) {
       await markSent(row.id);
       console.log(`[wa-agent ${stamp()}] terkirim #${row.id} → ${row.to_number}`);
@@ -339,16 +397,18 @@ async function tick() {
 }
 
 console.log(`[wa-agent] OpenWA: ${base}`);
-console.log(`[wa-agent] Sesi: ${sessionName} · antrean dicek tiap ${pollMs / 1000}s`);
-console.log(`[wa-agent] Inbox: http://127.0.0.1:${inboxPort}/webhook`);
-
-inbox.listen(inboxPort, "127.0.0.1", () => {
-  console.log(`[wa-agent] Webhook lokal siap di http://127.0.0.1:${inboxPort}/health`);
-});
+console.log(
+  `[wa-agent] Sesi: ${sessionName} · antrean: ${useBridge ? site : "DATABASE_URL lokal"} · cek tiap ${pollMs / 1000}s`,
+);
+if (inbox) {
+  inbox.listen(inboxPort, "127.0.0.1", () => {
+    console.log(`[wa-agent] Inbox lokal: http://127.0.0.1:${inboxPort}/webhook`);
+  });
+}
 
 const shutdown = () => {
   stopping = true;
-  inbox.close();
+  if (inbox) inbox.close();
   console.log("\n[wa-agent] berhenti.");
   process.exit(0);
 };
