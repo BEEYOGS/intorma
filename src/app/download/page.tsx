@@ -5,7 +5,12 @@ import { CheckCircle2, Clock3, Download, ExternalLink, Monitor, Smartphone } fro
 export const metadata = { title: "Download aplikasi", robots: { index: false } };
 
 const RELEASES_URL = "https://github.com/BEEYOGS/intorma/releases";
-const RELEASES_API = "https://api.github.com/repos/BEEYOGS/intorma/releases?per_page=20";
+
+/** Kunci cache berubah tiap 5 menit supaya aset rilis baru tidak tersangkut di Data Cache lama. */
+function releasesApi() {
+  const bucket = Math.floor(Date.now() / (5 * 60 * 1000));
+  return `https://api.github.com/repos/BEEYOGS/intorma/releases?per_page=20&t=${bucket}`;
+}
 
 type ReleaseAsset = {
   name: string;
@@ -37,7 +42,7 @@ async function getLatestRelease(): Promise<Release | null> {
     return releaseCache.release;
   }
   try {
-    const res = await fetch(RELEASES_API, {
+    const res = await fetch(releasesApi(), {
       headers: {
         Accept: "application/vnd.github+json",
         "User-Agent": "in.torma-download-page",
