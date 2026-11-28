@@ -1,5 +1,5 @@
 /* in.torma service worker — hanya aset publik dan halaman publik yang di-cache. */
-const CACHE = "intorma-v26";
+const CACHE = "intorma-v27";
 const SHELL = [
   "/",
   "/?source=installed_app",
@@ -13,7 +13,7 @@ const SHELL = [
   "/logos/bni.svg",
   "/logos/bri.svg",
   "/logos/permata.svg",
-  "/manifest.webmanifest?v=4",
+  "/manifest.webmanifest?v=5",
 ];
 
 // Halaman yang memuat data pelanggan tidak boleh tersimpan di Cache Storage,

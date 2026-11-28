@@ -25,12 +25,13 @@ import { StorefrontBottomNav } from "@/components/StorefrontBottomNav";
 import { ServiceWorkerRegister } from "@/components/PWA";
 import { InstallButtonLazy } from "@/components/InstallButtonLazy";
 import { AppBackHandler } from "@/components/AppBackHandler";
+import { QuickTools } from "@/components/QuickTools";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://intorma-psi.vercel.app"),
   title: { default: "in.torma — Studio desain & cetak", template: "%s — in.torma" },
   applicationName: "in.torma",
-  manifest: "/manifest.webmanifest?v=4",
+  manifest: "/manifest.webmanifest?v=5",
   openGraph: {
     type: "website",
     locale: "id_ID",
@@ -80,6 +81,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ServiceWorkerRegister />
         <InstallButtonLazy />
         <AppBackHandler />
+        <QuickTools />
         <ToastHost />
       </body>
     </html>

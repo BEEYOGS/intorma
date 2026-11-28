@@ -25,6 +25,32 @@ export function CommandPalette() {
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const [recent, setRecent] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem("intorma-command-recent") || "[]") as unknown;
+      if (Array.isArray(parsed)) {
+        setRecent(parsed.filter((item): item is string => typeof item === "string" && item.length >= 2).slice(0, 5));
+      }
+    } catch {
+      /* Abaikan data rusak. */
+    }
+  }, []);
+
+  const rememberQuery = useCallback((value: string) => {
+    const clean = value.trim().slice(0, 60);
+    if (clean.length < 2) return;
+    setRecent((current) => {
+      const next = [clean, ...current.filter((item) => item.toLowerCase() !== clean.toLowerCase())].slice(0, 5);
+      try {
+        window.localStorage.setItem("intorma-command-recent", JSON.stringify(next));
+      } catch {
+        /* Abaikan. */
+      }
+      return next;
+    });
+  }, []);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -136,6 +162,7 @@ export function CommandPalette() {
   }, [query, open]);
 
   function go(url: string) {
+    rememberQuery(query);
     close();
     router.push(url);
   }
@@ -176,10 +203,40 @@ export function CommandPalette() {
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto p-2">
-          {!hasResults && !loading && (
+          {!hasResults && !loading && !query && recent.length === 0 && (
             <p className="px-3 py-6 text-center text-sm text-mute">
-              {query ? "Tidak ada hasil." : "Ketik untuk mencari. Tekan Esc untuk tutup."}
+              Ketik untuk mencari. Tekan Esc untuk tutup.
             </p>
+          )}
+
+          {!query && recent.length > 0 && (
+            <Group
+              title="Pencarian terakhir"
+              action={
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRecent([]);
+                    try {
+                      window.localStorage.removeItem("intorma-command-recent");
+                    } catch {
+                      /* Abaikan. */
+                    }
+                  }}
+                  className="min-h-12 text-xs text-mute underline underline-offset-4 hover:text-ink"
+                >
+                  Hapus
+                </button>
+              }
+            >
+              {recent.map((term) => (
+                <Item key={term} label={term} hint="riwayat" onClick={() => setQuery(term)} />
+              ))}
+            </Group>
+          )}
+
+          {query && !hasResults && !loading && (
+            <p className="px-3 py-6 text-center text-sm text-mute">Tidak ada hasil.</p>
           )}
 
           {data.pages.length > 0 && (
@@ -225,10 +282,13 @@ export function CommandPalette() {
   );
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+function Group({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="mb-2">
-      <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-mute">{title}</p>
+      <div className="flex items-center justify-between gap-3 px-3">
+        <p className="py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-mute">{title}</p>
+        {action}
+      </div>
       <div className="space-y-0.5">{children}</div>
     </div>
   );

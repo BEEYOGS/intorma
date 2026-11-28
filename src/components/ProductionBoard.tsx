@@ -84,6 +84,24 @@ export function ProductionBoard({ orders, returnTo }: { orders: Order[]; returnT
             </span>
           </header>
 
+          {column.items.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1.5 text-xs">
+              <span className="rounded-tag-sm border border-line px-2 py-0.5 text-mute">
+                {column.items.length} pesanan
+              </span>
+              {column.items.some((item) => !item.paid && item.price != null) && (
+                <span className="rounded-tag-sm border border-line px-2 py-0.5 text-mute">
+                  {column.items.filter((item) => !item.paid && item.price != null).length} belum bayar
+                </span>
+              )}
+              {column.items.some((item) => deadlineInfo(item.deadline_at ?? item.deadline)?.overdue) && (
+                <span className="rounded-tag-sm border border-danger/30 px-2 py-0.5 text-danger">
+                  {column.items.filter((item) => deadlineInfo(item.deadline_at ?? item.deadline)?.overdue).length} terlambat
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="space-y-3">
             {column.items.length === 0 && (
               <p className="rounded-tag-sm border border-dashed border-line px-3 py-6 text-center text-xs text-mute">

@@ -284,6 +284,20 @@ export function OrderForm({
     setDraft(null);
   }
 
+  // Kirim cepat dari keyboard. Dialog tanggal/jam punya focus trap sendiri,
+  // jadi shortcut ini sengaja dilewati saat dialog modal terbuka.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
+      if (pending || uploading || refUploading) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      event.preventDefault();
+      formRef.current?.requestSubmit();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pending, uploading, refUploading]);
+
   const chosen = services.find((service) => service.id === selectedId);
   const isArea = chosen?.pricing_model === "area";
   const isPerUnit = chosen?.pricing_model === "per_unit";
@@ -1313,6 +1327,10 @@ setInteracted(true);
             <p className="text-sm leading-6 text-mute sm:max-w-[20rem] sm:text-right">
               Setelah dibuat, kamu langsung melihat total dan instruksi pembayaran. Kode pesanan juga
               dikirim lewat WhatsApp.
+              <span className="mt-1 block text-xs">
+                Tip: tekan <kbd className="rounded border border-line px-1.5 py-0.5">Ctrl</kbd> +{" "}
+                <kbd className="rounded border border-line px-1.5 py-0.5">Enter</kbd> untuk mengirim.
+              </span>
             </p>
           </div>
             </>

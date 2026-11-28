@@ -53,6 +53,20 @@
       "description": "Cek status pesanan",
       "url": "/lacak",
       "icons": [{ "src": "/icons/icon-192.png?v=4", "sizes": "192x192" }]
+    },
+    {
+      "name": "Kalkulator harga",
+      "short_name": "Harga",
+      "description": "Hitung estimasi biaya layanan",
+      "url": "/kalkulator",
+      "icons": [{ "src": "/icons/icon-192.png?v=4", "sizes": "192x192" }]
+    },
+    {
+      "name": "Jelajahi layanan",
+      "short_name": "Katalog",
+      "description": "Lihat katalog dan favorit layanan",
+      "url": "/?source=installed_app#katalog",
+      "icons": [{ "src": "/icons/icon-192.png?v=4", "sizes": "192x192" }]
     }
   ]
 }

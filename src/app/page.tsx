@@ -4,6 +4,7 @@ import { TopBar } from "@/components/TopBar";
 import { ProductIllustration } from "@/components/ProductIllustration";
 import { StatusBadge } from "@/components/Chrome";
 import { BankLogo } from "@/components/BankLogo";
+import { CopyTextButton } from "@/components/CopyTextButton";
 import { WhatsAppIcon, WhatsAppLink } from "@/components/WhatsApp";
 import { STATUS_META, asStatus } from "@/lib/status";
 import { isAdmin } from "@/lib/auth";
@@ -226,8 +227,9 @@ export default async function ProductPage() {
                   {faq.q}
                   <span className="text-[var(--text-3)] group-open:rotate-45 transition-transform text-lg">+</span>
                 </summary>
-                <div className="px-5 pb-5 text-sm text-[var(--text-2)] leading-relaxed">
-                  {faq.a}
+                <div className="flex items-start justify-between gap-3 px-5 pb-5 text-sm leading-relaxed text-[var(--text-2)]">
+                  <span>{faq.a}</span>
+                  <CopyTextButton value={faq.a} label={`Salin jawaban: ${faq.q}`} className="shrink-0" />
                 </div>
               </details>
             ))}

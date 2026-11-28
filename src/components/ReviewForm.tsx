@@ -81,7 +81,15 @@ export function ReviewForm({
         </div>
       </div>
       <label className="block">
-        <span className="label">Ulasan</span>
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="label">Ulasan</span>
+          <span
+            aria-live="polite"
+            className={`mono text-xs ${comment.trim().length > 0 && comment.trim().length < 10 ? "text-danger" : "text-[var(--text-3)]"}`}
+          >
+            {comment.length}/1000
+          </span>
+        </span>
         <textarea
           value={comment}
           onChange={(event) => setComment(event.target.value)}
@@ -92,7 +100,26 @@ export function ReviewForm({
           placeholder="Ceritakan pengalamanmu: kualitas, kecepatan, dan komunikasi."
           className="field resize-y"
         />
+        <span className="mt-1 block text-xs text-[var(--text-3)]">
+          {comment.trim().length === 0
+            ? "Minimal 10 karakter."
+            : comment.trim().length < 10
+              ? `${10 - comment.trim().length} karakter lagi sebelum bisa dikirim.`
+              : "Ulasan siap dikirim."}
+        </span>
       </label>
+      {comment.trim().length >= 10 && (
+        <details className="rounded-tag-sm border border-line px-3 py-2">
+          <summary className="inline-flex min-h-12 cursor-pointer items-center text-xs font-semibold text-[var(--text-2)]">
+            Pratinjau ulasan
+          </summary>
+          <div className="border-t border-line pt-3 text-sm leading-6 text-[var(--text-2)]">
+            <span className="font-semibold text-accent">{name}</span> · {"★".repeat(rating)}
+            {"☆".repeat(5 - rating)}
+            <p className="mt-1 whitespace-pre-wrap">{comment.trim()}</p>
+          </div>
+        </details>
+      )}
       <button type="submit" disabled={pending} className="btn btn-primary min-h-10 px-4 text-sm">
         {pending ? "Mengirim…" : "Kirim ulasan"}
       </button>

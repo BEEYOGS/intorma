@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
+import { CopyTextButton } from "@/components/CopyTextButton";
 import { isAdmin } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { tanggal } from "@/lib/format";
@@ -41,6 +42,9 @@ export default async function AuditPage({
 
   const total = Number(countRows[0]?.n ?? 0);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const serialize = (value: unknown) =>
+    JSON.stringify(value, (_key, item) => (typeof item === "bigint" ? item.toString() : item), 2);
+  const pageJson = serialize(rows);
 
   return (
     <AdminShell active="audit">
@@ -60,6 +64,9 @@ export default async function AuditPage({
           />
           <button type="submit" className="btn btn-outline min-h-10 px-4 text-sm">Cari</button>
         </form>
+        {rows.length > 0 && (
+          <CopyTextButton value={pageJson} label="Salin JSON halaman ini" className="sm:ml-auto" />
+        )}
       </div>
 
       <div className="mt-6 text-sm text-mute">
@@ -96,7 +103,10 @@ export default async function AuditPage({
                   <td className="px-4 py-3 font-mono text-xs">{r.entity_id ? String(r.entity_id) : "—"}</td>
                   <td className="px-4 py-3 text-xs text-mute">
                     {r.meta ? (
-                      <pre className="whitespace-pre-wrap break-all font-mono text-xs">{JSON.stringify(r.meta)}</pre>
+                      <div className="flex items-start justify-between gap-2">
+                        <pre className="min-w-0 whitespace-pre-wrap break-all font-mono text-xs">{serialize(r.meta)}</pre>
+                        <CopyTextButton value={serialize(r.meta)} label={`Salin detail log ${String(r.id)}`} className="shrink-0" />
+                      </div>
                     ) : (
                       "—"
                     )}

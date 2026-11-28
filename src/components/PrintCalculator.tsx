@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Clipboard, Minus, Ruler } from "lucide-react";
+import { ArrowRight, Check, Clipboard, Download, Minus, Ruler } from "lucide-react";
 import { toast } from "@/components/Toast";
 
 type ColorMode = "CMYK" | "RGB";
@@ -68,6 +68,40 @@ export function PrintCalculator() {
   const [bleed, setBleed] = useState("3");
   const [safe, setSafe] = useState("5");
   const [color, setColor] = useState<ColorMode>("CMYK");
+  const [restored, setRestored] = useState(false);
+
+  // Pulihkan spesifikasi terakhir agar tidak perlu mengisi ulang saat dibuka lagi.
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("intorma-print-calc");
+      if (raw) {
+        const saved = JSON.parse(raw) as Record<string, string>;
+        if (typeof saved.presetId === "string") setPresetId(saved.presetId);
+        if (typeof saved.width === "string") setWidth(saved.width);
+        if (typeof saved.height === "string") setHeight(saved.height);
+        if (typeof saved.quantity === "string") setQuantity(saved.quantity);
+        if (typeof saved.dpi === "string") setDpi(saved.dpi);
+        if (typeof saved.bleed === "string") setBleed(saved.bleed);
+        if (typeof saved.safe === "string") setSafe(saved.safe);
+        if (saved.color === "CMYK" || saved.color === "RGB") setColor(saved.color);
+      }
+    } catch {
+      /* Data rusak diabaikan; nilai default tetap dipakai. */
+    }
+    setRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      window.localStorage.setItem(
+        "intorma-print-calc",
+        JSON.stringify({ presetId, width, height, quantity, dpi, bleed, safe, color }),
+      );
+    } catch {
+      /* Penyimpanan privat bisa ditolak; kalkulator tetap berfungsi. */
+    }
+  }, [restored, presetId, width, height, quantity, dpi, bleed, safe, color]);
 
   const applyPreset = (preset: Preset) => {
     setPresetId(preset.id);
@@ -148,6 +182,25 @@ export function PrintCalculator() {
       toast("Spesifikasi disalin.", "ok");
     } catch {
       toast("Gagal menyalin. Pilih teks hasil hitung lalu salin manual.", "error");
+    }
+  };
+
+  const downloadSpec = () => {
+    try {
+      const blob = new Blob([`${specText}\n\nDihitung di in.torma.pre-press.\n`], {
+        type: "text/plain;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `in.torma-spesifikasi-${presetId === "custom" ? "custom" : presetId}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast("Spesifikasi diunduh.", "ok");
+    } catch {
+      toast("Spesifikasi tidak bisa diunduh di perangkat ini.", "error");
     }
   };
 
@@ -378,10 +431,14 @@ export function PrintCalculator() {
               <button type="button" onClick={copySpec} className="btn btn-ghost flex-1 !h-12 text-xs">
                 <Clipboard aria-hidden className="size-3.5" /> Salin spesifikasi
               </button>
+              <button type="button" onClick={downloadSpec} className="btn btn-ghost flex-1 !h-12 text-xs">
+                <Download aria-hidden className="size-3.5" /> Unduh .txt
+              </button>
               <Link href="/order" className="btn btn-primary flex-1 !h-12 text-xs">
                 Buat pesanan <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </div>
+            <p className="mt-3 text-xs text-[var(--text-3)]">Spesifikasi terakhir disimpan otomatis di perangkat ini.</p>
           </div>
         </div>
       </section>

@@ -2,27 +2,58 @@
 <html lang="id">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#070809" />
     <title>Offline — in.torma</title>
     <style>
       :root { color-scheme: dark; }
       * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
       body {
-        margin: 0; min-height: 100dvh; display: grid; place-items: center;
-        background: #070809; color: #f5f7f9;
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        background: #070809;
+        color: #f5f7f9;
         font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-        padding: 24px;
+        padding: calc(24px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
+        overflow-x: clip;
       }
-      main { max-width: 28rem; }
+      main { width: 100%; max-width: 28rem; }
       img { width: 56px; height: 56px; display: block; border-radius: 14px 14px 14px 0; }
-      p.eyebrow { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #9ba0a3; margin: 28px 0 12px; }
-      h1 { font-size: clamp(2rem, 7vw, 3rem); line-height: 1; letter-spacing: -.04em; margin: 0; }
+      p.eyebrow { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #9ba0a3; margin: 28px 0 12px; }
+      h1 { font-size: clamp(2rem, 7vw, 3rem); line-height: 1; letter-spacing: -.04em; margin: 0; text-wrap: balance; }
       h1 em { font-family: Georgia, serif; font-weight: 400; color: #c6c8c9; }
       p.desc { color: #9ba0a3; line-height: 1.6; margin: 18px 0 28px; }
-      button {
-        border: 0; border-radius: 16px 16px 16px 0; padding: 14px 22px;
-        background: #f5f7f9; color: #070809; font: inherit; font-weight: 700; cursor: pointer;
+      .status {
+        display: inline-flex; align-items: center; gap: 8px;
+        margin-top: 20px; padding: 8px 12px; min-height: 40px;
+        border: 1px solid #2a2d31; border-radius: 10px 10px 10px 0;
+        color: #9ba0a3; font-size: 13px;
       }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #0070f3; }
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+      button, a.btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-height: 48px; padding: 12px 20px;
+        border: 1px solid transparent; border-radius: 16px 16px 16px 0;
+        background: #f5f7f9; color: #070809;
+        font: inherit; font-weight: 700; text-decoration: none; cursor: pointer;
+        touch-action: manipulation;
+      }
+      a.btn.secondary { background: transparent; color: #f5f7f9; border-color: #2a2d31; }
+      button:focus-visible, a:focus-visible { outline: 2px solid #3291ff; outline-offset: 2px; }
+      .saved { margin-top: 28px; border-top: 1px solid #2a2d31; padding-top: 20px; }
+      .saved h2 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: #9ba0a3; margin: 0 0 12px; }
+      .links { display: flex; flex-wrap: wrap; gap: 8px; }
+      .links a {
+        display: inline-flex; align-items: center; min-height: 48px; padding: 0 14px;
+        border: 1px solid #2a2d31; border-radius: 10px 10px 10px 0;
+        color: #c6c8c9; text-decoration: none; font-size: 14px;
+      }
+      .links a:hover { border-color: #3f4348; color: #f5f7f9; }
+      @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
     </style>
   </head>
   <body>
@@ -30,8 +61,35 @@
       <img src="/icon.svg?v=4" alt="in.torma" />
       <p class="eyebrow">Sedang offline</p>
       <h1>Koneksi sedang <em>putus.</em></h1>
-      <p class="desc">Halaman yang kamu buka belum tersimpan di perangkat. Sambungkan internet dulu, lalu coba lagi.</p>
-      <button type="button" onclick="location.reload()">Coba lagi</button>
+      <p class="desc">Halaman yang kamu buka belum tersimpan di perangkat. Sambungkan internet dulu, lalu coba lagi. Beberapa halaman utama tetap bisa dibuka tanpa koneksi.</p>
+      <div class="status" role="status" aria-live="polite">
+        <span class="dot" aria-hidden></span>
+        <span id="status-text">Menunggu koneksi…</span>
+      </div>
+      <div class="actions" style="margin-top:20px">
+        <button type="button" onclick="location.reload()">Coba lagi</button>
+        <a class="btn secondary" href="/?source=installed_app">Ke beranda</a>
+      </div>
+      <section class="saved" aria-labelledby="saved-title">
+        <h2 id="saved-title">Tersedia tanpa koneksi</h2>
+        <div class="links">
+          <a href="/order">Pesan layanan</a>
+          <a href="/kalkulator">Kalkulator</a>
+          <a href="/lacak">Lacak pesanan</a>
+        </div>
+      </section>
     </main>
+    <script>
+      (function () {
+        var text = document.getElementById("status-text");
+        function update() {
+          text.textContent = navigator.onLine ? "Koneksi kembali — memuat ulang…" : "Masih offline. Periksa Wi-Fi atau data seluler.";
+          if (navigator.onLine) window.setTimeout(function () { window.location.reload(); }, 600);
+        }
+        window.addEventListener("online", update);
+        window.addEventListener("offline", update);
+        update();
+      })();
+    </script>
   </body>
 </html>
