@@ -50,7 +50,9 @@ export function CameraCapture({
   const previewUrlRef = useRef<string | null>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const lastStageRef = useRef<Stage>("guide");
 
   const [stage, setStage] = useState<Stage>("guide");
   const [error, setError] = useState("");
@@ -137,8 +139,11 @@ export function CameraCapture({
   }, [close, open, releasePreview, stopStream]);
 
   // Kamera harus mati saat aplikasi ke background / halaman ditinggalkan.
+  // Hanya bereaksi saat hidden, supaya kembali ke tab tidak mematikan stream
+  // yang sengaja dibuka pengguna setelah ia mengetuk tombol kamera.
   useEffect(() => {
     const release = () => {
+      if (document.visibilityState !== "hidden") return;
       stopStream();
       setStage((current) => (current === "camera" ? "guide" : current));
     };
@@ -149,6 +154,21 @@ export function CameraCapture({
       window.removeEventListener("pagehide", release);
     };
   }, [stopStream]);
+
+  // Fokus mengikuti aksi utama tiap tahap. Ini penting untuk keyboard dan
+  // screen reader: tombol yang memicu tahap baru tidak boleh kehilangan fokus.
+  useEffect(() => {
+    if (!open) {
+      lastStageRef.current = "guide";
+      return;
+    }
+    if (lastStageRef.current === stage) return;
+    lastStageRef.current = stage;
+    const frame = requestAnimationFrame(() => {
+      footerRef.current?.querySelector<HTMLElement>("[data-primary-action]")?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open, stage]);
 
   const startCamera = useCallback(
     async (direction: "environment" | "user" = facing) => {
@@ -203,6 +223,17 @@ export function CameraCapture({
 
         stopStream();
         streamRef.current = stream;
+        // Izin bisa dicabut dari pengaturan browser/system selagi kamera aktif.
+        // Jangan biarkan viewfinder menampilkan frame terakhir yang sudah mati.
+        stream.getVideoTracks().forEach((track) => {
+          track.addEventListener("ended", () => {
+            if (streamRef.current !== stream) return;
+            streamRef.current = null;
+            stopStream();
+            setError("Kamera berhenti karena izin dicabut atau perangkat tidak tersedia. Pakai galeri, ya.");
+            setStage("denied");
+          });
+        });
         const video = videoRef.current;
         if (video) {
           video.srcObject = stream;
@@ -310,6 +341,23 @@ export function CameraCapture({
   const shell = "mx-auto w-full max-w-lg px-5";
   const action =
     "flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-sharp)] border border-white/25 px-4 text-sm font-medium transition-colors hover:border-white/60 disabled:opacity-50";
+  const primary = `${action} border-[#0070f3] bg-[#0070f3] font-semibold hover:border-[#3291ff] hover:bg-[#3291ff]`;
+  // Setelah penolakan/kegagalan kamera, jangan memaksa izin lagi. Galeri
+  // menjadi jalur utama yang bisa langsung dipakai pengguna.
+  const galleryFirst =
+    stage === "denied" ||
+    (stage === "error" && /tidak ditemukan|tidak tersedia|terlalu lama|tidak merespons/.test(error));
+  const announcement = busy
+    ? "Membuka kamera. Izin bisa diminta oleh perangkat."
+    : stage === "camera"
+      ? "Kamera siap. Tekan tombol ambil foto."
+      : stage === "preview"
+        ? "Foto siap. Periksa, lalu gunakan atau ambil ulang."
+        : stage === "denied"
+          ? "Izin kamera tidak diberikan. Pilih foto dari galeri."
+          : stage === "error"
+            ? error
+            : "";
 
   return (
     <div
@@ -317,6 +365,7 @@ export function CameraCapture({
       role="dialog"
       aria-modal="true"
       aria-labelledby="camera-title"
+      aria-describedby="camera-guide"
       tabIndex={-1}
       className="fixed inset-0 z-[80] flex h-[100dvh] w-full flex-col overflow-hidden bg-black text-white outline-none"
     >
@@ -394,11 +443,12 @@ export function CameraCapture({
                 <div className="mt-4 rounded-[var(--radius-sharp)] border border-white/25 bg-white/5 p-4 text-sm">
                   <p className="flex items-center gap-2 font-medium">
                     <AlertTriangle aria-hidden className="size-4 shrink-0 text-[#3291ff]" />
-                    Izin kamera belum diberikan
+                    Kamera tidak diaktifkan
                   </p>
                   <p className="mt-2 text-xs leading-5 text-white/70">
-                    Buka Setelan → Aplikasi → in.torma → Izin → Kamera, lalu izinkan. Atau cukup pilih
-                    foto dari galeri—tidak perlu izin kamera.
+                    Kamu tidak memberi izin kamera, jadi fitur kamera tidak dipakai. Foto dari galeri
+                    tetap bisa dikirim tanpa izin kamera. Kalau nanti ingin memakai kamera, izinkan
+                    lewat Setelan → Aplikasi → in.torma → Izin → Kamera.
                   </p>
                 </div>
               ) : null}
@@ -412,7 +462,10 @@ export function CameraCapture({
         )}
       </div>
 
-      <div className="relative z-10 shrink-0 border-t border-white/10 bg-black/90 px-4 pt-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))]">
+      <div
+        ref={footerRef}
+        className="relative z-10 shrink-0 border-t border-white/10 bg-black/90 px-4 pt-3 pb-[calc(0.75rem_+_env(safe-area-inset-bottom))]"
+      >
         <div className={shell}>
           {stage === "camera" ? (
             <div className="flex items-center justify-center gap-4">
@@ -426,6 +479,7 @@ export function CameraCapture({
               <button
                 type="button"
                 onClick={capture}
+                data-primary-action
                 aria-label="Ambil foto"
                 className="grid size-[72px] shrink-0 place-items-center rounded-full border-[3px] border-white bg-white/10 transition-transform active:scale-95"
               >
@@ -444,11 +498,31 @@ export function CameraCapture({
               <button type="button" onClick={retake} className={action}>
                 <RotateCcw aria-hidden className="size-4" /> Ambil ulang
               </button>
-              <button type="button" onClick={usePhoto} className={`${action} border-[#0070f3] bg-[#0070f3] font-semibold hover:border-[#3291ff] hover:bg-[#3291ff]`}>
+              <button type="button" onClick={() => void usePhoto()} data-primary-action className={primary}>
                 <Check aria-hidden className="size-4" /> Gunakan foto
               </button>
               <button type="button" onClick={close} className={action}>
                 Batal
+              </button>
+            </div>
+          ) : galleryFirst ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => galleryRef.current?.click()}
+                data-primary-action
+                className={primary}
+              >
+                <Images aria-hidden className="size-4" /> Pilih dari galeri
+              </button>
+              <button
+                type="button"
+                onClick={() => void startCamera()}
+                disabled={busy}
+                className={action}
+              >
+                <CameraIcon aria-hidden className="size-4" />
+                {busy ? "Membuka kamera…" : stage === "denied" ? "Coba kamera lagi" : "Coba lagi"}
               </button>
             </div>
           ) : (
@@ -457,18 +531,19 @@ export function CameraCapture({
                 type="button"
                 onClick={() => void startCamera()}
                 disabled={busy}
-                className={`${action} border-[#0070f3] bg-[#0070f3] font-semibold hover:border-[#3291ff] hover:bg-[#3291ff]`}
+                data-primary-action
+                className={primary}
               >
                 <CameraIcon aria-hidden className="size-4" />
-                {busy ? "Membuka kamera…" : stage === "denied" ? "Coba kamera lagi" : "Ambil foto"}
+                {busy ? "Membuka kamera…" : "Ambil foto"}
               </button>
               <button type="button" onClick={() => galleryRef.current?.click()} className={action}>
                 <Images aria-hidden className="size-4" /> Pilih dari galeri
               </button>
             </div>
           )}
-          <p aria-live="polite" className="sr-only">
-            {busy ? "Membuka kamera" : stage === "preview" ? "Foto siap digunakan" : ""}
+          <p role="status" aria-live="polite" className="sr-only">
+            {announcement}
           </p>
         </div>
       </div>
@@ -493,7 +568,7 @@ function GuideCard({ guide }: { guide: string }) {
     { icon: <Check aria-hidden className="size-4 shrink-0 text-[#3291ff]" />, text: "Tahan HP sebentar sampai gambar tidak buram." },
   ];
   return (
-    <section className="pt-5 text-white">
+    <section id="camera-guide" className="pt-5 text-white">
       <p className="text-xs uppercase tracking-[0.18em] text-[#3291ff]">Panduan</p>
       <h3 className="mt-1 text-lg font-semibold tracking-tight">{guide}</h3>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -516,8 +591,12 @@ function GuideCard({ guide }: { guide: string }) {
         ))}
       </ul>
       <p className="mt-4 text-xs leading-5 text-white/55">
-        Foto diubah ke JPG dan metadata lokasi dibuang sebelum dikirim. Kamera hanya dibuka setelah kamu
-        mengetuk tombol—tidak ada popup otomatis.
+        Izin kamera diminta hanya setelah kamu mengetuk “Ambil foto”. Menolak izin tidak memblokir
+        pesanan—galeri tetap bisa dipakai.
+      </p>
+      <p className="mt-2 text-xs leading-5 text-white/55">
+        Foto diubah ke JPG dan metadata lokasi dibuang sebelum dikirim. Tidak ada popup atau kamera
+        otomatis.
       </p>
     </section>
   );
