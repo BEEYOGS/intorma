@@ -54,6 +54,64 @@ h1, h2, h3, h4 {
   outline-offset: 2px;
 }
 
+/* Banyak perbaikan kecil sekaligus: target sentuh lebih responsif, teks terpilih jelas,
+   input nyaman, dan print tidak membawa dekorasi halaman. */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+button {
+  user-select: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--text);
+}
+
+h1, h2, h3, h4 {
+  scroll-margin-top: calc(var(--topbar-offset) + 12px);
+}
+
+input,
+textarea,
+select {
+  caret-color: var(--accent);
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border: #52525b;
+    --border-2: #71717a;
+    --text-2: #d4d4d8;
+    --text-3: #a1a1aa;
+  }
+}
+
+@media print {
+  body::before,
+  body::after,
+  .topbar,
+  .storefront-bottom-nav,
+  .admin-bottom-nav {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
