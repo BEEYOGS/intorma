@@ -142,11 +142,13 @@ Halaman `/download` mengarah ke aset rilis GitHub yang dibangun oleh
 hanya muncul setelah pengguna mengetuknya; tidak ada auto-modal. Penolakan disimpan 30 hari dan
 “Nanti” 7 hari di localStorage.
 
-**Status rilis saat ini:** installer Windows v1.0.2 sudah nyata tetapi **belum di-code-sign**
-(SmartScreen masih bisa muncul) karena belum ada sertifikat code signing. APK v1.0.2 sekarang sudah
+**Status rilis saat ini:** installer Windows v1.0.2 sudah ditandatangani dengan sertifikat
+self-signed `CN=in.torma` + timestamp DigiCert, tetapi root-nya tidak trusted sehingga SmartScreen
+tetap bisa muncul; untuk distribusi luas tetap diperlukan sertifikat OV/EV dari CA. APK v1.0.2 sekarang sudah
 dibangun sebagai `release` dan ditandatangani dengan keypair RSA 2048 milik sendiri (v2/v3 terverifikasi);
-ini build sideload, bukan artifact Play Store. keystore ada di `android/intorma-release.jks` dan
-kredensialnya di `.env.signing`—keduanya di-ignore git. Workflow CI tetap bisa memakai secret
+ini build sideload, bukan artifact Play Store. keystore ada di `android/intorma-release.jks`, sertifikat Windows di
+`certs/intorma-code-signing.pfx`, dan kredensialnya di `.env.signing`—semuanya di-ignore git.
+Workflow CI tetap bisa memakai secret
 `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, dan `KEY_PASSWORD` bila dipakai.
 
 Tauri dan Capacitor adalah **wrapper online** ke `https://intorma-psi.vercel.app`, bukan static

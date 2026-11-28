@@ -12,6 +12,7 @@ logs/
 !.env.example
 *.jks
 *.keystore
+*.pfx
 *.apk
 *.aab
 *.idsig
