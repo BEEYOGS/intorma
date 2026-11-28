@@ -66,6 +66,7 @@ for (const [key, value] of Object.entries(values)) {
   const child = spawn(npx, args, {
     cwd: root,
     env: process.env,
+    shell: process.platform === "win32",
     stdio: ["pipe", "pipe", "pipe"],
   });
   let output = "";

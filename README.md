@@ -145,9 +145,29 @@ ketukan di luar, dan mengembalikan fokus ke tombol pembuka.
 
 ### WhatsApp
 
-**Jalur utama: Meta WhatsApp Cloud API.** Tidak butuh PC, gateway lokal, atau `wa-agent`; pesan
-dikirim langsung dari Vercel. Adapter OpenWA tetap ada sebagai fallback self-hosted, dan Fonnte hanya
-kompatibilitas lama (footernya tidak bisa dihapus lewat API).
+**Jalur aktif: Fonnte.** Nomor WhatsApp yang sama tetap dipakai tanpa menghapus chat atau
+memindahkan nomor. Token dan URL webhook bersifat rahasia; jangan pernah ditempel di chat.
+
+```env
+WA_PROVIDER=fonnte
+FONNTE_TOKEN=token-dari-dashboard-fonnte
+OPENWA_WEBHOOK_SECRET=string-acak-panjang
+ADMIN_WHATSAPP_NUMBER=089617607952
+```
+
+Langkah Fonnte:
+
+1. Pastikan device di dashboard Fonnte berstatus **connect** dan kuota masih ada.
+2. Isi `FONNTE_TOKEN` di `.env.local` lewat halaman token lokal, lalu jalankan `npm run wa:fonnte:setup`.
+3. Di dashboard Fonnte → Device → Edit, set Webhook URL ke
+   `https://intorma-psi.vercel.app/api/wa/webhook/<OPENWA_WEBHOOK_SECRET>` dan aktifkan **auto read**.
+   Secret hanya lewat segmen path, bukan query string; halaman token lokal menampilkan URL lengkap.
+4. Deploy ulang: `npx --no-install vercel --prod --yes`.
+5. Paket Fonnte tertentu masih menambahkan footer pihak ketiga yang tidak bisa dihapus lewat API.
+   Pastikan paket yang dipakai mendukung pesan tanpa footer sebelum dipakai produksi.
+
+Meta WhatsApp Cloud API tetap tersedia sebagai alternatif tanpa gateway pihak ketiga, tetapi
+menunggu verifikasi nomor dan persetujuan template:
 
 ```env
 WA_PROVIDER=cloud
@@ -206,7 +226,7 @@ OPENWA_WEBHOOK_SECRET=string-acak-panjang
 `trycloudflare.com`. Kalau gateway tidak bisa dijangkau dari Vercel, pesan masuk `wa_outbox` dan
 dikirim oleh `npm run wa:agent`. Alias lama `OPENWA_URL`, `OPENWA_KEY`, dan `ADMIN_WA` masih dibaca.
 
-Kalau sudah pindah ke Cloud, nonaktifkan task lokal agar PC tidak menjalankan gateway lama:
+Kalau tidak memakai OpenWA (Fonnte atau Cloud), nonaktifkan task lokal agar PC tidak menjalankan gateway lama:
 
 ```powershell
 Disable-ScheduledTask -TaskName intorma-openwa

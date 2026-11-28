@@ -29,8 +29,11 @@ const line = "-".repeat(66);
 console.log(line);
 console.log("  Diagnosa WhatsApp in.torma");
 console.log(line);
-const provider = String(env.WA_PROVIDER || (env.META_WA_TOKEN ? "cloud" : "openwa")).trim();
+const provider = String(
+  env.WA_PROVIDER || (env.FONNTE_TOKEN ? "fonnte" : env.META_WA_TOKEN ? "cloud" : "openwa"),
+).trim();
 console.log(`  Provider     : ${provider}`);
+console.log(`  Situs publik : ${site || "(belum diisi)"}`);
 if (provider === "cloud") {
   const ready = ["META_WA_TOKEN", "META_WA_PHONE_ID", "META_WA_APP_SECRET", "META_WA_VERIFY_TOKEN"]
     .map((key) => `${key}=${ok(env[key])}`)
@@ -38,45 +41,65 @@ if (provider === "cloud") {
   console.log(`  Meta env     : ${ready}`);
   console.log("  Gateway lokal tidak diperlukan saat WA_PROVIDER=cloud.");
   console.log(line);
-}
-console.log(`  OpenWA URL   : ${base}`);
-console.log(`  Sesi         : ${sessionName}`);
-console.log(`  Situs publik : ${site || "(belum diisi)"}`);
-console.log(`  API key      : ${key ? "terisi" : "KOSONG"}`);
-console.log(line);
-
-try {
-  const health = await fetch(`${base}/api/health/ready`, { signal: AbortSignal.timeout(4000) });
-  console.log(`  Gateway      : ${ok(health.ok)} (HTTP ${health.status})`);
-} catch {
-  console.log("  Gateway      : MATI — jalankan OpenWA (npm run openwa)");
-}
-
-if (key) {
+} else if (provider === "fonnte") {
+  console.log(`  Token Fonnte : ${ok(env.FONNTE_TOKEN)}`);
+  console.log("  Webhook      : /api/wa/webhook/<secret> (secret tidak ditampilkan di sini)");
   try {
-    const res = await fetch(`${base}/api/sessions?name=${encodeURIComponent(sessionName)}`, {
-      headers: { "x-api-key": key },
+    const res = await fetch("https://api.fonnte.com/device", {
+      method: "POST",
+      headers: { Authorization: String(env.FONNTE_TOKEN || "") },
       signal: AbortSignal.timeout(5000),
     });
-    const list = await res.json().catch(() => []);
-    const session = (Array.isArray(list) ? list : []).find((item) => item.name === sessionName);
-    if (!session) {
-      console.log("  Sesi WA      : belum ada — jalankan npm run wa:session");
-    } else {
-      console.log(`  Sesi WA      : ${String(session.status || "?").toUpperCase()} · ${session.phone || "belum tertaut"}`);
-      if (session.status === "ready") {
-        const hooks = await fetch(`${base}/api/sessions/${session.id}/webhooks`, {
-          headers: { "x-api-key": key },
-          signal: AbortSignal.timeout(5000),
-        })
-          .then((r) => r.json())
-          .catch(() => []);
-        const hook = (Array.isArray(hooks) ? hooks : []).find((item) => String(item.url).includes("/api/wa/webhook"));
-        console.log(`  Webhook      : ${hook ? hook.url : "belum terdaftar — jalankan npm run wa:webhook"}`);
-      }
-    }
+    const device = await res.json().catch(() => null);
+    console.log(`  Device       : ${ok(device?.status === true)} (HTTP ${res.status})`);
+    if (device?.device) console.log(`  Nomor        : ${device.device}`);
+    if (device?.device_status) console.log(`  Status       : ${device.device_status}`);
+    if (device?.quota) console.log(`  Kuota        : ${device.quota}`);
+    if (device?.expired) console.log(`  Expired      : ${device.expired}`);
+    if (device?.reason) console.log(`  Alasan       : ${device.reason}`);
   } catch (error) {
-    console.log(`  Sesi WA      : gagal dicek (${error instanceof Error ? error.message : error})`);
+    console.log(`  Device       : gagal dicek (${error instanceof Error ? error.message : error})`);
+  }
+  console.log(line);
+} else {
+  console.log(`  OpenWA URL   : ${base}`);
+  console.log(`  Sesi         : ${sessionName}`);
+  console.log(`  API key      : ${key ? "terisi" : "KOSONG"}`);
+  console.log(line);
+
+  try {
+    const health = await fetch(`${base}/api/health/ready`, { signal: AbortSignal.timeout(4000) });
+    console.log(`  Gateway      : ${ok(health.ok)} (HTTP ${health.status})`);
+  } catch {
+    console.log("  Gateway      : MATI — jalankan OpenWA (npm run openwa)");
+  }
+
+  if (key) {
+    try {
+      const res = await fetch(`${base}/api/sessions?name=${encodeURIComponent(sessionName)}`, {
+        headers: { "x-api-key": key },
+        signal: AbortSignal.timeout(5000),
+      });
+      const list = await res.json().catch(() => []);
+      const session = (Array.isArray(list) ? list : []).find((item) => item.name === sessionName);
+      if (!session) {
+        console.log("  Sesi WA      : belum ada — jalankan npm run wa:session");
+      } else {
+        console.log(`  Sesi WA      : ${String(session.status || "?").toUpperCase()} · ${session.phone || "belum tertaut"}`);
+        if (session.status === "ready") {
+          const hooks = await fetch(`${base}/api/sessions/${session.id}/webhooks`, {
+            headers: { "x-api-key": key },
+            signal: AbortSignal.timeout(5000),
+          })
+            .then((r) => r.json())
+            .catch(() => []);
+          const hook = (Array.isArray(hooks) ? hooks : []).find((item) => String(item.url).includes("/api/wa/webhook"));
+          console.log(`  Webhook      : ${hook ? hook.url : "belum terdaftar — jalankan npm run wa:webhook"}`);
+        }
+      }
+    } catch (error) {
+      console.log(`  Sesi WA      : gagal dicek (${error instanceof Error ? error.message : error})`);
+    }
   }
 }
 
@@ -103,5 +126,11 @@ if (env.DATABASE_URL) {
 
 console.log(line);
 console.log("  Link chat publik tidak butuh gateway; tombol wa.me tetap jalan.");
-console.log("  Untuk notifikasi: npm run openwa → npm run wa:agent");
+if (provider === "fonnte") {
+  console.log("  Untuk notifikasi: isi token di Fonnte, set webhook rahasia, lalu deploy.");
+} else if (provider === "cloud") {
+  console.log("  Untuk notifikasi: Cloud API mengirim langsung dari Vercel.");
+} else {
+  console.log("  Untuk notifikasi: npm run openwa → npm run wa:agent");
+}
 console.log(line);
