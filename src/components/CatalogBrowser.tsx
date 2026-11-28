@@ -145,6 +145,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
   const [category, setCategory] = useState<Category>("all");
   const [budget, setBudget] = useState<"all" | "low" | "mid" | "high">("all");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [fastOnly, setFastOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>("recommended");
   const [hydrated, setHydrated] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -204,6 +205,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     if (isCategory(kat)) setCategory(kat);
     if (isSort(urut)) setSort(urut);
     if (bud === "low" || bud === "mid" || bud === "high") setBudget(bud);
+    if (params.get("cepat") === "1") setFastOnly(true);
     setHydrated(true);
   }, []);
 
@@ -321,12 +323,13 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     patch("kat", category, "all");
     patch("budget", budget, "all");
     patch("urut", sort, "recommended");
+    patch("cepat", fastOnly ? "1" : "", "");
     const search = params.toString();
     const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
     if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
       window.history.replaceState(window.history.state, "", next);
     }
-  }, [query, category, budget, sort, hydrated]);
+  }, [query, category, budget, sort, fastOnly, hydrated]);
 
   // Tekan "/" untuk fokus cari, Esc untuk mengosongkan saat kolom aktif.
   useEffect(() => {
@@ -370,7 +373,8 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
         (budget === "mid" && service.price_from >= 100000 && service.price_from <= 300000) ||
         (budget === "high" && service.price_from > 300000);
       const matchFavorite = !favoritesOnly || favorites.includes(service.id);
-      return matchCategory && matchBudget && matchFavorite;
+      const matchFast = !fastOnly || service.days <= 3;
+      return matchCategory && matchBudget && matchFavorite && matchFast;
     });
     if (sort !== "recommended") {
       list.sort((a, b) => {
@@ -385,7 +389,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
       list.sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name, "id"));
     }
     return list;
-  }, [searched, category, budget, sort, query, favorites, favoritesOnly]);
+  }, [searched, category, budget, sort, query, favorites, favoritesOnly, fastOnly]);
   const suggestions = useMemo(
     () => (query.trim() && visible.length === 0 ? searchSuggestions(query) : []),
     [query, visible.length],
@@ -396,6 +400,8 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     setCategory("all");
     setBudget("all");
     setSort("recommended");
+    setFastOnly(false);
+    setFavoritesOnly(false);
   }
 
   async function copyLink() {
@@ -408,7 +414,12 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
   }
 
   const filtered =
-    query.trim() !== "" || category !== "all" || budget !== "all" || sort !== "recommended";
+    query.trim() !== "" ||
+    category !== "all" ||
+    budget !== "all" ||
+    sort !== "recommended" ||
+    fastOnly ||
+    favoritesOnly;
 
   return (
     <div>
@@ -543,6 +554,19 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
           >
             Favorit
             <span className="mono text-xs">{String(favorites.length).padStart(2, "0")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFastOnly((value) => !value)}
+            aria-pressed={fastOnly}
+            className={`inline-flex min-h-12 items-center gap-2 rounded-tag-sm border px-3 text-xs font-medium transition-colors ${
+              fastOnly
+                ? "border-accent/40 bg-accent/10 text-ink"
+                : "border-line text-mute hover:border-[var(--border-2)] hover:text-ink"
+            }`}
+          >
+            Siap ≤3 hari
+            <span className="mono text-xs">{String(services.filter((service) => service.days <= 3).length).padStart(2, "0")}</span>
           </button>
         </div>
       </div>

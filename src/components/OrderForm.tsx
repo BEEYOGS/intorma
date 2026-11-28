@@ -29,6 +29,17 @@ function formatBytes(n: number): string {
   return `${(n / 1024 ** 3).toFixed(2)} GB`;
 }
 
+function waHint(value: string): { ok: boolean; text: string } {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return { ok: false, text: "Contoh: 0812 3456 7890" };
+  const normalized = digits.startsWith("62") ? digits : digits.startsWith("0") ? `62${digits.slice(1)}` : "";
+  if (!normalized) return { ok: false, text: "Gunakan nomor Indonesia yang diawali 08 atau +62." };
+  if (normalized.length < 10 || normalized.length > 16) {
+    return { ok: false, text: `${normalized.length - 2} digit setelah 62. Periksa lagi nomornya.` };
+  }
+  return { ok: true, text: "Nomor valid untuk WhatsApp." };
+}
+
 type PaymentInfo = {
   enabled: boolean;
   bankName: string;
@@ -104,11 +115,15 @@ export function OrderForm({
   const v = state?.values ?? {};
   const [deadlineDate, setDeadlineDate] = useState(v.deadline ?? "");
   const [deadlineTime, setDeadlineTime] = useState(v.deadlineTime || "17:00");
+  const [nameValue, setNameValue] = useState(v.name || customer?.name || "");
+  const [waValue, setWaValue] = useState(v.wa || customer?.wa || "");
 
   useEffect(() => {
     if (v.deadline) setDeadlineDate(v.deadline);
     if (v.deadlineTime) setDeadlineTime(v.deadlineTime);
-  }, [v.deadline, v.deadlineTime]);
+    if (typeof v.name === "string") setNameValue(v.name);
+    if (typeof v.wa === "string") setWaValue(v.wa);
+  }, [v.deadline, v.deadlineTime, v.name, v.wa]);
   const initial = services.find((service) => service.id === (v.service ?? preselect)) ?? services[0];
   const [selectedId, setSelectedId] = useState(initial?.id ?? "");
   const [qty, setQty] = useState(v.qty || String(initial?.min_qty ?? 1));
@@ -1022,11 +1037,37 @@ setInteracted(true);
             <div className="grid gap-5 sm:grid-cols-2">
               <label className="block">
                 <span className="label">Nama</span>
-                <input name="name" defaultValue={v.name || customer?.name || ""} autoComplete="name" className="field" required placeholder="Nama kamu" />
+                <input
+                  name="name"
+                  value={nameValue}
+                  onChange={(event) => setNameValue(event.target.value)}
+                  autoComplete="name"
+                  className="field"
+                  required
+                  minLength={2}
+                  placeholder="Nama kamu"
+                  aria-describedby="order-name-hint"
+                />
+                <span id="order-name-hint" aria-live="polite" className={`mt-1 block text-xs ${nameValue.trim().length >= 2 ? "text-accent" : "text-[var(--text-3)]"}`}>
+                  {nameValue.trim().length >= 2 ? "Nama siap dipakai." : "Minimal 2 karakter."}
+                </span>
               </label>
               <label className="block">
                 <span className="label">Nomor WhatsApp</span>
-                <input name="wa" defaultValue={v.wa || customer?.wa || ""} inputMode="tel" autoComplete="tel" placeholder="0812 3456 7890" className="field" required />
+                <input
+                  name="wa"
+                  value={waValue}
+                  onChange={(event) => setWaValue(event.target.value)}
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="0812 3456 7890"
+                  className="field"
+                  required
+                  aria-describedby="order-wa-hint"
+                />
+                <span id="order-wa-hint" aria-live="polite" className={`mt-1 block text-xs ${waHint(waValue).ok ? "text-accent" : "text-[var(--text-3)]"}`}>
+                  {waHint(waValue).text}
+                </span>
               </label>
             </div>
           </fieldset>

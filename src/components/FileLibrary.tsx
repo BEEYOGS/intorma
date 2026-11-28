@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Archive, Camera, Download, Eye, Upload, X } from "lucide-react";
@@ -138,6 +139,19 @@ export function FileLibrary({
     );
   }
 
+  function selectAll() {
+    setSelected(files.map((file) => file.id));
+    if (files.length > 20) toast("Maksimal 20 file untuk satu ZIP. Pilih sebagian.", "info");
+  }
+
+  function movePreview(direction: -1 | 1) {
+    if (!preview) return;
+    const index = files.findIndex((file) => file.id === preview.id);
+    if (index < 0) return;
+    const next = files[(index + direction + files.length) % files.length];
+    if (next) setPreview(next);
+  }
+
   async function uploadFile(file: File) {
     setUploading(true);
     setError("");
@@ -181,6 +195,29 @@ export function FileLibrary({
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        {files.length > 1 && (
+          <div className="flex items-center gap-1 rounded-tag-sm border border-line">
+            <button
+              type="button"
+              onClick={() => movePreview(-1)}
+              aria-label="File sebelumnya"
+              className="grid size-12 place-items-center text-mute transition-colors hover:text-[var(--text)] sm:size-10"
+            >
+              ←
+            </button>
+            <span className="mono px-1 text-xs text-mute">
+              {files.findIndex((file) => file.id === preview.id) + 1}/{files.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => movePreview(1)}
+              aria-label="File berikutnya"
+              className="grid size-12 place-items-center text-mute transition-colors hover:text-[var(--text)] sm:size-10"
+            >
+              →
+            </button>
+          </div>
+        )}
         <a
           href={`/api/upload/${preview.code}?download=1`}
           download
@@ -240,14 +277,29 @@ export function FileLibrary({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {selected.length > 0 && (
-              <a
-                href={`/api/files/zip?ids=${selected.join(",")}`}
-                download
-                className="btn btn-primary min-h-12 px-4 text-sm sm:min-h-10"
+            {files.length > 0 && (
+              <button
+                type="button"
+                onClick={() => (selected.length === files.length ? setSelected([]) : selectAll())}
+                className="inline-flex min-h-12 items-center rounded-tag-sm border border-line px-3 text-xs text-mute transition-colors hover:border-[var(--border-2)] hover:text-[var(--text)] sm:min-h-10"
               >
-                <Archive aria-hidden className="size-4" /> Unduh ZIP ({selected.length})
-              </a>
+                {selected.length === files.length ? "Kosongkan pilihan" : "Pilih semua"}
+              </button>
+            )}
+            {selected.length > 0 && (
+              <>
+                <span className="text-xs text-mute">
+                  {selected.length} dipilih ·{" "}
+                  {formatSize(files.filter((file) => selected.includes(file.id)).reduce((sum, file) => sum + file.size, 0))}
+                </span>
+                <a
+                  href={`/api/files/zip?ids=${selected.slice(0, 20).join(",")}`}
+                  download
+                  className="btn btn-primary min-h-12 px-4 text-sm sm:min-h-10"
+                >
+                  <Archive aria-hidden className="size-4" /> Unduh ZIP ({Math.min(selected.length, 20)})
+                </a>
+              </>
             )}
             <button
               type="button"
@@ -322,6 +374,14 @@ export function FileLibrary({
                     </span>
                   </button>
                   <div className="flex shrink-0 items-center gap-2">
+                    {file.orderCode && (
+                      <Link
+                        href={`/lacak/${encodeURIComponent(file.orderCode)}`}
+                        className="inline-flex min-h-12 items-center rounded-tag-sm border border-line px-3 font-mono text-xs text-mute transition-colors hover:border-[var(--border-2)] hover:text-[var(--text)] sm:min-h-10"
+                      >
+                        {file.orderCode}
+                      </Link>
+                    )}
                     {meta.previewable && (
                       <button
                         type="button"

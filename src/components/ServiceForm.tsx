@@ -122,48 +122,23 @@ export function ServiceForm({ service }: { service?: Service }) {
         </p>
       </fieldset>
 
-      <div className="grid gap-5 sm:grid-cols-3">
-        <label className="block">
-          <span className="label">
-            {pricingModel === "flat" ? "Harga paket" : pricingModel === "area" ? "Harga per m²" : "Harga per satuan"}
-          </span>
-          <span className="relative block">
-            <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-ink/40">Rp</span>
-            <input
-              name="price_from"
-              inputMode="numeric"
-              defaultValue={service?.price_from ?? 0}
-              className="field pl-10 tabular-nums"
-            />
-          </span>
-          <span className="mt-1.5 block text-xs text-mute">
-            {pricingModel === "flat" ? "0 = harga menunggu admin." : "Tanpa titik, misal 25000 = Rp25.000."}
-          </span>
-        </label>
-        <label className="block">
-          <span className="label">Minimal order</span>
-          <span className="relative block">
-            <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-ink/40">Rp</span>
-            <input
-              name="min_price"
-              inputMode="numeric"
-              defaultValue={service?.min_price ?? 0}
-              className="field pl-10 tabular-nums"
-            />
-          </span>
-          <span className="mt-1.5 block text-xs text-mute">0 = tanpa minimum.</span>
-        </label>
-        <label className="block">
-          <span className="label">Pembulatan</span>
+      <label className="block max-w-sm">
+        <span className="label">
+          {pricingModel === "flat" ? "Harga paket" : pricingModel === "area" ? "Harga per m²" : "Harga per satuan"}
+        </span>
+        <span className="relative block">
+          <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-ink/40">Rp</span>
           <input
-            name="round_to"
+            name="price_from"
             inputMode="numeric"
-            defaultValue={service?.round_to ?? 0}
-            className="field tabular-nums"
+            defaultValue={service?.price_from ?? 0}
+            className="field pl-10 tabular-nums"
           />
-          <span className="mt-1.5 block text-xs text-mute">Misal 1000 = bulatkan ke atas per Rp1.000.</span>
-        </label>
-      </div>
+        </span>
+        <span className="mt-1.5 block text-xs text-mute">
+          {pricingModel === "flat" ? "0 = harga menunggu admin." : "Tanpa titik, misal 25000 = Rp25.000."}
+        </span>
+      </label>
 
       {pricingModel === "per_unit" && (
         <div className="grid gap-5 rounded-tag-sm border border-line bg-panel/40 p-4 sm:grid-cols-3">
@@ -197,34 +172,51 @@ export function ServiceForm({ service }: { service?: Service }) {
         </label>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block cursor-pointer">
-          <input type="checkbox" name="requires_file" defaultChecked={service?.requires_file ?? false} className="peer sr-only" />
-          <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
-            <span aria-hidden className="check-box">✓</span>
-            <span>
-              <span className="block text-sm font-semibold">Wajib link file</span>
-              <span className="block text-xs text-mute">Untuk produk cetak.</span>
-            </span>
+      <label className="block cursor-pointer">
+        <input type="checkbox" name="requires_file" defaultChecked={service?.requires_file ?? false} className="peer sr-only" />
+        <span className="check-tile peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
+          <span aria-hidden className="check-box">✓</span>
+          <span>
+            <span className="block text-sm font-semibold">Wajib link file</span>
+            <span className="block text-xs text-mute">Untuk produk cetak.</span>
           </span>
-        </label>
-        <label className="block">
-          <span className="label">Urutan</span>
-          <input name="sort" inputMode="numeric" defaultValue={service?.sort ?? 0} className="field tabular-nums" />
-          <span className="mt-1.5 block text-xs text-mute">Kecil ke besar.</span>
-        </label>
-      </div>
-
-      <label className="block">
-        <span className="label">Catatan harga</span>
-        <textarea
-          name="price_note"
-          rows={2}
-          defaultValue={service?.price_note}
-          placeholder="Contoh: harga per m², minimal 1 m², sudah termasuk cetak full color."
-          className="field resize-y"
-        />
+        </span>
       </label>
+
+      <details className="rounded-tag-sm border border-line bg-panel/40 p-4">
+        <summary className="cursor-pointer text-sm font-semibold">Pengaturan lanjutan</summary>
+        <p className="mt-1 text-xs text-mute">Minimum, pembulatan, urutan, dan catatan harga.</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="label">Minimal order</span>
+            <span className="relative block">
+              <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-ink/40">Rp</span>
+              <input name="min_price" inputMode="numeric" defaultValue={service?.min_price ?? 0} className="field pl-10 tabular-nums" />
+            </span>
+            <span className="mt-1.5 block text-xs text-mute">0 = tanpa minimum.</span>
+          </label>
+          <label className="block">
+            <span className="label">Pembulatan</span>
+            <input name="round_to" inputMode="numeric" defaultValue={service?.round_to ?? 0} className="field tabular-nums" />
+            <span className="mt-1.5 block text-xs text-mute">Misal 1000 = bulatkan ke atas per Rp1.000.</span>
+          </label>
+          <label className="block">
+            <span className="label">Urutan</span>
+            <input name="sort" inputMode="numeric" defaultValue={service?.sort ?? 0} className="field tabular-nums" />
+            <span className="mt-1.5 block text-xs text-mute">Kecil ke besar.</span>
+          </label>
+          <label className="block">
+            <span className="label">Catatan harga</span>
+            <textarea
+              name="price_note"
+              rows={2}
+              defaultValue={service?.price_note}
+              placeholder="Contoh: harga per m², minimal 1 m²."
+              className="field resize-y"
+            />
+          </label>
+        </div>
+      </details>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4">
         <button type="submit" disabled={pending} className="btn btn-primary min-h-12 px-5 text-sm">

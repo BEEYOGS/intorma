@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { History, X } from "lucide-react";
 import { readRecentOrders, RECENT_KEY, type RecentOrder } from "@/components/RememberOrder";
@@ -24,6 +24,8 @@ function simpan(items: RecentOrder[]) {
 
 export function RecentOrders() {
   const [items, setItems] = useState<RecentOrder[]>([]);
+  const [undo, setUndo] = useState<{ items: RecentOrder[]; label: string } | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const sync = () => setItems(readRecentOrders());
@@ -33,24 +35,54 @@ export function RecentOrders() {
     return () => {
       window.removeEventListener("storage", sync);
       window.removeEventListener("intorma:recent-orders", sync);
+      if (undoTimer.current) clearTimeout(undoTimer.current);
     };
   }, []);
 
+  function scheduleUndo(previous: RecentOrder[], label: string) {
+    setUndo({ items: previous, label });
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    undoTimer.current = setTimeout(() => setUndo(null), 6000);
+  }
+
   function hapus(code: string) {
+    scheduleUndo(items, code);
     const next = items.filter((item) => item.code !== code);
     simpan(next);
     setItems(next);
   }
 
   function bersihkan() {
+    scheduleUndo(items, "semua riwayat");
     simpan([]);
     setItems([]);
   }
 
-  if (items.length === 0) return null;
+  function batalkan() {
+    if (!undo) return;
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    simpan(undo.items);
+    setItems(undo.items);
+    setUndo(null);
+  }
+
+  if (items.length === 0 && !undo) return null;
 
   return (
     <div className="wrap pt-8">
+      {undo && (
+        <div role="status" className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-tag-sm border border-line bg-panel/60 px-4 py-2 text-sm">
+          <span className="text-mute">{undo.label} dihapus.</span>
+          <button
+            type="button"
+            onClick={batalkan}
+            className="inline-flex min-h-12 items-center font-semibold text-accent underline underline-offset-4"
+          >
+            Batalkan hapus
+          </button>
+        </div>
+      )}
+      {items.length > 0 && (
       <section className="card p-5" aria-label="Pesanan yang baru dilacak">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
           <p className="flex items-center gap-2 text-sm font-semibold">
@@ -87,6 +119,7 @@ export function RecentOrders() {
           ))}
         </ul>
       </section>
+      )}
     </div>
   );
 }

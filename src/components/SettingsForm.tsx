@@ -8,6 +8,9 @@ import type { PaymentSettings } from "@/lib/settings";
 export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; waNumber: string }) {
   const [state, action, pending] = useActionState<ActionResult, FormData>(saveSettings, null);
   const [form, setForm] = useState(initial);
+  const dirty = (Object.keys(initial) as Array<keyof PaymentSettings>).some(
+    (key) => initial[key] !== form[key],
+  );
 
   const set = (key: keyof PaymentSettings) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -15,6 +18,22 @@ export function SettingsForm({ initial, waNumber }: { initial: PaymentSettings; 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start lg:gap-14">
       <form action={action} className="grid gap-6">
+        <div aria-live="polite" className="flex min-h-8 flex-wrap items-center gap-3">
+          {dirty && (
+            <>
+              <span className="inline-flex items-center gap-2 rounded-tag-sm border border-line bg-panel/50 px-3 py-1.5 text-xs text-mute">
+                <span aria-hidden className="size-1.5 rounded-full bg-accent" /> Ada perubahan belum disimpan
+              </span>
+              <button
+                type="button"
+                onClick={() => setForm(initial)}
+                className="inline-flex min-h-10 items-center text-xs text-accent underline underline-offset-4"
+              >
+                Kembalikan ke nilai awal
+              </button>
+            </>
+          )}
+        </div>
         <label className="block cursor-pointer">
           <input
             type="checkbox"

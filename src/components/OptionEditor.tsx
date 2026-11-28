@@ -6,9 +6,19 @@ import { DeleteActionButton, GroupForm, OptionBadge, OptionForm } from "@/compon
 import { deleteOption, deleteOptionGroup } from "@/app/actions";
 
 export function OptionEditor({ service }: { service: Service }) {
-  const [openGroup, setOpenGroup] = useState<number | null>(null);
+  const [openGroups, setOpenGroups] = useState<number[]>([]);
   const [openOption, setOpenOption] = useState<number | null>(null);
   const [addingGroup, setAddingGroup] = useState(false);
+  const totalOptions = service.option_groups.reduce((sum, group) => sum + group.options.length, 0);
+  const inactiveOptions = service.option_groups.reduce(
+    (sum, group) => sum + group.options.filter((option) => !option.active).length,
+    0,
+  );
+
+  function toggleGroup(id: number) {
+    setOpenGroups((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]));
+    setOpenOption(null);
+  }
 
   return (
     <section className="border-t border-[var(--border)] pt-5">
@@ -19,14 +29,31 @@ export function OptionEditor({ service }: { service: Service }) {
             Grup seperti bahan, ukuran, atau finishing. Harga opsi otomatis masuk ke total.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setAddingGroup((v) => !v)}
-          aria-expanded={addingGroup}
-          className="btn btn-ghost !h-10 text-xs"
-        >
-          {addingGroup ? "Tutup" : "+ Tambah grup"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {service.option_groups.length > 0 && (
+            <>
+              <span className="mono text-xs text-mute">
+                {service.option_groups.length} grup · {totalOptions} opsi
+                {inactiveOptions > 0 ? ` · ${inactiveOptions} nonaktif` : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => setOpenGroups(openGroups.length === service.option_groups.length ? [] : service.option_groups.map((group) => group.id))}
+                className="inline-flex min-h-12 items-center rounded-tag-sm border border-line px-3 text-xs text-mute transition-colors hover:text-[var(--text)]"
+              >
+                {openGroups.length === service.option_groups.length ? "Tutup semua" : "Buka semua"}
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setAddingGroup((v) => !v)}
+            aria-expanded={addingGroup}
+            className="btn btn-ghost !h-10 text-xs"
+          >
+            {addingGroup ? "Tutup" : "+ Tambah grup"}
+          </button>
+        </div>
       </div>
 
       {addingGroup && (
@@ -42,15 +69,12 @@ export function OptionEditor({ service }: { service: Service }) {
       ) : (
         <div className="mt-5 space-y-2">
           {service.option_groups.map((group) => {
-            const expanded = openGroup === group.id;
+            const expanded = openGroups.includes(group.id);
             return (
               <div key={group.id} className="card overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => {
-                    setOpenGroup(expanded ? null : group.id);
-                    setOpenOption(null);
-                  }}
+                  onClick={() => toggleGroup(group.id)}
                   aria-expanded={expanded}
                   className="flex w-full flex-wrap items-center justify-between gap-3 p-4 text-left text-sm transition-colors hover:bg-white/[0.02]"
                 >

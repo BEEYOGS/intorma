@@ -84,16 +84,34 @@ export default async function PortalPage({
 
         <div className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-sharp)] border border-[var(--border)] bg-[var(--border)] sm:grid-cols-4">
           {[
-            ["Total pesanan", String(orders.length)],
-            ["Menunggu bayar", String(unpaid)],
-            ["Selesai", String(done)],
-            ["Total nilai", rupiah(orders.reduce((sum, o) => sum + Number(o.price ?? 0), 0))],
-          ].map(([label, value]) => (
-            <div key={label} className="bg-[var(--panel)] p-4">
-              <p className="text-xs text-[var(--text-3)]">{label}</p>
-              <p className="mono mt-2 text-xl font-semibold text-[var(--text)]">{value}</p>
-            </div>
-          ))}
+            { label: "Total pesanan", value: String(orders.length), filter: "all" },
+            { label: "Menunggu bayar", value: String(unpaid), filter: "unpaid" },
+            { label: "Selesai", value: String(done), filter: "done" },
+            { label: "Total nilai", value: rupiah(orders.reduce((sum, o) => sum + Number(o.price ?? 0), 0)), filter: "" },
+          ].map(({ label, value, filter }) => {
+            const params = new URLSearchParams();
+            if (q) params.set("q", q);
+            if (filter) params.set("status", filter);
+            const suffix = params.toString();
+            const content = (
+              <>
+                <p className="text-xs text-[var(--text-3)]">{label}</p>
+                <p className="mono mt-2 text-xl font-semibold text-[var(--text)]">{value}</p>
+              </>
+            );
+            if (!filter) return <div key={label} className="bg-[var(--panel)] p-4">{content}</div>;
+            const active = (status ?? "all") === filter;
+            return (
+              <Link
+                key={label}
+                href={`/portal${suffix ? `?${suffix}` : ""}`}
+                aria-current={active ? "page" : undefined}
+                className={`block bg-[var(--panel)] p-4 transition-colors hover:bg-white/[0.03] ${active ? "ring-1 ring-inset ring-accent/40" : ""}`}
+              >
+                {content}
+              </Link>
+            );
+          })}
         </div>
 
         <form method="GET" className="mt-6 flex flex-wrap items-end gap-3">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { TopBar } from "@/components/TopBar";
 import { Footer } from "@/components/Chrome";
+import { FaqBrowser } from "@/components/FaqBrowser";
 import { ArrowRight } from "lucide-react";
 
 export const metadata = {
@@ -72,15 +73,8 @@ export default function FaqPage() {
         </section>
 
         <section className="pb-16">
-          <div className="wrap max-w-3xl space-y-3">
-            {FAQS.map((item) => (
-              <details key={item.q} className="card group p-5">
-                <summary className="cursor-pointer list-none text-sm font-semibold">
-                  {item.q}
-                </summary>
-                <p className="mt-3 text-sm leading-6 text-mute">{item.a}</p>
-              </details>
-            ))}
+          <div className="wrap max-w-3xl">
+            <FaqBrowser faqs={FAQS} />
           </div>
         </section>
 

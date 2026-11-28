@@ -2,9 +2,11 @@
 
 import { useActionState, useState } from "react";
 import { loginCustomer, registerCustomer, type CustomerState } from "@/app/actions";
+import { PasswordField } from "@/components/PasswordField";
 
 export function CustomerAuthForm({ next = "/portal" }: { next?: string }) {
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [password, setPassword] = useState("");
   const [loginState, loginAction, loginPending] = useActionState<CustomerState, FormData>(loginCustomer, null);
   const [registerState, registerAction, registerPending] = useActionState<CustomerState, FormData>(registerCustomer, null);
 
@@ -46,7 +48,7 @@ export function CustomerAuthForm({ next = "/portal" }: { next?: string }) {
             </label>
             <label className="block">
               <span className="label">Password</span>
-              <input name="password" type="password" autoComplete="current-password" className="input" required placeholder="Minimal 8 karakter" aria-invalid={Boolean(loginState?.error)} aria-describedby={loginState?.error ? "login-error" : undefined} />
+              <PasswordField name="password" autoComplete="current-password" required placeholder="Minimal 8 karakter" aria-invalid={Boolean(loginState?.error)} aria-describedby={loginState?.error ? "login-error" : undefined} />
             </label>
             <p className="text-xs leading-5 text-mute">
               Pesanan lama dibuka lewat tautan pribadi dari WhatsApp. Butuh penggabungan akun? Hubungi admin.
@@ -79,7 +81,18 @@ export function CustomerAuthForm({ next = "/portal" }: { next?: string }) {
             </div>
             <label className="block">
               <span className="label">Password</span>
-              <input name="password" type="password" autoComplete="new-password" className="input" required minLength={8} placeholder="Minimal 8 karakter" aria-invalid={Boolean(registerState?.error)} aria-describedby={registerState?.error ? "register-error" : undefined} />
+              <PasswordField
+                name="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                placeholder="Minimal 8 karakter"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                showStrength
+                aria-invalid={Boolean(registerState?.error)}
+                aria-describedby={registerState?.error ? "register-error" : undefined}
+              />
             </label>
             <p className="text-xs leading-5 text-mute">
               Pesanan lama tidak dihubungkan otomatis hanya dari nomor WhatsApp. Gunakan tautan pribadi yang kami kirim.
