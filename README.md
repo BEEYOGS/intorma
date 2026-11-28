@@ -105,13 +105,35 @@ Dengan Drive aktif:
 
 Halaman `/download` mengarah ke aset rilis GitHub yang dibangun oleh
 `.github/workflows/build-native.yml` (`.exe`, `.msi`, `.apk` v1.0.2). PWA dipasang lewat
-`manifest.webmanifest` + `sw.js` (cache `intorma-v7`). Tombol **Install aplikasi** di header/menu
+`manifest.webmanifest` + `sw.js` (cache `intorma-v9`). Tombol **Install aplikasi** di header/menu
 membuka prompt PWA bila browser mendukung; jika tidak, popup menampilkan panduan per platform.
 Penolakan popup disimpan per sesi agar tidak muncul berulang saat berpindah halaman.
 
 Tauri adalah jalur wrapper utama. Konfigurasi Capacitor disimpan hanya sebagai percobaan Android;
 keduanya memuat URL produksi yang sama, sehingga folder `public` bukan hasil static export Next.js
 dan build lokal Tauri memerlukan Windows SDK. Jangan menganggap build lokal sebagai pengganti rilis CI.
+
+### Bottom bar mobile
+
+Pedoman yang dipakai: `viewport-fit=cover` + `env(safe-area-inset-bottom)` agar bar tidak tertutup
+home indicator (MDN `env()`), `100dvh` untuk tinggi layar dinamis (MDN viewport units), target
+sentuh minimal 24×24 CSS px dan disarankan 44×44 (WCAG 2.2 SC 2.5.8), serta maksimal lima
+destination pada navigation bar (Material 3 / HIG tab bar).
+
+Semua ukuran ada di `src/app/globals.css`:
+
+- `--bottom-bar-height: 56px` — tinggi area tombol, di atas batas 44px.
+- `--bottom-bar-safe` — tinggi tombol + safe area perangkat.
+- `--bottom-bar-clearance` — jarak konten di atas bar; jadi `0` di desktop dan di halaman yang
+  menyembunyikan nav global.
+- `--bottom-overlay-offset` — offset toast/kartu install; tetap memakai ruang bar mesmo nav disembunyikan
+  karena `/order` punya action bar sendiri.
+
+`StorefrontBottomNav` tidak di-mount pada halaman dengan action bar sendiri (`/order`) maupun alur
+privat/transaksional (`/admin`, `/bayar`, `/nota`, `/portal`, `/masuk`, `/dashboard`, detail `/lacak`).
+Admin memakai lima destination + tombol **Lainnya** berupa bottom sheet; enam tab sisanya tidak
+dipaksakan berbagi lebar 360px. `AdminBottomNav` menutup sheet saat rute berubah, Escape, atau
+ketukan di luar, dan mengembalikan fokus ke tombol pembuka.
 
 ### WhatsApp
 

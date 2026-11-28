@@ -1099,7 +1099,7 @@ setInteracted(true);
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel/95 px-4 pb-[var(--action-bar-padding)] pt-3 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-xs text-mute">{chosen?.name ?? "Pilih layanan"}</p>

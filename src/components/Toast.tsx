@@ -39,7 +39,7 @@ export function ToastHost() {
 
   return (
     <div
-      className="pointer-events-none fixed bottom-24 left-1/2 z-[70] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:bottom-6"
+      className="pointer-events-none fixed bottom-[var(--bottom-overlay-offset)] left-1/2 z-[70] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:bottom-6"
       aria-live="polite"
       aria-atomic="false"
     >

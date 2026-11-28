@@ -1,5 +1,5 @@
 /* in.torma service worker — hanya aset publik dan halaman publik yang di-cache. */
-const CACHE = "intorma-v8";
+const CACHE = "intorma-v9";
 const SHELL = [
   "/",
   "/order",

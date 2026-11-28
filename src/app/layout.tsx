@@ -71,7 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#konten" className="skip-link">Lewati ke konten</a>
         <ScrollProgress />
         <PageFade>
-          <main id="konten" className="pb-20 sm:pb-0">{children}</main>
+          <main id="konten" className="main-content">{children}</main>
         </PageFade>
         <StorefrontBottomNav />
         <ServiceWorkerRegister />

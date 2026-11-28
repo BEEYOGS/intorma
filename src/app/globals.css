@@ -22,6 +22,13 @@
   --radius: 8px;
   /* Sudut khas in.torma: tiga sudut membulat, kiri bawah tajam. */
   --radius-sharp: 8px 8px 8px 0;
+  /* Bottom bar: satu ukuran untuk nav, action bar, toast, dan kartu install. */
+  --bottom-bar-height: 56px;
+  --bottom-bar-safe: calc(var(--bottom-bar-height) + env(safe-area-inset-bottom, 0px));
+  --bottom-bar-clearance: calc(var(--bottom-bar-safe) + 0.75rem);
+  /* Overlay tidak ikut dinamis: action bar /order tetap butuh ruang walau nav disembunyikan. */
+  --bottom-overlay-offset: calc(var(--bottom-bar-safe) + 0.75rem);
+  --action-bar-padding: max(0.75rem, env(safe-area-inset-bottom, 0px));
 }
 
 html {
@@ -60,6 +67,21 @@ body {
 
 html {
   overflow-x: clip;
+}
+
+/* Halaman dengan action bar sendiri tidak perlu ruang untuk nav global. */
+html[data-bottom-nav="hidden"] {
+  --bottom-bar-clearance: 0px;
+}
+
+.main-content {
+  padding-bottom: var(--bottom-bar-clearance);
+}
+
+@media (min-width: 640px) {
+  :root {
+    --bottom-bar-clearance: 0px;
+  }
 }
 
 /* Subtle grid background - very faint, not AI-looking */

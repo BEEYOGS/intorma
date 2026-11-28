@@ -224,7 +224,7 @@ export function InstallButton() {
           aria-modal="true"
           aria-label="Pasang aplikasi in.torma"
           tabIndex={-1}
-          className="fixed inset-x-4 bottom-[calc(1.5rem_+_env(safe-area-inset-bottom))] z-50 w-auto overflow-hidden rounded-[var(--radius-sharp)] border border-line border-t-2 border-t-accent bg-[var(--panel-2)]/95 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] backdrop-blur-md sm:inset-x-auto sm:right-6 sm:w-[23rem]"
+          className="fixed inset-x-4 bottom-[var(--bottom-overlay-offset)] z-50 w-auto overflow-hidden rounded-[var(--radius-sharp)] border border-line border-t-2 border-t-accent bg-[var(--panel-2)]/95 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] backdrop-blur-md sm:bottom-6 sm:inset-x-auto sm:right-6 sm:w-[23rem]"
         >
           <div className="p-5">
             <button

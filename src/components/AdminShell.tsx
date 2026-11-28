@@ -1,26 +1,16 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BarChart3, ClipboardList, ExternalLink, History, Layers3, LogOut, Settings2, ShieldCheck, Star, Tag, UsersRound } from "lucide-react";
+import { ExternalLink, LogOut } from "lucide-react";
 import { adminLogout } from "@/app/actions";
 import { SITE_NAME } from "@/lib/site";
+import { adminTabs, type AdminTab } from "@/lib/admin-tabs";
+import { AdminBottomNav } from "@/components/AdminBottomNav";
 import { CommandPalette } from "@/components/CommandPalette";
 
-const tabs = [
-  { href: "/admin", label: "Pesanan", short: "Pesanan", key: "orders", icon: ClipboardList },
-  { href: "/admin/analitik", label: "Analitik", short: "Analitik", key: "analytics", icon: BarChart3 },
-  { href: "/admin/pelanggan", label: "Pelanggan", short: "Pelanggan", key: "customers", icon: UsersRound },
-  { href: "/admin/layanan", label: "Layanan & harga", short: "Layanan", key: "services", icon: Layers3 },
-  { href: "/admin/audit", label: "Log aktivitas", short: "Audit", key: "audit", icon: History },
-  { href: "/admin/ulasan", label: "Ulasan", short: "Ulasan", key: "reviews", icon: Star },
-  { href: "/admin/promo", label: "Promo", short: "Promo", key: "promo", icon: Tag },
-  { href: "/admin/akun", label: "Akun admin", short: "Akun", key: "accounts", icon: ShieldCheck },
-  { href: "/admin/pengaturan", label: "Pengaturan", short: "Setelan", key: "settings", icon: Settings2 },
-] as const;
-
-export type AdminTab = (typeof tabs)[number]["key"];
+export type { AdminTab } from "@/lib/admin-tabs";
 
 export function AdminShell({ active, children }: { active: AdminTab; children: ReactNode }) {
-  const current = tabs.find((tab) => tab.key === active) ?? tabs[0];
+  const current = adminTabs.find((tab) => tab.key === active) ?? adminTabs[0];
 
   return (
     <div className="min-h-dvh">
@@ -32,7 +22,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
               <img src="/int.svg" alt={SITE_NAME} className="h-6 w-auto" />
             </Link>
             <div className="hidden items-center gap-1 overflow-x-auto sm:flex" aria-label="Navigasi admin">
-              {tabs.map((tab) => {
+              {adminTabs.map((tab) => {
                 const on = active === tab.key;
                 const Icon = tab.icon;
                 return (
@@ -76,43 +66,13 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
         </div>
       </header>
 
-      <main id="konten" className="wrap pb-32 pt-10 sm:pb-12 sm:pt-12">
+      <main id="konten" className="wrap pb-[calc(var(--bottom-bar-safe)+1.5rem)] pt-10 sm:pb-12 sm:pt-12">
         {children}
       </main>
 
       <CommandPalette />
 
-      <nav
-        aria-label="Navigasi admin bawah"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--bg)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm sm:hidden"
-      >
-        <ul className="grid grid-cols-9">
-          {tabs.map((tab) => {
-            const on = active === tab.key;
-            const Icon = tab.icon;
-            return (
-              <li key={tab.key}>
-                <Link
-                  href={tab.href}
-                  aria-current={on ? "page" : undefined}
-                  className={`relative flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-semibold transition-colors ${
-                    on ? "text-[var(--text)]" : "text-[var(--text-3)]"
-                  }`}
-                >
-                  {on && <span aria-hidden className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-[var(--text)]" />}
-                  <span
-                    aria-hidden
-                    className={`grid size-8 place-items-center rounded-tag-sm transition-colors ${on ? "bg-[var(--panel-2)]" : ""}`}
-                  >
-                    <Icon className="size-[18px]" strokeWidth={on ? 2 : 1.7} />
-                  </span>
-                  {tab.short}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      <AdminBottomNav active={active} />
     </div>
   );
 }
