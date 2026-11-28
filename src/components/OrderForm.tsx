@@ -419,7 +419,10 @@ export function OrderForm({
     setRefProgress(0);
     const totalBytes = refFiles.reduce((sum, file) => sum + file.size, 0);
     try {
-      const response = await fetch("/api/upload/token", { cache: "no-store" });
+      const response = await fetch("/api/upload/token", {
+        cache: "no-store",
+        headers: { "x-upload-token": uploadToken },
+      });
       if (!response.ok) throw new Error("Upload belum tersedia. Pakai kolom link referensi, atau coba lagi nanti.");
       const { token, folder } = (await response.json()) as { token: string; folder: string };
       if (!token || !folder) throw new Error("Sesi upload tidak valid. Coba lagi.");
