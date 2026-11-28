@@ -42,6 +42,11 @@ html {
   scrollbar-color: #3a3a3a transparent;
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--topbar-offset) + 28px);
+  overscroll-behavior-x: none;
+}
+
+h1, h2, h3, h4 {
+  text-wrap: balance;
 }
 
 :focus-visible {

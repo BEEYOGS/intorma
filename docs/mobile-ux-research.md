@@ -74,6 +74,7 @@ Audit menyeluruh terhadap komponen customer tidak menemukan P0. Yang sudah baik 
 | Final | Status manual pembayaran diumumkan lewat live region; error ditampilkan merah dan hitung mundur dibaca jelas | `PaymentPoller.tsx` | Dibangun |
 | Final | Kontrol admin/pustaka file/lacak dan pratinjau file disamakan ke target 48px, label dialog, serta token warna | `admin/*`, `FileLibrary.tsx`, `lacak/[kode]`, `LoginForm.tsx`, `LacakForm.tsx` | Dibangun |
 | Final | Menu navigasi mobile memakai pola disclosure, bukan dialog | `MobileNav.tsx` | Dibangun |
+| Final | Judul menyeimbangkan baris (`text-wrap: balance`) dan scroll horizontal dicegah di level dokumen | `globals.css` | Dibangun |
 
 ## Baseline QA produksi (28 Nov 2026)
 
