@@ -114,7 +114,9 @@ export async function currentAdmin(): Promise<AdminCredential | null> {
       : null;
   }
   const rows = (await sql`
-    select id, username, role, token_version from admin_accounts where id = ${session.id}
+    select id, username, role, active, token_version
+    from admin_accounts
+    where id = ${session.id} and active = true
   `) as Array<Record<string, unknown>>;
   const row = rows[0];
   if (!row || !Boolean(row.active) || Number(row.token_version) !== session.version) return null;

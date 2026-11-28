@@ -1,8 +1,13 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { guardRate } from "@/lib/api-rate-limit";
 import { GET as baseGet, POST as basePost } from "../route";
 
-export const GET = baseGet;
+export async function GET(req: Request) {
+  const limited = await guardRate("wa_webhook_path_get", 30);
+  if (limited) return limited;
+  return baseGet(req);
+}
 
 const SITE = "https://intorma-psi.vercel.app";
 
@@ -23,6 +28,9 @@ function secretValid(given: string, expected: string): boolean {
  * ke handler utama sebagai header internal. Handler utama tetap fail-closed.
  */
 export async function POST(req: Request, context: { params: Promise<{ secret: string }> }) {
+  const limited = await guardRate("wa_webhook_path", 60);
+  if (limited) return limited;
+
   const expected = webhookSecret();
   const { secret } = await context.params;
   if (!secretValid(secret, expected)) {

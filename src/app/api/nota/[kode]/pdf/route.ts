@@ -3,6 +3,7 @@ import Courier from "pdfkit/standard-fonts/Courier";
 import Helvetica from "pdfkit/standard-fonts/Helvetica";
 import HelveticaBold from "pdfkit/standard-fonts/HelveticaBold";
 import TimesItalic from "pdfkit/standard-fonts/TimesItalic";
+import { guardRate } from "@/lib/api-rate-limit";
 import { sql } from "@/lib/db";
 import { jam, tanggal } from "@/lib/format";
 import { cleanAccessToken, hasOrderAccess } from "@/lib/order-access";
@@ -19,6 +20,9 @@ registerStdFonts(Courier, Helvetica, HelveticaBold, TimesItalic);
 const M = 42;
 
 export async function GET(req: Request, { params }: { params: Promise<{ kode: string }> }) {
+  const limited = await guardRate("nota_pdf", 20);
+  if (limited) return limited;
+
   const { kode } = await params;
   const accessToken = cleanAccessToken(new URL(req.url).searchParams.get("t"));
   const order = (

@@ -11,6 +11,7 @@ import { isValidCode, makeCode, normalizeCode } from "@/lib/codes";
 import { calculateQuote, type QuoteSelection } from "@/lib/pricing";
 import { minDeadlineDate, deadlineToUtc } from "@/lib/deadline";
 import {
+  accessQuery,
   cleanAccessToken,
   hasOrderAccess,
   newOrderAccessToken,
@@ -225,13 +226,16 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   if (values.file && !/^https?:\/\//i.test(values.file) && !values.file.startsWith("/api/upload/")) {
     return { error: "Link file harus diawali http:// atau https://.", values };
   }
+  const accessToken = newOrderAccessToken();
+
   // Simpan kode upload sebelum URL diubah absolut, supaya relasi uploads
   // ke order tidak hilang saat admin hendak menyertakan tautan Drive.
+  // Token akses ikut disertakan karena endpoint unduh kini memeriksa kepemilikan.
   const uploadCode = values.file.startsWith("/api/upload/")
     ? values.file.slice("/api/upload/".length).split("?")[0]
     : null;
   const fileUrl = uploadCode
-    ? `${siteUrl()}/api/upload/${uploadCode}`
+    ? `${siteUrl()}/api/upload/${uploadCode}${accessQuery(accessToken)}`
     : values.file || null;
 
   const quote = calculateQuote(svc, {
@@ -291,7 +295,6 @@ export async function createOrder(_prev: OrderState, f: FormData): Promise<Order
   const heightCm = quote.snapshot?.height_cm ?? null;
 
   let order: { id: number; code: string; access_token: string } | undefined;
-  const accessToken = newOrderAccessToken();
   try {
     for (let i = 0; i < 5 && !order; i++) {
       const rows = await sql`

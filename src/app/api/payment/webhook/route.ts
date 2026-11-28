@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { guardRate } from "@/lib/api-rate-limit";
 import { getCoreStatus, gatewayEnabled, verifyMidtransSignature } from "@/lib/payment";
 import { settleMidtransPayment } from "@/lib/payment-settle";
 
@@ -18,6 +19,8 @@ type MidtransPayload = {
 const text = (value: unknown) => (typeof value === "string" || typeof value === "number" ? String(value) : "");
 
 export async function POST(req: Request) {
+  const limited = await guardRate("payment_webhook", 60);
+  if (limited) return limited;
   if (!gatewayEnabled()) return NextResponse.json({ ok: false }, { status: 503 });
 
   const payload = (await req.json().catch(() => null)) as MidtransPayload | null;
