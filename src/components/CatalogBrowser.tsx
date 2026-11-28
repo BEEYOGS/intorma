@@ -10,6 +10,8 @@ import type { Service } from "@/lib/db";
 import { priceLabel } from "@/lib/pricing";
 import { highlightTerms, searchServices, searchSuggestions } from "@/lib/catalog-search";
 
+const RECENT_KEY = "intorma-catalog-recent";
+
 const CATEGORIES = [
   { key: "all", label: "Semua" },
   { key: "design", label: "Desain" },
@@ -102,6 +104,8 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
   const lastScrollRef = useRef(0);
   const [pinned, setPinned] = useState(false);
   const [compactHidden, setCompactHidden] = useState(false);
+  const [recent, setRecent] = useState<string[]>([]);
+  const [recentReady, setRecentReady] = useState(false);
 
   // Bar ringkas hanya muncul setelah kartu filter utama terlewat di layar.
   useEffect(() => {
@@ -150,6 +154,42 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     if (bud === "low" || bud === "mid" || bud === "high") setBudget(bud);
     setHydrated(true);
   }, []);
+
+  // Riwayat pencarian disimpan lokal, bukan ke server atau akun.
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(RECENT_KEY) || "[]") as unknown;
+      if (Array.isArray(parsed)) {
+        setRecent(parsed.filter((item): item is string => typeof item === "string").slice(0, 5));
+      }
+    } catch {
+      /* Riwayat rusak diabaikan. */
+    }
+    setRecentReady(true);
+  }, []);
+
+  function rememberQuery(value: string) {
+    const clean = value.trim().slice(0, 60);
+    if (clean.length < 2) return;
+    setRecent((current) => {
+      const next = [clean, ...current.filter((item) => item.toLowerCase() !== clean.toLowerCase())].slice(0, 5);
+      try {
+        window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      } catch {
+        /* Penyimpanan privat bisa ditolak; tetap pakai state saat ini. */
+      }
+      return next;
+    });
+  }
+
+  function clearRecent() {
+    setRecent([]);
+    try {
+      window.localStorage.removeItem(RECENT_KEY);
+    } catch {
+      /* Abaikan. */
+    }
+  }
 
   // Tulis filter ke URL tanpa menambah entri riwayat.
   useEffect(() => {
@@ -268,6 +308,14 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    rememberQuery(query);
+                    inputRef.current?.blur();
+                  }
+                }}
+                onBlur={() => rememberQuery(query)}
                 placeholder="Misalnya spanduk, kartu nama, atau kemasan…"
                 aria-keyshortcuts="/"
                 className="field !pl-10 !pr-10"
@@ -311,6 +359,38 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
             </select>
           </label>
         </div>
+
+        {recentReady && !query.trim() && recent.length > 0 && (
+          <div className="mt-4 border-t border-line pt-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="label mb-2">Pencarian terakhir</span>
+              <button
+                type="button"
+                onClick={clearRecent}
+                className="inline-flex min-h-12 items-center text-xs font-medium text-mute underline underline-offset-4 hover:text-ink"
+              >
+                Hapus
+              </button>
+            </div>
+            <div className="chip-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              {recent.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => {
+                    setQuery(item);
+                    inputRef.current?.focus();
+                  }}
+                  className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-tag-sm border border-line px-3 text-xs font-medium text-mute transition-colors hover:border-accent/40 hover:text-ink"
+                >
+                  <Clock3 aria-hidden className="size-3.5" />
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mt-5 flex flex-wrap gap-2 border-t border-line pt-5" role="group" aria-label="Filter kategori katalog">
           {CATEGORIES.map((item) => (
             <button

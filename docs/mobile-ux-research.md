@@ -61,6 +61,11 @@ Audit menyeluruh terhadap komponen customer tidak menemukan P0. Yang sudah baik 
 | P3 | `rootMargin` filter katalog mengikuti tinggi topbar asli | `CatalogBrowser.tsx` | Dibangun |
 | P3 | Error harga sticky tidak di-truncate dan memakai `role="alert"` | `OrderForm.tsx` | Dibangun |
 | P3 | Focus trap sheet memfilter elemen tersembunyi | `MobileSheet.tsx` | Dibangun |
+| Cerdas | Riwayat pencarian katalog disimpan lokal (maks. 5), bisa dipakai ulang dan dihapus | `CatalogBrowser.tsx` | Dibangun |
+| Cerdas | Saran deadline "Paling cepat/+1/+3 hari" memakai hari kalender WIB dan batas layanan | `OrderForm.tsx`, `lib/deadline.ts` | Dibangun |
+| Cerdas | Contoh brief sesuai kategori mengisi tujuan/audiens/gaya/elemen wajib | `BriefAssistant.tsx` | Dibangun |
+| Cerdas | Status offline/online tampil sebagai notifikasi pasif di live region yang sama | `Toast.tsx` | Dibangun |
+| Cerdas | Petunjuk pembayaran menyesuaikan sisa waktu dan tetap menjelajahi tiap 5 detik saat aktif | `PaymentPoller.tsx` | Dibangun |
 
 ## Baseline QA produksi (28 Nov 2026)
 

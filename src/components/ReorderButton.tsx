@@ -44,7 +44,7 @@ export function ReorderButton({
     <button
       type="button"
       onClick={reorder}
-      className="btn btn-ghost min-h-9 !px-3 text-xs"
+      className="btn btn-ghost min-h-12 !px-3 text-xs"
       aria-label="Pesan ulang dengan spesifikasi yang sama"
     >
       <RotateCcw aria-hidden className="size-3.5" /> Pesan ulang

@@ -5,6 +5,66 @@ import { ChevronDown, Sparkles } from "lucide-react";
 
 const STYLES = ["Minimal", "Modern", "Playful", "Elegant", "Bold", "Vintage", "Earthy", "Techy"];
 
+type QuickStart = { label: string; purpose: string; audience: string; style: string; mustHave: string };
+
+const QUICK_STARTS: Record<string, QuickStart[]> = {
+  print: [
+    {
+      label: "Promo toko",
+      purpose: "Spanduk promo akhir pekan",
+      audience: "Orang yang lewat di depan toko",
+      style: "Bold",
+      mustHave: "Produk utama, harga, QR WhatsApp",
+    },
+    {
+      label: "Undangan",
+      purpose: "Undangan acara keluarga",
+      audience: "Keluarga dan teman dekat",
+      style: "Elegant",
+      mustHave: "Nama acara, tanggal, alamat",
+    },
+    {
+      label: "Kemasan",
+      purpose: "Label kemasan produk",
+      audience: "Pembeli di marketplace dan toko",
+      style: "Minimal",
+      mustHave: "Nama produk, berat, kode batch",
+    },
+  ],
+  design: [
+    {
+      label: "Logo brand",
+      purpose: "Identitas visual untuk brand baru",
+      audience: "Pelanggan yang belum mengenal brand",
+      style: "Modern",
+      mustHave: "Nama brand, tagline, ikon sederhana",
+    },
+    {
+      label: "Media sosial",
+      purpose: "Templat konten Instagram",
+      audience: "Pengikut yang scroll cepat",
+      style: "Playful",
+      mustHave: "Judul besar, satu pesan utama, CTA",
+    },
+    {
+      label: "Presentasi",
+      purpose: "Slide pitch singkat",
+      audience: "Klien yang mengambil keputusan",
+      style: "Techy",
+      mustHave: "Masalah, solusi, angka kunci",
+    },
+  ],
+  other: [
+    {
+      label: "Dokumen rapi",
+      purpose: "Penataan dokumen supaya mudah dibaca",
+      audience: "Tim internal dan klien",
+      style: "Minimal",
+      mustHave: "Judul, daftar isi, konsistensi grid",
+    },
+  ],
+};
+
 export function BriefAssistant({
   category,
   dimensions,
@@ -41,6 +101,13 @@ export function BriefAssistant({
     if (text.trim()) onApply(text);
   }
 
+  function applyQuick(item: QuickStart) {
+    setPurpose(item.purpose);
+    setAudience(item.audience);
+    setStyle(item.style);
+    setMustHave(item.mustHave);
+  }
+
   function reset() {
     setPurpose("");
     setAudience("");
@@ -50,6 +117,8 @@ export function BriefAssistant({
     setReferences("");
     setNotes("");
   }
+
+  const quickStarts = QUICK_STARTS[category] ?? QUICK_STARTS.design;
 
   return (
     <div className="rounded-tag-sm border border-accent/25 bg-accent/[0.05] p-4">
@@ -74,6 +143,22 @@ export function BriefAssistant({
           <p className="text-xs leading-5 text-mute">
             Jawab singkat, lalu tekan “Susun brief”. Hasilnya bisa diedit manual.
           </p>
+
+          <div>
+            <span className="label">Mulai dari contoh</span>
+            <div className="chip-scroll -mx-1 mt-2 flex gap-2 overflow-x-auto px-1 pb-1">
+              {quickStarts.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => applyQuick(item)}
+                  className="inline-flex min-h-12 shrink-0 items-center rounded-tag-sm border border-line px-3 text-xs font-medium text-mute transition-colors hover:border-accent/40 hover:text-ink"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <label className="block">
             <span className="label">Tujuan</span>
@@ -158,10 +243,10 @@ export function BriefAssistant({
           </label>
 
           <div className="flex flex-wrap gap-2 pt-1">
-            <button type="button" onClick={compose} className="btn btn-primary min-h-9 px-4 text-sm">
+            <button type="button" onClick={compose} className="btn btn-primary min-h-12 px-4 text-sm">
               Susun brief
             </button>
-            <button type="button" onClick={reset} className="btn btn-ghost min-h-9 px-4 text-sm">
+            <button type="button" onClick={reset} className="btn btn-ghost min-h-12 px-4 text-sm">
               Reset
             </button>
           </div>

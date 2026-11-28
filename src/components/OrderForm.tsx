@@ -6,7 +6,7 @@ import { createOrder, type OrderState } from "@/app/actions";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { DateField } from "@/components/DateField";
 import type { Service, ServiceOptionGroup } from "@/lib/db";
-import { rupiah } from "@/lib/format";
+import { rupiah, tanggal } from "@/lib/format";
 import { calculateQuote, formatQty, optionPriceLabel, priceLabel } from "@/lib/pricing";
 import { minDeadlineDate as minDeadlineDateWIB } from "@/lib/deadline";
 import { searchServices } from "@/lib/catalog-search";
@@ -102,6 +102,13 @@ export function OrderForm({
   const refAbortRef = useRef<AbortController | null>(null);
   const bypassRef = useRef(false);
   const v = state?.values ?? {};
+  const [deadlineDate, setDeadlineDate] = useState(v.deadline ?? "");
+  const [deadlineTime, setDeadlineTime] = useState(v.deadlineTime || "17:00");
+
+  useEffect(() => {
+    if (v.deadline) setDeadlineDate(v.deadline);
+    if (v.deadlineTime) setDeadlineTime(v.deadlineTime);
+  }, [v.deadline, v.deadlineTime]);
   const initial = services.find((service) => service.id === (v.service ?? preselect)) ?? services[0];
   const [selectedId, setSelectedId] = useState(initial?.id ?? "");
   const [qty, setQty] = useState(v.qty || String(initial?.min_qty ?? 1));
@@ -271,7 +278,13 @@ export function OrderForm({
   const isArea = chosen?.pricing_model === "area";
   const isPerUnit = chosen?.pricing_model === "per_unit";
   // Sama persis dengan aturan di server: hari kalender WIB, bukan 24 jam berjalan.
-  const minDeadlineISO = chosen ? minDeadlineDateWIB(chosen.days ?? 3) : undefined;
+  const minDays = chosen?.days ?? 3;
+  const minDeadlineISO = chosen ? minDeadlineDateWIB(minDays) : undefined;
+  const deadlinePresets = [
+    { label: "Paling cepat", date: minDeadlineDateWIB(minDays) },
+    { label: "+1 hari", date: minDeadlineDateWIB(minDays + 1) },
+    { label: "+3 hari", date: minDeadlineDateWIB(minDays + 3) },
+  ];
   const unit = chosen?.unit_label || (isArea ? "m²" : "unit");
   const quote = chosen
     ? calculateQuote(chosen, { qty, widthCm: width, heightCm: height, selected: selection })
@@ -1219,18 +1232,43 @@ setInteracted(true);
             <p className="mb-5 text-sm text-mute">
               Kapan pesanan ini harus selesai? Tanggal dan jam wajib diisi supaya antrean produksi jelas.
             </p>
+            <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Saran deadline">
+              {deadlinePresets.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => {
+                    setDeadlineDate(preset.date);
+                    setDeadlineTime("17:00");
+                  }}
+                  className="inline-flex min-h-12 items-center rounded-tag-sm border border-line px-3 text-xs font-medium text-mute transition-colors hover:border-accent/40 hover:text-ink"
+                >
+                  {preset.label} · {tanggal(preset.date)}
+                </button>
+              ))}
+            </div>
             <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_10rem]">
               <label className="block">
                 <span className="label">
                   Tanggal <span className="text-[var(--quiet)]">*</span>
                 </span>
-                <DateField name="deadline" defaultValue={v.deadline} placeholder="Pilih tanggal deadline" min={minDeadlineISO} />
+                <DateField
+                  key={`deadline-${deadlineDate || "empty"}`}
+                  name="deadline"
+                  defaultValue={deadlineDate}
+                  placeholder="Pilih tanggal deadline"
+                  min={minDeadlineISO}
+                />
               </label>
               <label className="block">
                 <span className="label">
                   Jam <span className="text-[var(--quiet)]">*</span>
                 </span>
-                <TimeField name="deadlineTime" defaultValue={v.deadlineTime || "17:00"} />
+                <TimeField
+                  key={`time-${deadlineTime}`}
+                  name="deadlineTime"
+                  defaultValue={deadlineTime}
+                />
               </label>
             </div>
             <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-mute">

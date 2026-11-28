@@ -191,29 +191,36 @@ export function PaymentPoller({
   }
 
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-tag-sm border border-line bg-sand/50 px-4 py-3">
-      <span className="flex items-center gap-2 text-xs font-semibold text-ink">
-        <span className="relative flex size-2">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-60" />
-          <span className="relative inline-flex size-2 rounded-full bg-accent" />
+    <div className="mt-4 rounded-tag-sm border border-line bg-sand/50 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="flex items-center gap-2 text-xs font-semibold text-ink">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-60" />
+            <span className="relative inline-flex size-2 rounded-full bg-accent" />
+          </span>
+          Menunggu pembayaran
         </span>
-        Menunggu pembayaran
-      </span>
-      {remaining !== null && (
-        <span className="inline-flex items-center gap-1.5 text-xs tabular-nums text-mute">
-          <Clock3 aria-hidden className="size-3.5" />
-          {remaining > 0 ? remainingLabel(remaining) : "kedaluwarsa"}
-        </span>
-      )}
-      <button
-        type="button"
-        onClick={checkNow}
-        disabled={checking}
-        className="ml-auto inline-flex min-h-12 items-center gap-1.5 rounded-tag-sm border border-line px-2.5 text-xs font-semibold text-mute transition-colors hover:border-[var(--border-2)] hover:text-ink disabled:opacity-50 sm:min-h-10"
-      >
-        {checking ? <Loader2 aria-hidden className="size-3.5 animate-spin" /> : <RefreshCw aria-hidden className="size-3.5" />}
-        Cek status
-      </button>
+        {remaining !== null && (
+          <span className="inline-flex items-center gap-1.5 text-xs tabular-nums text-mute">
+            <Clock3 aria-hidden className="size-3.5" />
+            {remaining > 0 ? remainingLabel(remaining) : "kedaluwarsa"}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={checkNow}
+          disabled={checking}
+          className="ml-auto inline-flex min-h-12 items-center gap-1.5 rounded-tag-sm border border-line px-2.5 text-xs font-semibold text-mute transition-colors hover:border-[var(--border-2)] hover:text-ink disabled:opacity-50 sm:min-h-10"
+        >
+          {checking ? <Loader2 aria-hidden className="size-3.5 animate-spin" /> : <RefreshCw aria-hidden className="size-3.5" />}
+          Cek status
+        </button>
+      </div>
+      <p className={`mt-2 text-[11px] leading-4 ${remaining != null && remaining > 0 && remaining < 60_000 ? "text-danger" : "text-mute"}`}>
+        {remaining != null && remaining > 0 && remaining < 60_000
+          ? "Segera kedaluwarsa. Selesaikan pembayaran sekarang."
+          : "Status dicek otomatis tiap 5 detik saat halaman aktif."}
+      </p>
     </div>
   );
 }

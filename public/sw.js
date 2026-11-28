@@ -1,5 +1,5 @@
 /* in.torma service worker — hanya aset publik dan halaman publik yang di-cache. */
-const CACHE = "intorma-v13";
+const CACHE = "intorma-v14";
 const SHELL = [
   "/",
   "/?source=installed_app",

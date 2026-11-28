@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { X } from "lucide-react";
+import { Wifi, WifiOff, X } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 
 type ToastTone = "ok" | "error" | "info";
@@ -25,8 +25,34 @@ export function toast(text: string, tone: ToastTone = "info") {
 export function ToastHost() {
   const [items, setItems] = useState<ToastItem[]>([]);
   const [drag, setDrag] = useState<{ id: number; dx: number } | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [onlineNotice, setOnlineNotice] = useState(false);
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const onlineTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragRef = useRef<{ id: number; pointerId: number; startX: number; dx: number } | null>(null);
+
+  useEffect(() => {
+    const onOffline = () => {
+      setOffline(true);
+      setOnlineNotice(false);
+      if (onlineTimer.current) clearTimeout(onlineTimer.current);
+      onlineTimer.current = null;
+    };
+    const onOnline = () => {
+      setOffline(false);
+      setOnlineNotice(true);
+      if (onlineTimer.current) clearTimeout(onlineTimer.current);
+      onlineTimer.current = setTimeout(() => setOnlineNotice(false), 3000);
+    };
+    setOffline(!navigator.onLine);
+    window.addEventListener("offline", onOffline);
+    window.addEventListener("online", onOnline);
+    return () => {
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("online", onOnline);
+      if (onlineTimer.current) clearTimeout(onlineTimer.current);
+    };
+  }, []);
 
   const remove = useCallback((id: number) => {
     const timer = timers.current.get(id);
@@ -91,6 +117,24 @@ export function ToastHost() {
       aria-live="polite"
       aria-atomic="false"
     >
+      {offline && (
+        <div
+          role="status"
+          className="toast-item pointer-events-auto flex items-center gap-2 rounded-tag-sm border border-[var(--quiet)]/45 bg-[var(--panel)] px-4 py-3 text-sm text-[var(--text)]"
+        >
+          <WifiOff aria-hidden className="size-4 shrink-0 text-[var(--text-3)]" />
+          Sedang offline. Periksa koneksi, lalu coba lagi.
+        </div>
+      )}
+      {onlineNotice && (
+        <div
+          role="status"
+          className="toast-item pointer-events-auto flex items-center gap-2 rounded-tag-sm border border-accent/40 bg-[var(--panel)] px-4 py-3 text-sm text-[var(--text)]"
+        >
+          <Wifi aria-hidden className="size-4 shrink-0 text-accent" />
+          Koneksi kembali.
+        </div>
+      )}
       {items.map((item) => (
         <div
           key={item.id}
