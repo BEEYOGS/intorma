@@ -22,6 +22,7 @@
     "wa:webhook": "node scripts/wa-webhook.mjs",
     "wa:check": "node scripts/wa-check.mjs",
     "wa:cloud:setup": "node scripts/setup-meta-cloud.mjs",
+    "wa:cloud:templates": "node scripts/meta-templates.mjs",
     "test:integrations": "tsx scripts/test-integrations.ts",
     "test:smoke": "node scripts/smoke.mjs",
     "db:backup": "node --env-file=.env.local scripts/backup-db.mjs"

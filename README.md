@@ -165,11 +165,14 @@ Langkah Meta:
 | Nama template | Isi body |
 | --- | --- |
 | `order_created` | `Halo {{1}}, pesanan {{2}} sudah kami terima. {{3}} Total: {{4}} Target selesai: {{5}} Pantau & bayar: {{6}}` |
-| `admin_notice` | `{{1}} {{2}}` |
+| `admin_notice` | `Notifikasi in.torma — {{1}}: {{2}}` |
 | `order_status` | `Halo {{1}}, pesanan {{2}}: {{3}} Pantau di: {{4}}` |
 | `payment_received` | `Halo {{1}}, pembayaran {{2}} sebesar {{3}} sudah kami terima. Terima kasih! Pantau: {{4}}` |
 | `payment_reminder` | `Halo {{1}}, pesanan {{2}} masih menunggu pembayaran. Total: {{3}} Target selesai: {{4}} Bayar & detail: {{5}}` |
 | `reorder_offer` | `Halo {{1}}, pesanan {{2}} sudah selesai. Butuh cetak ulang? Pakai {{3}} untuk diskon. Pesan lagi: {{4}}` |
+
+Setelah `META_WA_TOKEN` dan `META_WA_PHONE_ID` terisi, jalankan `npm run wa:cloud:templates`
+untuk membuat keenam template lewat Graph API. Template yang baru dibuat tetap perlu disetujui Meta.
 
 Balasan `status INT-DDMMYY001` memakai teks biasa karena terjadi dalam jendela 24 jam setelah
 pelanggan membalas. Notifikasi keluar memakai template agar tidak ditolak dengan kode `131047`.
