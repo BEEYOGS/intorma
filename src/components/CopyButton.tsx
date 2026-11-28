@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { haptic } from "@/lib/haptics";
 
 export function CopyButton({
   value,
@@ -31,6 +32,7 @@ export function CopyButton({
       document.execCommand("copy");
       document.body.removeChild(area);
     }
+    haptic("tap");
     setCopied(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setCopied(false), 2000);
@@ -40,7 +42,7 @@ export function CopyButton({
     <button
       type="button"
       onClick={copy}
-      className={`inline-flex min-h-10 items-center gap-1.5 rounded-tag-sm border border-line bg-panel/70 px-3 text-xs font-semibold text-ink/70 transition-colors hover:border-ink hover:text-ink ${className}`}
+      className={`inline-flex min-h-12 items-center gap-1.5 rounded-tag-sm border border-line bg-panel/70 px-3 text-xs font-semibold text-ink/70 transition-colors hover:border-ink hover:text-ink sm:min-h-10 ${className}`}
       aria-label={label}
     >
       {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}

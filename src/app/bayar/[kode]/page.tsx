@@ -9,6 +9,7 @@ import {
   Download,
   Landmark,
   QrCode,
+  RefreshCw,
   ShieldCheck,
 } from "lucide-react";
 import { CopyButton } from "@/components/CopyButton";
@@ -134,7 +135,7 @@ export default async function PayPage({
   return (
     <>
       <Nav />
-      <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:py-12">
+      <main className="mx-auto w-full max-w-5xl px-5 pb-28 pt-8 sm:pb-12 sm:py-12">
         <Link
           href={trackUrl}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-mute transition-colors hover:text-ink"
@@ -364,6 +365,21 @@ export default async function PayPage({
           </aside>
         </div>
       </main>
+
+      {/* Halaman bayar sengaja tanpa bottom nav agar tidak dua bar bertumpuk. */}
+      <nav
+        data-mobile-chrome
+        aria-label="Aksi pembayaran"
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-line bg-[var(--bg)]/95 px-4 pb-[env(safe-area-inset-bottom,0px)] pt-2 backdrop-blur-md sm:hidden"
+      >
+        <Link href={trackUrl} className="btn btn-ghost min-h-12 flex-1 px-3 text-sm">
+          <RefreshCw aria-hidden className="size-4" /> Cek status
+        </Link>
+        <Link href={notaUrl} className="btn btn-primary min-h-12 flex-1 px-3 text-sm">
+          <Download aria-hidden className="size-4" /> Lihat nota
+        </Link>
+      </nav>
+
       <Footer />
     </>
   );

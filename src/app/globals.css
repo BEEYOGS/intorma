@@ -587,8 +587,58 @@ button,
     min-height: 48px;
     font-size: 16px;
   }
+  /* Menyamakan semua input yang bisa difokus, termasuk palette dan field admin,
+     supaya Safari tidak memperbesar halaman saat keyboard muncul. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
   .btn {
     min-height: 48px;
+  }
+}
+
+/* Baris chip horizontal: bisa digeser, tidak menggulung halaman, tanpa scrollbar. */
+.chip-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+}
+.chip-scroll::-webkit-scrollbar {
+  display: none;
+}
+.chip-scroll > * {
+  scroll-snap-align: start;
+}
+
+/* Daftar panjang: browser boleh melewati render kartu di luar viewport. */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}
+
+/* Toast bisa digeser horizontal untuk ditutup tanpa mengganggu scroll vertikal. */
+.toast-item {
+  touch-action: pan-y;
+  user-select: none;
+}
+
+@media (hover: none) {
+  /* Hindari hover “nyangkut” pada layar sentuh; state aktif tetap responsif. */
+  .card-lift:hover {
+    transform: none;
+  }
+}
+
+/* Perangkat dengan transparansi dikurangi tetap mendapat chrome yang solid. */
+@media (prefers-reduced-transparency: reduce) {
+  [data-mobile-chrome] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--bg) !important;
   }
 }
 

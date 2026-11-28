@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Clock, ChevronDown } from "lucide-react";
+import { useOverlayRegistration } from "@/hooks/useOverlayRegistration";
 
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
 
@@ -46,6 +47,7 @@ export function TimeField({ name, defaultValue = "17:00" }: { name: string; defa
   const [minute, setMinute] = useState(m);
   const [mode, setMode] = useState<"hour" | "minute">("hour");
   const [open, setOpen] = useState(false);
+  useOverlayRegistration("time-field", open, () => setOpen(false));
   const rootRef = useRef<HTMLDivElement>(null);
 
   const hour24 = to24(hour12, period);

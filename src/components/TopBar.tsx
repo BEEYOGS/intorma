@@ -23,7 +23,7 @@ export async function TopBar({ isAdmin = false }: { isAdmin?: boolean }) {
   const iconClass = "size-3.5 shrink-0 opacity-70";
 
   return (
-    <header className="topbar sticky top-0 z-50 bg-[var(--bg)]/80 backdrop-blur-sm">
+    <header data-mobile-chrome className="topbar sticky top-0 z-50 bg-[var(--bg)]/80 backdrop-blur-sm">
       <Link href="/" className="flex items-center gap-2" aria-label="in.torma, beranda">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/int.svg" alt="in.torma" className="h-6 w-auto" />

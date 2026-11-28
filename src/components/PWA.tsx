@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, X } from "lucide-react";
 import { isInstalledEnvironment, markInstalledEnvironment, useAppEnvironment } from "@/hooks/useAppEnvironment";
+import { useOverlayRegistration } from "@/hooks/useOverlayRegistration";
+import { haptic } from "@/lib/haptics";
 
 type InstallPrompt = Event & {
   prompt: () => Promise<void>;
@@ -149,6 +151,8 @@ export function InstallButton() {
     rememberDismissal();
   }, [clearTimer]);
 
+  useOverlayRegistration("install-popup", showPopup, closePopup);
+
   // Dialog pasif tetap harus bisa ditutup dengan keyboard dan mengembalikan fokus.
   useEffect(() => {
     if (!showPopup) return;
@@ -213,6 +217,7 @@ export function InstallButton() {
       await prompt.prompt();
       const choice = await prompt.userChoice;
       if (choice.outcome === "accepted") {
+        haptic("success");
         rememberInstalled();
         setInstalled(true);
       } else {
@@ -246,7 +251,7 @@ export function InstallButton() {
               type="button"
               onClick={closePopup}
               aria-label="Tutup notifikasi"
-              className="absolute right-3 top-3 grid size-10 place-items-center rounded-[var(--radius-sharp)] text-ink/45 transition-colors hover:bg-white/[0.06] hover:text-ink"
+              className="absolute right-3 top-3 grid size-11 place-items-center rounded-[var(--radius-sharp)] text-ink/45 transition-colors hover:bg-white/[0.06] hover:text-ink"
             >
               <X className="size-4" />
             </button>
@@ -267,7 +272,7 @@ export function InstallButton() {
 
             {prompt ? (
               <div className="mt-4 flex flex-wrap gap-2">
-                <button type="button" onClick={install} className="btn btn-primary min-h-10 flex-1 px-4 text-sm">
+                <button type="button" onClick={install} className="btn btn-primary min-h-12 flex-1 px-4 text-sm sm:min-h-10">
                   Install sekarang <Download aria-hidden className="size-4" />
                 </button>
                 <button
@@ -277,7 +282,7 @@ export function InstallButton() {
                     setShowPopup(false);
                     rememberLater();
                   }}
-                  className="btn btn-ghost min-h-10 px-4 text-sm"
+                  className="btn btn-ghost min-h-12 px-4 text-sm sm:min-h-10"
                 >
                   Nanti
                 </button>

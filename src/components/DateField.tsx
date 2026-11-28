@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useOverlayRegistration } from "@/hooks/useOverlayRegistration";
 import { wibToday } from "@/lib/deadline";
 
 const MONTHS = [
@@ -66,6 +67,7 @@ export function DateField({
 }) {
   const [value, setValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);
+  useOverlayRegistration("date-field", open, () => setOpen(false));
   const start = parseISO(defaultValue) ?? (min ? parseISO(min) : null) ?? new Date();
   const [view, setView] = useState({ year: start.getFullYear(), month: start.getMonth() });
   const rootRef = useRef<HTMLDivElement>(null);

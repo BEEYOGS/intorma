@@ -1,62 +1,126 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { X } from "lucide-react";
+import { haptic } from "@/lib/haptics";
 
+type ToastTone = "ok" | "error" | "info";
 type ToastItem = {
   id: number;
-  tone: "ok" | "error" | "info";
+  tone: ToastTone;
   text: string;
 };
 
+const MAX_VISIBLE = 3;
+const DISMISS_MS = 4000;
+const SWIPE_PX = 72;
+
 let counter = 0;
 
-export function toast(text: string, tone: ToastItem["tone"] = "info") {
+export function toast(text: string, tone: ToastTone = "info") {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("intorma:toast", { detail: { text, tone } }));
 }
 
 export function ToastHost() {
   const [items, setItems] = useState<ToastItem[]>([]);
+  const [drag, setDrag] = useState<{ id: number; dx: number } | null>(null);
+  const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const dragRef = useRef<{ id: number; pointerId: number; startX: number; dx: number } | null>(null);
 
-  const push = useCallback((text: string, tone: ToastItem["tone"]) => {
-    const id = ++counter;
-    setItems((prev) => [...prev, { id, text, tone }]);
-    setTimeout(() => {
-      setItems((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+  const remove = useCallback((id: number) => {
+    const timer = timers.current.get(id);
+    if (timer) clearTimeout(timer);
+    timers.current.delete(id);
+    setItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
+  const push = useCallback(
+    (text: string, tone: ToastTone) => {
+      const id = ++counter;
+      // Maksimal tiga toast: pesan lama tidak menutupi CTA di layar kecil.
+      setItems((prev) => [...prev.slice(-(MAX_VISIBLE - 1)), { id, text, tone }]);
+      timers.current.set(
+        id,
+        setTimeout(() => remove(id), DISMISS_MS),
+      );
+      if (tone === "error") haptic("warning");
+    },
+    [remove],
+  );
+
   useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { text: string; tone: ToastItem["tone"] };
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { text: string; tone: ToastTone };
       push(detail.text, detail.tone);
     };
     window.addEventListener("intorma:toast", handler);
-    return () => window.removeEventListener("intorma:toast", handler);
+    return () => {
+      window.removeEventListener("intorma:toast", handler);
+      for (const timer of timers.current.values()) clearTimeout(timer);
+      timers.current.clear();
+    };
   }, [push]);
+
+  function onPointerDown(event: ReactPointerEvent<HTMLDivElement>, id: number) {
+    if (!event.isPrimary || event.pointerType === "mouse") return;
+    dragRef.current = { id, pointerId: event.pointerId, startX: event.clientX, dx: 0 };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const state = dragRef.current;
+    if (!state || state.pointerId !== event.pointerId) return;
+    state.dx = Math.max(-140, Math.min(140, event.clientX - state.startX));
+    setDrag({ id: state.id, dx: state.dx });
+  }
+
+  function onPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    const state = dragRef.current;
+    if (!state || state.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    setDrag(null);
+    if (Math.abs(state.dx) > SWIPE_PX) remove(state.id);
+  }
 
   if (items.length === 0) return null;
 
   return (
     <div
+      data-mobile-chrome
       className="pointer-events-none fixed bottom-[var(--bottom-overlay-offset)] left-1/2 z-[70] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4 sm:bottom-6"
       aria-live="polite"
       aria-atomic="false"
     >
-      {items.map((t) => (
+      {items.map((item) => (
         <div
-          key={t.id}
-          role={t.tone === "error" ? "alert" : "status"}
-          aria-live={t.tone === "error" ? "assertive" : "polite"}
-          className={`pointer-events-auto rounded-tag-sm border px-4 py-3 text-sm shadow-[0_16px_40px_-20px_rgba(0,0,0,0.8)] backdrop-blur-sm toast-item ${
-            t.tone === "ok"
+          key={item.id}
+          role={item.tone === "error" ? "alert" : "status"}
+          style={drag?.id === item.id ? { transform: `translateX(${drag.dx}px)` } : undefined}
+          onPointerDown={(event) => onPointerDown(event, item.id)}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={() => {
+            dragRef.current = null;
+            setDrag(null);
+          }}
+          className={`toast-item pointer-events-auto flex items-start gap-2 rounded-tag-sm border px-4 py-3 text-sm shadow-[0_16px_40px_-20px_rgba(0,0,0,0.8)] backdrop-blur-sm transition-transform ${
+            item.tone === "ok"
               ? "border-[var(--accent)]/40 bg-[var(--panel)] text-[var(--text)]"
-              : t.tone === "error"
+              : item.tone === "error"
                 ? "border-[var(--red)]/40 bg-[var(--panel)] text-[var(--text)]"
                 : "border-[var(--border)] bg-[var(--panel)] text-[var(--text)]"
           }`}
         >
-          {t.text}
+          <span className="min-w-0 flex-1">{item.text}</span>
+          <button
+            type="button"
+            onClick={() => remove(item.id)}
+            aria-label="Tutup notifikasi"
+            className="grid size-11 shrink-0 place-items-center rounded-tag-sm text-[var(--text-3)] transition-colors hover:text-[var(--text)] sm:size-9"
+          >
+            <X aria-hidden className="size-4" />
+          </button>
         </div>
       ))}
     </div>

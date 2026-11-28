@@ -17,6 +17,7 @@ import { TimeField } from "@/components/TimeField";
 import { ServiceIcon } from "@/components/ServiceIcon";
 import { ArrowRight, Check } from "lucide-react";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
+import { haptic } from "@/lib/haptics";
 import { ACCEPT_ATTR } from "@/lib/upload-rules";
 import type { UploadedFile } from "@/lib/drive";
 
@@ -557,7 +558,19 @@ export function OrderForm({
         </div>
       )}
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-14">
-        <form ref={formRef} action={action} onSubmit={handleSubmit} className="space-y-10">
+        <form
+          ref={formRef}
+          action={action}
+          onSubmit={handleSubmit}
+          onInvalid={(event) => {
+            // Validasi native bisa menyembunyikan field di balik action bar sticky.
+            const field = event.target as HTMLElement | null;
+            if (!field) return;
+            haptic("warning");
+            field.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+          className="space-y-10"
+        >
           <input ref={filesFieldRef} type="hidden" name="files" defaultValue="" />
           <input type="hidden" name="service" value={selectedId} />
           <input type="hidden" name="qty" value={isPerUnit ? qty : ""} />
@@ -1285,7 +1298,7 @@ setInteracted(true);
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel/95 px-4 pb-[var(--action-bar-padding)] pt-3 backdrop-blur-xl lg:hidden">
+      <div data-mobile-chrome className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel/95 px-4 pb-[var(--action-bar-padding)] pt-3 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-xs text-mute">{chosen?.name ?? "Pilih layanan"}</p>
@@ -1297,7 +1310,7 @@ setInteracted(true);
             type="button"
             onClick={() => formRef.current?.requestSubmit()}
             disabled={pending || uploading || refUploading || hasPriceError || total == null}
-            className="btn btn-primary min-h-11 shrink-0 px-5 text-sm"
+            className="btn btn-primary min-h-12 shrink-0 px-5 text-sm"
           >
             {refUploading ? "Mengunggah…" : pending ? "Membuat…" : "Buat pesanan"}
             {!pending && !refUploading && <ArrowRight aria-hidden className="size-4" />}

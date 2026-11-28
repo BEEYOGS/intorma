@@ -182,6 +182,25 @@ Admin memakai lima destination + tombol **Lainnya** berupa bottom sheet; enam ta
 dipaksakan berbagi lebar 360px. `AdminBottomNav` menutup sheet saat rute berubah, Escape, atau
 ketukan di luar, dan mengembalikan fokus ke tombol pembuka.
 
+### Interaksi mobile lanjutan
+
+- `MobileSheet` dipakai bersama `OrderInspection` dan menu **Lainnya** admin: geser ke bawah untuk
+  menutup (jarak >104px atau velocity >0,45px/ms), focus trap, kunci scroll, Escape, backdrop, dan
+  pengembalian fokus. Di desktop tetap berupa drawer kanan tanpa gesture.
+- Tombol back Android mengikuti urutan: tutup overlay teratas → `history.back()` untuk navigasi
+  internal → keluar aplikasi. Sheet, date/time picker, pratinjau file, command palette, menu seluler,
+  dan kartu install mendaftar ke tumpukan overlay global (`src/lib/overlay-stack.ts`).
+- Katalog punya bar filter ringkas yang muncul setelah kartu filter terlewat, otomatis menyusut saat
+  scroll turun, dan memakai chip kategori horizontal `scroll-snap`. Filter anggaran ikut tersinkron
+  ke URL.
+- Toast dibatasi tiga item, bisa digeser horizontal atau ditutup dengan tombol, dan memakai satu
+  region `aria-live` di container.
+- Haptic opsional lewat `navigator.vibrate` saat salin, install diterima, atau validasi gagal.
+  Matikan dengan `localStorage.setItem("intorma-haptics", "0")`; otomatis mati bila
+  `prefers-reduced-motion: reduce` aktif.
+- Halaman `/bayar` punya action bar bawah sendiri (Cek status / Lihat nota) karena nav global sengaja
+  disembunyikan di alur transaksional.
+
 ### WhatsApp
 
 **Jalur aktif: Fonnte.** Nomor WhatsApp yang sama tetap dipakai tanpa menghapus chat atau

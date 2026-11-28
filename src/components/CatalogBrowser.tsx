@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Clock3, Link2, Search, X } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Clock3, Link2, RotateCcw, Search, X } from "lucide-react";
 import { toast } from "@/components/Toast";
 import { ProductIllustration } from "@/components/ProductIllustration";
 import type { Service } from "@/lib/db";
@@ -51,7 +51,7 @@ function ProductCard({ service, query }: { service: Service; query: string }) {
   return (
     <Link
       href={`/order?layanan=${service.id}`}
-      className="card card-lift group flex flex-col overflow-hidden"
+      className="card card-lift cv-auto group flex flex-col overflow-hidden"
     >
       <div className="relative grid h-40 place-items-center overflow-hidden border-b border-line bg-white/[0.015] px-5 text-[var(--text-2)] transition-colors group-hover:text-[var(--text)]">
         <span
@@ -97,6 +97,42 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
   const [sort, setSort] = useState<SortKey>("recommended");
   const [hydrated, setHydrated] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const filterAnchorRef = useRef<HTMLDivElement>(null);
+  const lastScrollRef = useRef(0);
+  const [pinned, setPinned] = useState(false);
+  const [compactHidden, setCompactHidden] = useState(false);
+
+  // Bar ringkas hanya muncul setelah kartu filter utama terlewat di layar.
+  useEffect(() => {
+    const anchor = filterAnchorRef.current;
+    if (!anchor) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0, rootMargin: "-56px 0px 0px 0px" },
+    );
+    observer.observe(anchor);
+    return () => observer.disconnect();
+  }, []);
+
+  // Sembunyi saat scroll turun, muncul lagi saat scroll naik (lebih hemat ruang).
+  useEffect(() => {
+    lastScrollRef.current = window.scrollY;
+    setCompactHidden(false);
+    if (!pinned) return;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastScrollRef.current;
+      if (delta > 10 && y > 220) {
+        setCompactHidden(true);
+        lastScrollRef.current = y;
+      } else if (delta < -4) {
+        setCompactHidden(false);
+        lastScrollRef.current = y;
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [pinned]);
 
   // Pulihkan filter dari URL supaya tautan bisa dibagikan dan tombol kembali bekerja.
   useEffect(() => {
@@ -129,7 +165,7 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
       window.history.replaceState(window.history.state, "", next);
     }
-  }, [query, category, sort, hydrated]);
+  }, [query, category, budget, sort, hydrated]);
 
   // Tekan "/" untuk fokus cari, Esc untuk mengosongkan saat kolom aktif.
   useEffect(() => {
@@ -207,10 +243,12 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
     }
   }
 
-  const filtered = query.trim() !== "" || category !== "all" || sort !== "recommended";
+  const filtered =
+    query.trim() !== "" || category !== "all" || budget !== "all" || sort !== "recommended";
 
   return (
     <div>
+      <div ref={filterAnchorRef} aria-hidden className="pointer-events-none h-px" />
       <div className="card mb-8 p-5">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_11rem_11rem] md:items-end">
           <label className="block">
@@ -290,7 +328,68 @@ export function CatalogBrowser({ services }: { services: Service[] }) {
         </div>
       </div>
 
-      <div className="mb-5 flex items-end justify-between gap-4 border-b border-line pb-4">
+      {pinned && !compactHidden && (
+        <div
+          data-mobile-chrome
+          className="fixed inset-x-0 top-14 z-30 border-b border-line bg-[var(--bg)]/95 px-4 pb-2 pt-2 shadow-[0_12px_30px_-24px_rgba(0,0,0,0.9)] backdrop-blur-md sm:hidden"
+        >
+          <div className="flex items-center gap-2">
+            <label className="relative min-w-0 flex-1">
+              <span className="sr-only">Cari layanan</span>
+              <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[var(--text-3)]" />
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Cari layanan…"
+                inputMode="search"
+                enterKeyHint="search"
+                autoComplete="off"
+                className="field min-h-12 !pl-10"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={reset}
+              aria-label="Reset filter"
+              className="grid size-12 shrink-0 place-items-center rounded-[var(--radius-sharp)] border border-line text-mute transition-colors hover:text-ink"
+            >
+              <RotateCcw aria-hidden className="size-4" />
+            </button>
+          </div>
+          <div
+            className="chip-scroll -mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1"
+            role="group"
+            aria-label="Filter kategori cepat"
+          >
+            {CATEGORIES.map((item) => {
+              const on = category === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setCategory(item.key)}
+                  aria-pressed={on}
+                  className={`inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-tag-sm border px-3 text-xs font-medium transition-colors ${
+                    on
+                      ? "border-accent/40 bg-accent/10 text-ink"
+                      : "border-line text-mute hover:border-[var(--border-2)] hover:text-ink"
+                  }`}
+                >
+                  {item.label}
+                  <span className="mono text-xs opacity-70">{String(counts[item.key]).padStart(2, "0")}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div
+        className={`mb-5 flex items-end justify-between gap-4 border-b border-line pb-4 transition-[margin] ${
+          pinned ? "mt-16 sm:mt-0" : ""
+        }`}
+      >
         <p className="text-xs text-[var(--text-3)]" aria-live="polite">
           Menampilkan <span className="mono text-[var(--text)]">{visible.length}</span> dari{" "}
           <span className="mono text-[var(--text)]">{services.length}</span> layanan

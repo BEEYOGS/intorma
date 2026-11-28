@@ -14,7 +14,7 @@ export function AdminShell({ active, children }: { active: AdminTab; children: R
 
   return (
     <div className="min-h-dvh">
-      <header className="topbar sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur-sm">
+      <header data-mobile-chrome className="topbar sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur-sm">
         <div className="wrap flex h-14 items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-4 sm:gap-6">
             <Link href="/" aria-label={`${SITE_NAME} — beranda`} className="shrink-0">

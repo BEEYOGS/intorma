@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Archive, Download, Eye, Upload, X } from "lucide-react";
 import { UploadProgressBar } from "@/components/UploadProgressBar";
+import { useOverlayRegistration } from "@/hooks/useOverlayRegistration";
 import { uploadFileToStorage, type UploadProgress } from "@/lib/upload-client";
 import { ACCEPT_ATTR } from "@/lib/upload-rules";
 
@@ -77,6 +78,7 @@ export function FileLibrary({
   const [error, setError] = useState("");
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [preview, setPreview] = useState<FileItem | null>(null);
+  useOverlayRegistration("file-preview", Boolean(preview), () => setPreview(null));
   const previewRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 

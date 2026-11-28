@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MoreHorizontal, X } from "lucide-react";
+import { MobileSheet } from "@/components/MobileSheet";
 import { adminTabs, primaryAdminTabKeys, type AdminTab, type AdminTabDefinition } from "@/lib/admin-tabs";
 
 const primaryKeys = new Set<string>(primaryAdminTabKeys);
@@ -11,7 +12,7 @@ const moreTabs = adminTabs.filter((tab) => !primaryKeys.has(tab.key));
 const SHEET_ID = "admin-more-sheet";
 
 function tabClass(active: boolean) {
-  return `relative flex min-h-[var(--bottom-bar-height)] flex-col items-center justify-center gap-1 px-1 py-1.5 text-[10px] font-semibold leading-none transition-colors ${
+  return `relative flex min-h-[var(--bottom-bar-height)] flex-col items-center justify-center gap-1 px-1 py-1.5 text-[11px] font-semibold leading-none transition-colors ${
     active ? "text-[var(--text)]" : "text-[var(--text-3)] hover:text-[var(--text)]"
   }`;
 }
@@ -29,7 +30,6 @@ function ActiveMark() {
 export function AdminBottomNav({ active }: { active: AdminTab }) {
   const [open, setOpen] = useState(false);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
-  const sheetRef = useRef<HTMLDivElement>(null);
   const moreActive = moreTabs.some((tab) => tab.key === active);
 
   const close = useCallback((restoreFocus = false) => {
@@ -40,34 +40,6 @@ export function AdminBottomNav({ active }: { active: AdminTab }) {
   useEffect(() => {
     setOpen(false);
   }, [active]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    sheetRef.current?.querySelector<HTMLAnchorElement>("a")?.focus();
-
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        close(true);
-      }
-    };
-    const onPointer = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (sheetRef.current?.contains(target) || moreButtonRef.current?.contains(target)) return;
-      close();
-    };
-
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onPointer);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onPointer);
-    };
-  }, [open, close]);
 
   const renderTab = (tab: AdminTabDefinition) => {
     const on = active === tab.key;
@@ -88,6 +60,7 @@ export function AdminBottomNav({ active }: { active: AdminTab }) {
   return (
     <>
       <nav
+        data-mobile-chrome
         aria-label="Navigasi admin bawah"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--bg)]/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-md sm:hidden"
       >
@@ -113,26 +86,17 @@ export function AdminBottomNav({ active }: { active: AdminTab }) {
       </nav>
 
       {open && (
-        <div className="fixed inset-0 z-50 sm:hidden">
-          <button
-            type="button"
-            aria-label="Tutup menu lainnya"
-            onClick={() => close(true)}
-            className="absolute inset-0 size-full cursor-default bg-black/60 backdrop-blur-sm"
-          />
-          <div
-            id={SHEET_ID}
-            ref={sheetRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menu admin lainnya"
-            className="absolute inset-x-0 bottom-0 rounded-t-[var(--radius)] border-t border-[var(--border-2)] bg-[var(--panel)] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] shadow-[0_-24px_60px_-30px_rgba(0,0,0,0.9)]"
-          >
-            <div aria-hidden className="mx-auto mt-2 h-1 w-10 rounded-full bg-[var(--border-2)]" />
-            <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-4">
+        <MobileSheet
+          open={open}
+          onClose={() => close(true)}
+          titleId={SHEET_ID}
+          panelClassName="!border-[var(--border-2)] !bg-[var(--panel)]"
+          bodyClassName="!px-4 !pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] !pt-0"
+          header={
+            <div className="flex items-center justify-between gap-3 px-4 pb-1 pt-2">
               <div>
                 <p className="eyebrow">Navigasi admin</p>
-                <h2 className="mt-1 text-base font-semibold">Lainnya</h2>
+                <h2 id={SHEET_ID} className="mt-1 text-base font-semibold">Lainnya</h2>
               </div>
               <button
                 type="button"
@@ -143,30 +107,31 @@ export function AdminBottomNav({ active }: { active: AdminTab }) {
                 <X aria-hidden className="size-4" />
               </button>
             </div>
-            <ul className="grid grid-cols-2 gap-2 px-4">
-              {moreTabs.map((tab) => {
-                const on = active === tab.key;
-                const Icon = tab.icon;
-                return (
-                  <li key={tab.key}>
-                    <Link
-                      href={tab.href}
-                      aria-current={on ? "page" : undefined}
-                      className={`flex min-h-14 items-center gap-3 rounded-[var(--radius-sharp)] border px-3 py-2 text-sm font-medium transition-colors ${
-                        on
-                          ? "border-[var(--border-2)] bg-[var(--panel-2)] text-[var(--text)]"
-                          : "border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--panel-2)] hover:text-[var(--text)]"
-                      }`}
-                    >
-                      <Icon aria-hidden className="size-[18px] shrink-0" strokeWidth={on ? 2 : 1.7} />
-                      <span className="truncate">{tab.label}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </div>
+          }
+        >
+          <ul className="grid grid-cols-2 gap-2">
+            {moreTabs.map((tab) => {
+              const on = active === tab.key;
+              const Icon = tab.icon;
+              return (
+                <li key={tab.key}>
+                  <Link
+                    href={tab.href}
+                    aria-current={on ? "page" : undefined}
+                    className={`flex min-h-14 items-center gap-3 rounded-[var(--radius-sharp)] border px-3 py-2 text-sm font-medium transition-colors ${
+                      on
+                        ? "border-[var(--border-2)] bg-[var(--panel-2)] text-[var(--text)]"
+                        : "border-[var(--border)] text-[var(--text-2)] hover:bg-[var(--panel-2)] hover:text-[var(--text)]"
+                    }`}
+                  >
+                    <Icon aria-hidden className="size-[18px] shrink-0" strokeWidth={on ? 2 : 1.7} />
+                    <span className="truncate">{tab.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </MobileSheet>
       )}
     </>
   );

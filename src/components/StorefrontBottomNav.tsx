@@ -52,6 +52,7 @@ export function StorefrontBottomNav() {
 
   return (
     <nav
+      data-mobile-chrome
       aria-label="Navigasi bawah"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-[var(--bg)]/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-md sm:hidden"
     >
