@@ -130,6 +130,16 @@ export function OrderForm({
   const [filter, setFilter] = useState<"all" | "design" | "print" | "other">("all");
   const [brief, setBrief] = useState(v.brief || "");
   const [promoCode, setPromoCode] = useState(initialPromo);
+
+  useEffect(() => {
+    if (initialPromo) return;
+    try {
+      const saved = window.localStorage.getItem("intorma-last-promo");
+      if (saved) setPromoCode(saved);
+    } catch {
+      // Abaikan kegagalan penyimpanan.
+    }
+  }, [initialPromo]);
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoMessage, setPromoMessage] = useState("");
   const [promoPending, setPromoPending] = useState(false);
@@ -497,6 +507,11 @@ export function OrderForm({
       setPromoCode(data.code || code);
       setPromoDiscount(data.discount || 0);
       setPromoMessage(`Diskon ${rupiah(data.discount || 0)} diterapkan.`);
+      try {
+        window.localStorage.setItem("intorma-last-promo", data.code || code);
+      } catch {
+        // Abaikan kegagalan penyimpanan.
+      }
     } catch {
       setPromoDiscount(0);
       setPromoMessage("Gagal memvalidasi kode promo.");

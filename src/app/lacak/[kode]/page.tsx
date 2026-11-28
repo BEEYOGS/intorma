@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { BankLogo, hasBankLogo } from "@/components/BankLogo";
 import { Footer, Nav, StatusBadge } from "@/components/Chrome";
 import { CopyButton } from "@/components/CopyButton";
+import { CopyOrderSummaryButton } from "@/components/CopyOrderSummaryButton";
 import { OrderAccessGate } from "@/components/OrderAccessGate";
 import { ShareStatusButton } from "@/components/ShareStatusButton";
 import { CalendarButton } from "@/components/CalendarButton";
@@ -173,6 +174,7 @@ export default async function TrackPage({
               <div className="flex flex-wrap items-center gap-2">
                 <CopyButton value={order.code} label="Salin kode" />
                 <ShareStatusButton code={order.code} status={meta.label} deadline={deadlineLabel(order.deadline_at, order.deadline)} />
+                <CopyOrderSummaryButton code={order.code} service={order.service} status={meta.label} deadline={order.deadline_at} price={order.price} paid={order.paid} />
               </div>
             </div>
           </div>
